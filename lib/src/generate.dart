@@ -1,5 +1,3 @@
-
-
 // void generate(LibraryElement library, File destFile) {
 //   var referencePath = p.relative(library.source.fullName, from: libDir.path);
 
