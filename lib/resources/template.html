@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+
+<html lang="en" class="fontawesome-i2svg-active fontawesome-i2svg-complete">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="description" content="Best practices for building consistent, maintainable, efficient Dart libraries.">
+  <title>{{ page-title }}</title>
+
+  <!-- Favicon / Touch Icons -->
+  <link rel="icon" sizes="64x64" href="https://dart.dev/assets/shared/dart/icon/64.png">
+  <link href="https://dart.dev/assets/img/touch-icon-iphone.png" rel="apple-touch-icon">
+  <link href="https://dart.dev/assets/img/touch-icon-ipad.png" rel="apple-touch-icon" sizes="152x152">
+  <link href="https://dart.dev/assets/img/touch-icon-iphone-retina.png" rel="apple-touch-icon" sizes="180x180">
+  <link href="https://dart.dev/assets/img/touch-icon-ipad-retina.png" rel="apple-touch-icon" sizes="167x167">
+
+  <meta property="og:image" content="https://dart.dev/assets/shared/dart-logo-for-shares.png?2">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Display:wght@400&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Mono:wght@400;500;700&amp;display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons&amp;display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="default">
+  <header id="page-header" class="site-header">
+    <nav id="mainnav" class="site-header">
+
+      <a class="brand" title="Dart"><img src="dart.svg" alt="Dart"></a>
+      <div class="navbar">{{ page-title }}</div>
+
+      <ul class="navbar">
+
+        {{ navbar }}
+
+        <li>
+          <a href="https://dart.dev/overview" class="nav-link">Overview</a>
+        </li>
+        <li class="mainnav__get-started">
+          <a href="https://dart.dev/guides" class="nav-link
+         active">
+            <span>Docs</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://dart.dev/community" class="nav-link">Community</a>
+        </li>
+        <li>
+          <a href="https://dart.dev/#try-dart" class="nav-link">Try Dart</a>
+        </li>
+        <li>
+          <a href="https://dart.dev/get-dart" class="nav-link">Get Dart</a>
+        </li>
+        <li class="searchfield">
+          <form action="https://dart.dev/search" class="site-header__search form-inline" id="cse-search-box">
+            <input type="hidden" name="cx" value="011220921317074318178:_yy-tmb5t_i">
+            <input type="hidden" name="ie" value="UTF-8">
+            <input type="hidden" name="hl" value="en">
+            <input class="site-header__searchfield form-control search-field" type="search" name="q" id="q"
+              autocomplete="off" placeholder="Search" aria-label="Search">
+          </form>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <div id="sidenav" class="">
+    
+    <div class="site-sidebar">
+
+      {{ sidenav }}
+
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a href="https://dart.dev/overview" class="nav-link">Overview</a>
+        </li>
+        <li class="nav-item">
+          <a href="https://dart.dev/community" class="nav-link">Community</a>
+        </li>
+        <li class="nav-item">
+          <a href="https://dartpad.dev/" class="nav-link external">Try Dart</a>
+        </li>
+        <li class="nav-item">
+          <a href="https://dart.dev/get-dart" class="nav-link">Get Dart</a>
+        </li>
+        <li class="nav-item">
+          <a href="https://dart.dev/guides" class="nav-link active">Docs</a>
+        </li>
+      </ul>
+
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-toggle="collapse"
+            href="https://dart.dev/guides/language/effective-dart#sidenav-1" role="button" aria-expanded="false"
+            aria-controls="sidenav-1">Samples &amp; tutorials</a>
+
+          <ul class="nav flex-column flex-nowrap collapse " id="sidenav-1">
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/samples">Language samples</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable" data-toggle="collapse" data-target="#sidenav-1-2"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-1-2" role="button" aria-expanded="true"
+                aria-controls="sidenav-1-2">Codelabs
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse show" id="sidenav-1-2">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/codelabs">List of Dart codelabs</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/codelabs/dart-cheatsheet">Language cheatsheet</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/codelabs/iterables">Iterable collections</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/codelabs/async-await">Asynchronous programming</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/codelabs/null-safety">Null safety</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/tutorials">Tutorials</a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-toggle="collapse"
+            href="https://dart.dev/guides/language/effective-dart#sidenav-2" role="button" aria-expanded="false"
+            aria-controls="sidenav-2">Language</a>
+
+          <ul class="nav flex-column flex-nowrap collapse " id="sidenav-2">
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/language-tour">Tour</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/type-system">Type system</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/extension-methods">Extension methods</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/concurrency">Concurrency</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-2-5"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-2-5" role="button" aria-expanded="false"
+                aria-controls="sidenav-2-5">Null safety
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-2-5">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/null-safety">Overview: Sound null safety</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/null-safety/migration-guide">Migrating to null safety</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/null-safety/understanding-null-safety">Understanding null
+                    safety</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/null-safety/unsound-null-safety">Unsound null safety</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/null-safety/faq">FAQ</a>
+                </li>
+              </ul>
+            </li>
+
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" data-toggle="collapse"
+            href="https://dart.dev/guides/language/effective-dart#sidenav-3" role="button" aria-expanded="true"
+            aria-controls="sidenav-3">Effective Dart</a>
+
+          <ul class="nav flex-column flex-nowrap collapse show" id="sidenav-3">
+            <li class="nav-item">
+              <a class="nav-link active" href="https://dart.dev/guides/language/effective-dart">Overview</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/effective-dart/style">Style</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/effective-dart/documentation">Documentation</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/effective-dart/usage">Usage</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/effective-dart/design">Design</a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-toggle="collapse"
+            href="https://dart.dev/guides/language/effective-dart#sidenav-4" role="button" aria-expanded="false"
+            aria-controls="sidenav-4">Core libraries</a>
+
+          <ul class="nav flex-column flex-nowrap collapse " id="sidenav-4">
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/libraries">Overview</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/libraries/library-tour">Tour</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-4-3"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-4-3" role="button" aria-expanded="false"
+                aria-controls="sidenav-4-3">Articles
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-4-3">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/articles/libraries/creating-streams">Creating streams</a>
+                </li>
+              </ul>
+            </li>
+
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-toggle="collapse"
+            href="https://dart.dev/guides/language/effective-dart#sidenav-5" role="button" aria-expanded="false"
+            aria-controls="sidenav-5">Packages</a>
+
+          <ul class="nav flex-column flex-nowrap collapse " id="sidenav-5">
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/packages">How to use packages</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/libraries/useful-libraries">Commonly used packages</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/libraries/create-library-packages">Creating packages</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/tools/pub/publishing">Publishing packages</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/libraries/writing-package-pages">Writing package
+                pages</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-5-6"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-5-6" role="button" aria-expanded="false"
+                aria-controls="sidenav-5-6">Package reference
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-5-6">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/pub/dependencies">Dependencies</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/pub/glossary">Glossary</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/pub/package-layout">Package layout conventions</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/pub/environment-variables">Pub environment
+                    variables</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/pub/pubspec">Pubspec file</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/pub/troubleshoot">Troubleshooting pub</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/pub/verified-publishers">Verified publishers</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/pub/versioning">Versioning</a>
+                </li>
+              </ul>
+            </li>
+
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-toggle="collapse"
+            href="https://dart.dev/guides/language/effective-dart#sidenav-6" role="button" aria-expanded="false"
+            aria-controls="sidenav-6">Development</a>
+
+          <ul class="nav flex-column flex-nowrap collapse " id="sidenav-6">
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/codelabs/async-await">Futures, async, await</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/tutorials/language/streams">Streams</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/json">JSON</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/numbers">Number representation</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-6-5"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-6-5" role="button" aria-expanded="false"
+                aria-controls="sidenav-6-5">Interoperability
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-6-5">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/guides/libraries/c-interop">C interop</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/guides/libraries/objective-c-interop">Objective-C and Swift
+                    interop</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/guides/libraries/java-interop">Java and Kotlin interop</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/web/js-interop">JavaScript interop</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/google-apis">Google APIs</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/multiplatform-apps">Multi-platform apps</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-6-8"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-6-8" role="button" aria-expanded="false"
+                aria-controls="sidenav-6-8">Command-line &amp; server apps
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-6-8">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/server">Overview</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tutorials/server/get-started">Get started</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tutorials/server/cmdline">Write command-line apps</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tutorials/server/fetch-data">Fetch data from the
+                    internet</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tutorials/server/httpserver">Write HTTP servers</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/server/libraries">Libraries and packages</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/server/google-cloud">Google Cloud</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-6-9"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-6-9" role="button" aria-expanded="false"
+                aria-controls="sidenav-6-9">Web apps
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-6-9">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/web">Overview</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tutorials/web/get-started">Get started</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-6-9-3"
+                    href="https://dart.dev/guides/language/effective-dart#sidenav-6-9-3" role="button"
+                    aria-expanded="false" aria-controls="sidenav-6-9-3">Low-level web programming
+                  </a>
+                  <ul class="nav flex-column flex-nowrap collapse " id="sidenav-6-9-3">
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tutorials/web/low-level-html/connect-dart-html">Connect
+                        Dart &amp; HTML</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tutorials/web/low-level-html/add-elements">Add elements
+                        to the DOM</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tutorials/web/low-level-html/remove-elements">Remove
+                        DOM elements</a>
+                    </li>
+                  </ul>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/web/deployment">Deployment</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/web/libraries">Libraries and packages</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/environment-declarations">Environment declarations</a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-toggle="collapse"
+            href="https://dart.dev/guides/language/effective-dart#sidenav-7" role="button" aria-expanded="false"
+            aria-controls="sidenav-7">Tools &amp; techniques</a>
+
+          <ul class="nav flex-column flex-nowrap collapse " id="sidenav-7">
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/tools">Overview</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-7-2"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-7-2" role="button" aria-expanded="false"
+                aria-controls="sidenav-7-2">Editors &amp; debuggers
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-7-2">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/jetbrains-plugin">IntelliJ &amp; Android Studio</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/vs-code">VS Code</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/dart-devtools">Dart DevTools</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-7-2-4"
+                    href="https://dart.dev/guides/language/effective-dart#sidenav-7-2-4" role="button"
+                    aria-expanded="false" aria-controls="sidenav-7-2-4">DartPad
+                  </a>
+                  <ul class="nav flex-column flex-nowrap collapse " id="sidenav-7-2-4">
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dartpad">Overview</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dartpad/dartpad-best-practices">DartPad in
+                        tutorials</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dartpad/troubleshoot">Troubleshooting DartPad</a>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-7-3"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-7-3" role="button" aria-expanded="false"
+                aria-controls="sidenav-7-3">Command-line tools
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-7-3">
+                <li class="nav-item">
+                  <a class="nav-link collapsable" data-toggle="collapse" data-target="#sidenav-7-3-1"
+                    href="https://dart.dev/guides/language/effective-dart#sidenav-7-3-1" role="button"
+                    aria-expanded="true" aria-controls="sidenav-7-3-1">Dart SDK
+                  </a>
+                  <ul class="nav flex-column flex-nowrap collapse show" id="sidenav-7-3-1">
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/sdk">Overview</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dart-tool">dart</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dart-analyze">dart analyze</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dart-compile">dart compile</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dart-create">dart create</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dart-doc">dart doc</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dart-fix">dart fix</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dart-format">dart format</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dart-info">dart info</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/pub/cmd">dart pub</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dart-run">dart run</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dart-test">dart test</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/dartaotruntime">dartaotruntime</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/experiment-flags">Experiment flags</a>
+                    </li>
+                  </ul>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link collapsable" data-toggle="collapse" data-target="#sidenav-7-3-2"
+                    href="https://dart.dev/guides/language/effective-dart#sidenav-7-3-2" role="button"
+                    aria-expanded="true" aria-controls="sidenav-7-3-2">Other command-line tools
+                  </a>
+                  <ul class="nav flex-column flex-nowrap collapse show" id="sidenav-7-3-2">
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/build_runner">build_runner</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="https://dart.dev/tools/webdev">webdev</a>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-7-4"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-7-4" role="button" aria-expanded="false"
+                aria-controls="sidenav-7-4">Managing source code
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-7-4">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/guides/language/formatting">Formatting code</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/guides/libraries/private-files">What not to commit</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-7-5"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-7-5" role="button" aria-expanded="false"
+                aria-controls="sidenav-7-5">Static analysis
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-7-5">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/guides/language/analysis-options">Customizing static
+                    analysis</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/guides/language/sound-problems">Fixing common type
+                    problems</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/diagnostic-messages">Diagnostic messages</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/tools/linter-rules">Linter rules</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-7-6"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-7-6" role="button" aria-expanded="false"
+                aria-controls="sidenav-7-6">Testing &amp; optimization
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-7-6">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/guides/testing">Testing</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/web/debugging">Debugging web apps</a>
+                </li>
+              </ul>
+            </li>
+
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-toggle="collapse"
+            href="https://dart.dev/guides/language/effective-dart#sidenav-8" role="button" aria-expanded="false"
+            aria-controls="sidenav-8">Resources</a>
+
+          <ul class="nav flex-column flex-nowrap collapse " id="sidenav-8">
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/faq">FAQ</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/evolution">Language evolution</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/guides/language/spec">Language specification</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link collapsable collapsed" data-toggle="collapse" data-target="#sidenav-8-4"
+                href="https://dart.dev/guides/language/effective-dart#sidenav-8-4" role="button" aria-expanded="false"
+                aria-controls="sidenav-8-4">Coming from ...
+              </a>
+              <ul class="nav flex-column flex-nowrap collapse " id="sidenav-8-4">
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/guides/language/coming-from/js-to-dart">JavaScript to
+                    Dart</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://dart.dev/guides/language/coming-from/swift-to-dart">Swift to
+                    Dart</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/resources/books">Books</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://dart.dev/resources/videos">Videos</a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link " data-toggle="collapse" href="https://dart.dev/guides/language/effective-dart#sidenav-9"
+            role="button" aria-expanded="true" aria-controls="sidenav-9">Related sites</a>
+
+          <ul class="nav flex-column flex-nowrap collapse show" id="sidenav-9">
+            <li class="nav-item">
+              <a class="nav-link external" href="https://api.dart.dev/" target="_blank" rel="noopener">API
+                reference<span class="material-icons md-24">
+                  open_in_new
+                </span></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link external" href="https://medium.com/dartlang" target="_blank" rel="noopener">Blog<span
+                  class="material-icons md-24">
+                  open_in_new
+                </span></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link external" href="https://dartpad.dev/" target="_blank" rel="noopener">DartPad (online
+                editor)<span class="material-icons md-24">
+                  open_in_new
+                </span></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link external" href="https://flutter.dev/" target="_blank" rel="noopener">Flutter<span
+                  class="material-icons md-24">
+                  open_in_new
+                </span></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link external" href="https://pub.dev/" target="_blank" rel="noopener">Package site<span
+                  class="material-icons md-24">
+                  open_in_new
+                </span></a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+    </div>
+  </div>
+
+  <main id="page-content">
+
+
+    <div id="site-toc--side" class="site-toc ">
+      <header class="site-toc__title">Contents</header>
+
+      <ul id="toc" class="section-nav">
+
+        {{ toc }}
+
+      </ul>
+    </div>
+
+    <article>
+      <div class="content">
+
+        <nav id="subnav">
+
+          {{ subnav }}
+
+          <ul>
+            <li class="previous">
+
+            </li>
+            <li class="next">
+
+              <a href="https://dart.dev/guides/language/effective-dart/style">Style&nbsp;&nbsp;⟩</a>
+
+            </li>
+          </ul>
+        </nav>
+
+        {{ page-content }}
+
+        <div>
+          <div id="page-github-links" class="btn-group" aria-label="Page GitHub links" role="group">
+            <a href="https://github.com/dart-lang/site-www/tree/main/src/_guides/language/effective-dart/index.md"
+              class="btn no-automatic-external" title="View page source" target="_blank" rel="noopener">
+              <i class="" data-fa-i2svg=""><svg class="svg-inline--fa fa-file-alt fa-w-12 fa-sm" aria-hidden="true"
+                  focusable="false" data-prefix="fas" data-icon="file-alt" role="img" xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 384 512" data-fa-i2svg="">
+                  <path fill="currentColor"
+                    d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm64 236c0 6.6-5.4 12-12 12H108c-6.6 0-12-5.4-12-12v-8c0-6.6 5.4-12 12-12h168c6.6 0 12 5.4 12 12v8zm0-64c0 6.6-5.4 12-12 12H108c-6.6 0-12-5.4-12-12v-8c0-6.6 5.4-12 12-12h168c6.6 0 12 5.4 12 12v8zm0-72v8c0 6.6-5.4 12-12 12H108c-6.6 0-12-5.4-12-12v-8c0-6.6 5.4-12 12-12h168c6.6 0 12 5.4 12 12zm96-114.1v6.1H256V0h6.1c6.4 0 12.5 2.5 17 7l97.9 98c4.5 4.5 7 10.6 7 16.9z">
+                  </path>
+                </svg></i>
+            </a>
+            <a href="https://github.com/dart-lang/site-www/issues/new?template=1_page_issue.yml&amp;title=[PAGE%20ISSUE]:%20%27Effective%20Dart%27&amp;page-url=https://dart.dev/guides/language/effective-dart&amp;page-source=https://github.com/dart-lang/site-www/tree/main/src/_guides/language/effective-dart/index.md"
+              class="btn no-automatic-external" title="Report an issue with this page" target="_blank" rel="noopener">
+              <i class="" data-fa-i2svg=""><svg class="svg-inline--fa fa-bug fa-w-16 fa-sm" aria-hidden="true"
+                  focusable="false" data-prefix="fas" data-icon="bug" role="img" xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 512 512" data-fa-i2svg="">
+                  <path fill="currentColor"
+                    d="M511.988 288.9c-.478 17.43-15.217 31.1-32.653 31.1H424v16c0 21.864-4.882 42.584-13.6 61.145l60.228 60.228c12.496 12.497 12.496 32.758 0 45.255-12.498 12.497-32.759 12.496-45.256 0l-54.736-54.736C345.886 467.965 314.351 480 280 480V236c0-6.627-5.373-12-12-12h-24c-6.627 0-12 5.373-12 12v244c-34.351 0-65.886-12.035-90.636-32.108l-54.736 54.736c-12.498 12.497-32.759 12.496-45.256 0-12.496-12.497-12.496-32.758 0-45.255l60.228-60.228C92.882 378.584 88 357.864 88 336v-16H32.666C15.23 320 .491 306.33.013 288.9-.484 270.816 14.028 256 32 256h56v-58.745l-46.628-46.628c-12.496-12.497-12.496-32.758 0-45.255 12.498-12.497 32.758-12.497 45.256 0L141.255 160h229.489l54.627-54.627c12.498-12.497 32.758-12.497 45.256 0 12.496 12.497 12.496 32.758 0 45.255L424 197.255V256h56c17.972 0 32.484 14.816 31.988 32.9zM257 0c-61.856 0-112 50.144-112 112h224C369 50.144 318.856 0 257 0z">
+                  </path>
+                </svg></i>
+            </a>
+          </div>
+        </div>
+
+
+        <div style="clear:both"></div>
+
+      </div>
+    </article>
+  </main>
+  <footer id="page-footer">
+    <div class="footer-section">
+      {{ footer-section }}
+    </div>
+  </footer>
+
+</body>
+
+</html>
