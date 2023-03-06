@@ -62,14 +62,14 @@ class Jot {
     // todo: generation
     if (workspace.single) {
       var group = workspace.groups.first;
-      group.generate(outDir);
+      await group.generate(outDir);
     } else {
       // todo: write workspace file(s)
 
       for (var group in workspace.groups) {
         var dir = Directory(p.join(outDir.path, group.name));
         dir.createSync();
-        group.generate(dir);
+        await group.generate(dir);
       }
     }
 
