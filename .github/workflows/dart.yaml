@@ -21,7 +21,7 @@ jobs:
             run-tests: true
     steps:
       - uses: actions/checkout@v3
-      - uses: dart-lang/setup-dart@v1
+      - uses: dart-lang/setup-dart@8f7850f0f6056c5b91a1b9c206a53c9b1be28e4e
         with:
           sdk: ${{matrix.sdk}}
 

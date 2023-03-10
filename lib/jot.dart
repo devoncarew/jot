@@ -1,15 +1,18 @@
+/// Woot there some docs.
+
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:cli_util/cli_logging.dart';
+import 'package:jot/src/html.dart';
 import 'package:path/path.dart' as p;
 
 import 'src/analysis.dart';
 import 'src/model.dart';
 
-// todo: hoist to another isolate to get better progress reporting
+export 'src/model.dart';
 
-// todo: handle globals for stats and logs
+// todo: hoist to another isolate to get better progress reporting
 
 class Jot {
   final Directory inDir;
@@ -20,7 +23,9 @@ class Jot {
   Future<void> generate() async {
     var log = Logger.standard();
 
-    var workspace = Workspace.fromPackage(inDir);
+    // todo: move DocWorkspace.fromPackage into here
+    var htmlTemplate = await HtmlTemplate.initDir(outDir);
+    var workspace = DocWorkspace.fromPackage(htmlTemplate, inDir);
 
     Progress? progress = log.progress('resolving public libraries');
 
@@ -29,49 +34,72 @@ class Jot {
       progress = null;
     }
 
-    var libraries = <ResolvedLibraryResult>[];
-
     var helper = AnalysisHelper(inDir);
-    var docGroup = workspace.groups.first;
 
-    await for (var lib in helper.resolvedPublicLibraries()) {
+    final libDirPath = p.join(inDir.path, 'lib');
+
+    await for (var resolvedLibrary in helper.resolvedPublicLibraries()) {
       cancelProgress();
 
-      var libPath = lib.element.source.fullName;
-      var relPath = p.relative(libPath, from: inDir.path);
-      log.stdout('  $relPath');
+      var libraryPath = resolvedLibrary.element.source.fullName;
+      log.stdout('  ${p.relative(libraryPath, from: inDir.path)}');
 
-      libraries.add(lib);
+      var dartLibraryPath = p.relative(libraryPath, from: libDirPath);
+      var htmlOutputPath = '${p.withoutExtension(dartLibraryPath)}.html';
 
-      docGroup.addFile(LibraryFile(File(libPath), lib));
+      var packageContainer = workspace.addChild(DocContainer(
+        workspace,
+        dartLibraryPath,
+      )) as DocContainer;
+
+      packageContainer.mainFile = DocFile(
+        workspace,
+        dartLibraryPath,
+        htmlOutputPath,
+        libraryGenerator(resolvedLibrary),
+      );
+
+      var exportNamespace = resolvedLibrary.element.exportNamespace;
+      var elements = exportNamespace.definedNames.values
+          .where((element) => element.isPublic);
+
+      for (var clazz in elements.whereType<InterfaceElement>()) {
+        var path = '${p.withoutExtension(dartLibraryPath)}/${clazz.name}.html';
+        packageContainer.addChild(DocFile(
+          packageContainer,
+          clazz.name,
+          path,
+          interfaceElementGenerator(clazz),
+        ));
+      }
+
+      // todo: also handle exports
+
+      // InterfaceElement
+
+      // for (var clazz in resolvedLibrary.element.topLevelElements
+      //     .whereType<ClassElement>()) {
+      //   print('class ${clazz.name}');
+
+      //   // workspace.addChild(DocFile(
+      //   //   workspace,
+      //   //   todo,
+      //   //   todo,
+      //   //   classGenerator(clazz),
+      //   // ));
+      // }
     }
 
     cancelProgress();
     log.stdout('');
-
-    if (libraries.isEmpty) {
-      log.stderr('No libraries found to document.');
-      exit(1);
-    }
 
     // build model
     progress = log.progress('generating docs');
     // todo: build model and stuff
     progress!.finish();
 
-    // todo: generation
-    if (workspace.single) {
-      var group = workspace.groups.first;
-      await group.generate(outDir);
-    } else {
-      // todo: write workspace file(s)
-
-      for (var group in workspace.groups) {
-        var dir = Directory(p.join(outDir.path, group.name));
-        dir.createSync();
-        await group.generate(dir);
-      }
-    }
+    // todo: generation stats
+    workspace.generate(outDir, logger: log);
 
     // todo: print entrypoint, time, api and generation stats
     // "1,347 symbols, 82% have documentation, 4 libraries, 8MB of html, 0.3s"

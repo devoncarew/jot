@@ -19710,8 +19710,8 @@ body.obsolete #page-content {
 #mainnav .brand {
   display: block;
   float: left;
-  width: 85px;
-  margin: 0 20px;
+  /* width: 85px; */
+  margin: 0 12px;
   overflow: hidden;
   line-height: 50px;
   position: relative;
