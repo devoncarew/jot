@@ -1,31 +1,37 @@
 import 'dart:io';
 
+import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:jot/src/utils.dart';
 import 'package:path/path.dart' as p;
 
-import 'utils.dart';
-
 class AnalysisHelper {
-  final Directory projectDir;
-  late final Directory _libDir;
+  late final Directory _rootDir;
 
-  AnalysisHelper(this.projectDir) {
-    _libDir =
-        Directory(p.join(p.canonicalize(projectDir.absolute.path), 'lib'));
-  }
+  late AnalysisContextCollection _collection;
 
-  Directory get libDir => _libDir;
-
-  Stream<ResolvedLibraryResult> resolvedPublicLibraries() async* {
-    final collection = AnalysisContextCollection(
-      includedPaths: [_libDir.path],
+  AnalysisHelper.package(Directory packageDir) {
+    _rootDir =
+        Directory(p.join(p.canonicalize(packageDir.absolute.path), 'lib'));
+    _collection = AnalysisContextCollection(
+      includedPaths: [_rootDir.path],
       resourceProvider: PhysicalResourceProvider.INSTANCE,
     );
+  }
 
-    final context = collection.contexts.single;
+  AnalysisHelper.sdk(Directory sdkDir) {
+    _rootDir = Directory(p.join(p.canonicalize(sdkDir.absolute.path), 'lib'));
+    _collection = AnalysisContextCollection(
+      includedPaths: [_rootDir.path],
+      resourceProvider: PhysicalResourceProvider.INSTANCE,
+    );
+  }
 
+  AnalysisContext get context => _collection.contexts.first;
+
+  Stream<ResolvedLibraryResult> resolvedPublicLibraries() async* {
     for (var file in _publicFiles) {
       var lib = await context.currentSession
           .getResolvedLibrary(file.absolute.path) as ResolvedLibraryResult;
@@ -37,9 +43,9 @@ class AnalysisHelper {
   }
 
   Iterable<File> get _publicFiles sync* {
-    final srcPath = p.join(libDir.path, 'src');
+    final srcPath = p.join(_rootDir.path, 'src');
 
-    for (var file in libDir
+    for (var file in _rootDir
         .listSyncSorted(recursive: true)
         .whereType<File>()
         .where((f) => f.path.endsWith('.dart'))) {
@@ -53,5 +59,10 @@ class AnalysisHelper {
 
       yield file;
     }
+  }
+
+  Future<LibraryElementResult> getLibraryByUri(String uri) async {
+    var result = await context.currentSession.getLibraryByUri(uri);
+    return result as LibraryElementResult;
   }
 }

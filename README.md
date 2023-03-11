@@ -4,4 +4,5 @@ An experimental documentation generator for Dart projects.
 
 ## What's this?
 
-todo:
+An experiment for a fast, simple documentation generator for Dart, with the
+output a SPA web app.

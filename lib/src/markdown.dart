@@ -1,5 +1,6 @@
-import 'package:jot/src/model.dart';
 import 'package:markdown/markdown.dart';
+
+import 'utils.dart';
 
 // todo: sanitize html (see lib/src/render/documentation_renderer.dart from
 //       dartdoc)
@@ -12,7 +13,15 @@ class MarkdownResults {
   MarkdownResults(this.html, this.outline);
 }
 
-MarkdownResults convertMarkdown(String markdown) {
+String convertMarkdown(String markdown) {
+  return markdownToHtml(
+    markdown,
+    extensionSet: ExtensionSet.gitHubWeb,
+    enableTagfilter: true,
+  );
+}
+
+MarkdownResults convertMarkdownWithOutline(String markdown) {
   final document = Document(extensionSet: ExtensionSet.gitHubWeb);
 
   final nodes = document.parse(markdown);

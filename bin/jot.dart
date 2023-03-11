@@ -11,7 +11,6 @@ void main(List<String> args) async {
   try {
     results = parser.parse(args);
   } catch (e) {
-    // todo:
     printUsage(parser, e);
     exit(64);
   }
