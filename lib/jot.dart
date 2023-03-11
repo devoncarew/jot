@@ -8,9 +8,9 @@ import 'package:jot/src/html.dart';
 import 'package:path/path.dart' as p;
 
 import 'src/analysis.dart';
-import 'src/model.dart';
+import 'src/workspace.dart';
 
-export 'src/model.dart';
+export 'src/workspace.dart';
 
 // todo: hoist to another isolate to get better progress reporting
 
@@ -23,7 +23,10 @@ class Jot {
   Future<void> generate() async {
     var log = Logger.standard();
 
-    // todo: move DocWorkspace.fromPackage into here
+    if (!outDir.existsSync()) {
+      outDir.createSync(recursive: true);
+    }
+
     var htmlTemplate = await HtmlTemplate.initDir(outDir);
     var workspace = DocWorkspace.fromPackage(htmlTemplate, inDir);
 
@@ -34,7 +37,7 @@ class Jot {
       progress = null;
     }
 
-    var helper = AnalysisHelper(inDir);
+    var helper = AnalysisHelper.package(inDir);
 
     final libDirPath = p.join(inDir.path, 'lib');
 
@@ -56,7 +59,7 @@ class Jot {
         workspace,
         dartLibraryPath,
         htmlOutputPath,
-        libraryGenerator(resolvedLibrary),
+        libraryGenerator(resolvedLibrary.element),
       );
 
       var exportNamespace = resolvedLibrary.element.exportNamespace;
@@ -72,22 +75,6 @@ class Jot {
           interfaceElementGenerator(clazz),
         ));
       }
-
-      // todo: also handle exports
-
-      // InterfaceElement
-
-      // for (var clazz in resolvedLibrary.element.topLevelElements
-      //     .whereType<ClassElement>()) {
-      //   print('class ${clazz.name}');
-
-      //   // workspace.addChild(DocFile(
-      //   //   workspace,
-      //   //   todo,
-      //   //   todo,
-      //   //   classGenerator(clazz),
-      //   // ));
-      // }
     }
 
     cancelProgress();

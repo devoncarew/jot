@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart' as p;
@@ -28,7 +27,7 @@ FileContentGenerator emptyContentGenerator =
 FileContentGenerator markdownGenerator(File markdownFile) {
   return (DocWorkspace workspace, DocFile file) async {
     var content = markdownFile.readAsStringSync();
-    var results = convertMarkdown(content);
+    var results = convertMarkdownWithOutline(content);
     return GenerationResults(results.html, results.outline);
   };
 }
@@ -41,20 +40,22 @@ FileContentGenerator plaintextGenerator(File markdownFile) {
   };
 }
 
-FileContentGenerator libraryGenerator(ResolvedLibraryResult resolvedLibrary) {
+FileContentGenerator libraryGenerator(LibraryElement libraryElement) {
   return (DocWorkspace workspace, DocFile file) async {
-    var exportNamespace = resolvedLibrary.element.exportNamespace;
+    var exportNamespace = libraryElement.exportNamespace;
     var elements = exportNamespace.definedNames.values
         .where((element) => element.isPublic);
 
     var buf = StringBuffer();
 
-    var packageRef = '${file.parentPackage!.name}/${file.name}';
-    buf.writeln('<pre><code>$packageRef</code></pre>');
+    if (file.parentPackage != null) {
+      var packageRef = '${file.parentPackage!.name}/${file.name}';
+      buf.writeln('<pre><code>$packageRef</code></pre>');
+    }
 
-    var docs = resolvedLibrary.element.documentationComment;
+    var docs = libraryElement.documentationComment;
     if (docs != null) {
-      buf.writeln('<p>${stripDartdoc(docs)}</p>');
+      buf.writeln(convertMarkdown(stripDartdoc(docs)));
     }
 
     buf.writeln([
@@ -76,7 +77,7 @@ FileContentGenerator interfaceElementGenerator(InterfaceElement clazz) {
     var buf = StringBuffer('<pre>${clazz.name}</pre>');
     var docs = clazz.documentationComment;
     if (docs != null) {
-      buf.writeln('<p>${stripDartdoc(docs)}</p>');
+      buf.writeln('<p>${convertMarkdown(stripDartdoc(docs))}</p>');
     }
     return GenerationResults(buf.toString());
   };
@@ -176,6 +177,7 @@ class DocContainer extends DocEntity {
 class DocWorkspace extends DocContainer {
   final HtmlTemplate htmlTemplate;
   final List<DocFile> navFiles = [];
+  String? footer;
 
   DocWorkspace(String name, {super.isPackage, required this.htmlTemplate})
       : super(null, name) {
@@ -213,7 +215,6 @@ class DocWorkspace extends DocContainer {
   Future<String> generateWorkspacePage(
       DocFile file, GenerationResults page) async {
     // navbar
-    // <li><a href="https://dart.dev/overview" class="nav-link">Overview</a></li>
     var navbarContent = [
       mainFile!,
       ...navFiles,
@@ -230,32 +231,15 @@ class DocWorkspace extends DocContainer {
       return '<li><a $href class="nav-link$active">$name</a></li>';
     }).join(' ');
 
-    // todo: sidenav
-    // <ul class="nav flex-column">
-    //   <li class="nav-item">
-    //     <a class="nav-link collapsed" data-toggle="collapse"
-    //       href="https://dart.dev/guides/language/effective-dart#sidenav-1" role="button" aria-expanded="false"
-    //       aria-controls="sidenav-1">Samples &amp; tutorials</a>
-    //   </li>
-    // </ul>
-
+    // side nav
     var sidenavContents = _genSidenav(file, this);
 
-    // todo:
-    // // Create the toc for markdown header elements.
-    // var toc = StringBuffer();
-    // var headerElements = markdownHeaders(content);
-    // // todo: lower header elements should be nested in an <ul class="nav">
-    // for (var h in headerElements) {
-    //   toc.writeln(
-    //     '<li class="toc-entry nav-item toc-${h.tag}">'
-    //     '  <a class="nav-link" href="#${h.generatedId}">${h.textContent}</a>'
-    //     '</li>',
-    //   );
-    // }
-
     // breadcrumbs
-    var breadcrumbsContent = file.breadcrumbs.map((entity) {
+    var breadcrumbs = file.breadcrumbs;
+    if (file == workspace.mainFile) {
+      breadcrumbs = breadcrumbs.take(1);
+    }
+    var breadcrumbsContent = breadcrumbs.map((entity) {
       var target =
           entity is DocFile ? entity : (entity as DocContainer).mainFile!;
       var active = file == target ? ' active' : '';
@@ -275,6 +259,7 @@ class DocWorkspace extends DocContainer {
       breadcrumbs: breadcrumbsContent,
       pageContent: page.contents,
       toc: page.outline?.asHtml ?? '',
+      footerSection: footer ?? '',
     );
   }
 
@@ -284,7 +269,7 @@ class DocWorkspace extends DocContainer {
 
     if (entity is DocWorkspace) {
       var buf = StringBuffer('<ul class="nav flex-column">');
-      // buf.writeln(_genSidenav(page, entity.mainFile!));
+      buf.writeln(_genSidenav(page, entity.mainFile!, ext: true));
       for (var child in entity.children) {
         buf.writeln(_genSidenav(page, child, ext: child is DocFile));
       }
@@ -332,11 +317,17 @@ class DocWorkspace extends DocContainer {
         yaml.loadYaml(File(p.join(dir.path, 'pubspec.yaml')).readAsStringSync())
             as yaml.YamlMap;
 
+    final packageName = pubspec['name'] as String?;
+    final packageVersion = pubspec['version'] as String?;
+
     var workspace = DocWorkspace(
-      'package:${pubspec['name']}',
+      'package:$packageName',
       htmlTemplate: htmlTemplate,
       isPackage: true,
     );
+    if (packageVersion != null) {
+      workspace.footer = 'package:$packageName v$packageVersion';
+    }
 
     for (var file in dir
         .listSyncSorted()
@@ -345,8 +336,8 @@ class DocWorkspace extends DocContainer {
       var name = p.relative(file.path, from: dir.path);
       var path = '${p.withoutExtension(name)}.html';
       if (name == 'README.md') {
-        workspace.mainFile =
-            DocFile(workspace, name, 'index.html', markdownGenerator(file));
+        workspace.mainFile = DocFile(
+            workspace, workspace.name, 'index.html', markdownGenerator(file));
       } else if (name == 'CHANGELOG.md' || name == 'LICENSE.md') {
         workspace.navFiles
             .add(DocFile(workspace, name, path, markdownGenerator(file)));
@@ -374,65 +365,4 @@ class DocWorkspace extends DocContainer {
 
     return workspace;
   }
-}
-
-class Outline {
-  final List<Heading> items = [];
-
-  void add(Heading heading) {
-    if (items.isEmpty) {
-      items.add(heading);
-    } else if (items.last.level >= heading.level) {
-      items.add(heading);
-    } else {
-      items.last.add(heading);
-    }
-  }
-
-  String get asHtml {
-    var buf = StringBuffer('<ul id="toc" class="section-nav">');
-    for (var item in items) {
-      buf.writeln(item.asHtml);
-    }
-    buf.writeln('</ul>');
-    return buf.toString();
-  }
-}
-
-class Heading {
-  final String label;
-  final String? id;
-  final int level;
-
-  final List<Heading> children = [];
-
-  Heading(this.label, {this.id, this.level = 2});
-
-  void add(Heading heading) {
-    if (children.isEmpty) {
-      children.add(heading);
-    } else if (children.last.level >= heading.level) {
-      children.add(heading);
-    } else {
-      children.last.add(heading);
-    }
-  }
-
-  String get asHtml {
-    var buf = StringBuffer('<li class="toc-entry nav-item toc-h$level">');
-    var href = id == null ? '' : 'href="#$id"';
-    buf.writeln('<a class="nav-link" $href>$label</a>');
-    if (children.isNotEmpty) {
-      buf.writeln('<ul class="nav">');
-      for (var child in children) {
-        buf.writeln(child.asHtml);
-      }
-      buf.writeln('</ul>');
-    }
-    buf.writeln('</li>');
-    return buf.toString();
-  }
-
-  @override
-  String toString() => id == null ? '$label h$level' : '$label h$level ($id)';
 }

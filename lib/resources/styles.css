@@ -19100,7 +19100,7 @@ select:active {
   position: fixed;
   bottom: 0px;
   left: 0px;
-  width: 226px;
+  width: 245px;
   border-right: 1px solid #d8d8d8;
   overflow-x: hidden;
   overflow-y: auto;
@@ -19532,7 +19532,7 @@ body.obsolete #page-content {
 
 @media(min-width: 1024px) {
   #page-content>article {
-    margin-left: 226px
+    margin-left: 245px;
   }
 }
 

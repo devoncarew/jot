@@ -1,6 +1,17 @@
+## todo
+
++ put 'package:args' in the TOC
++ script for doc'ing the dart sdk
+- script for doc'ing flutter
+- tests for workspace code
+- cleaner gen?
+- abstract html generation?
+
 ## Model elements
 
 - item (documentable, backed by an element)
+- group
+- group ordering
 - items
 
 ## Testing
@@ -15,9 +26,7 @@
 
 ## Page layout and nav
 
-- similar to dart.dev
-- integrated
-- clean
+- SPA
 
 ## Search
 
@@ -25,28 +34,9 @@
 
 ## Generation
 
-- fast
-- no args
-- configuration via a yaml file
-- cli just supports documenting packages
-- more sophisticated use cases (dart sdk, flutter) should use the package as a
++ no args
++ cli just supports documenting packages
++ more sophisticated use cases (dart sdk, flutter) should use the package as a
   library
-
-
-## single package workspace
-
-todo: addChild(displayname, location, docfile)
-
-- index.html (main file)  / index.html
-- CHANGELOG.md (nav file) "CHANGELOG.md" / CHANGELOG.md
-- foo.md "foo.md" / foo.md
-- doc/bar.md "doc/bar.md" / doc/bar.md
-- my_library.html (main file)
-- my_library/ClassA.html
-- my_library/Classb.html
-- helpers/library2.html (main file)
-- helpers/library2/ClassC.html
-
-## multiple package workspace (SDK, ...)
-
-- todo:
+- fast
+- configuration via a yaml file

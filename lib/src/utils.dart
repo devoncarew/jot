@@ -58,3 +58,64 @@ extension DirectoryExtension on Directory {
 extension FileSystemEntityExtension on FileSystemEntity {
   String get name => p.basename(path);
 }
+
+class Outline {
+  final List<Heading> items = [];
+
+  void add(Heading heading) {
+    if (items.isEmpty) {
+      items.add(heading);
+    } else if (items.last.level >= heading.level) {
+      items.add(heading);
+    } else {
+      items.last.add(heading);
+    }
+  }
+
+  String get asHtml {
+    var buf = StringBuffer('<ul id="toc" class="section-nav">');
+    for (var item in items) {
+      buf.writeln(item.asHtml);
+    }
+    buf.writeln('</ul>');
+    return buf.toString();
+  }
+}
+
+class Heading {
+  final String label;
+  final String? id;
+  final int level;
+
+  final List<Heading> children = [];
+
+  Heading(this.label, {this.id, this.level = 2});
+
+  void add(Heading heading) {
+    if (children.isEmpty) {
+      children.add(heading);
+    } else if (children.last.level >= heading.level) {
+      children.add(heading);
+    } else {
+      children.last.add(heading);
+    }
+  }
+
+  String get asHtml {
+    var buf = StringBuffer('<li class="toc-entry nav-item toc-h$level">');
+    var href = id == null ? '' : 'href="#$id"';
+    buf.writeln('<a class="nav-link" $href>$label</a>');
+    if (children.isNotEmpty) {
+      buf.writeln('<ul class="nav">');
+      for (var child in children) {
+        buf.writeln(child.asHtml);
+      }
+      buf.writeln('</ul>');
+    }
+    buf.writeln('</li>');
+    return buf.toString();
+  }
+
+  @override
+  String toString() => id == null ? '$label h$level' : '$label h$level ($id)';
+}
