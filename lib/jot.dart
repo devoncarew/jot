@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 
 import 'src/analysis.dart';
 import 'src/api.dart';
+import 'src/utils.dart';
 import 'src/workspace.dart';
 
 export 'src/workspace.dart';
@@ -31,13 +32,15 @@ class Jot {
       outDir.createSync(recursive: true);
     }
 
-    var htmlTemplate = await HtmlTemplate.initDir(outDir);
+    var stats = Stats()..start();
+
+    var htmlTemplate = await HtmlTemplate.initDir(outDir, stats: stats);
     var workspace = DocWorkspace.fromPackage(htmlTemplate, inDir);
     // todo:
     var packageName = workspace.name.substring('package:'.length);
     var api = Api();
 
-    Progress? progress = log.progress('resolving public libraries');
+    Progress? progress = log.progress('Resolving public libraries');
 
     void cancelProgress() {
       progress?.finish();
@@ -88,14 +91,17 @@ class Jot {
     log.stdout('');
 
     // build model
-    progress = log.progress('generating docs');
-    // todo: build model and stuff
-    progress!.finish();
+    log.stdout('Generating docs...');
 
-    // todo: generation stats
-    workspace.generate(outDir, logger: log);
+    // generate docs
+    await workspace.generate(outDir, logger: log, stats: stats);
 
-    // todo: print entrypoint, time, api and generation stats
+    stats.stop();
+
+    log.stdout('');
     // "1,347 symbols, 82% have documentation, 4 libraries, 8MB of html, 0.3s"
+    log.stdout('Wrote docs to ${p.relative(outDir.path)} in '
+        '${stats.elapsedSeconds}s (${stats.fileCount} files, '
+        '${stats.sizeDesc}).');
   }
 }

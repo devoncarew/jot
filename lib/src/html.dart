@@ -3,13 +3,19 @@ import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
 
+import 'utils.dart';
+
 class HtmlTemplate {
-  static Future<HtmlTemplate> initDir(Directory dir) async {
+  static Future<HtmlTemplate> initDir(Directory dir, {Stats? stats}) async {
     final cssData = await _loadResourceData('styles.css');
-    File(p.join(dir.path, 'styles.css')).writeAsStringSync(cssData);
+    final cssFile = File(p.join(dir.path, 'styles.css'));
+    cssFile.writeAsStringSync(cssData);
+    stats?.genFile(cssFile);
 
     final iconData = await _loadResourceData('dart.svg');
-    File(p.join(dir.path, 'dart.svg')).writeAsStringSync(iconData);
+    final iconFile = File(p.join(dir.path, 'dart.svg'));
+    iconFile.writeAsStringSync(iconData);
+    stats?.genFile(iconFile);
 
     final htmlData = await _loadResourceData('template.html');
     return HtmlTemplate._(htmlData);

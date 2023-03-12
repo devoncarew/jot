@@ -79,25 +79,44 @@ class Item {
     if (result == null) {
       var enclosing = element.enclosingElement;
       if (enclosing is InterfaceElement) {
-        // todo: is this comprehensive?
         if (element.kind == ElementKind.METHOD) {
-          // todo: continue looking up while doc == null
-          result = enclosing
-              .lookUpInheritedMethod(element.name!, element.library!)
-              ?.documentationComment;
+          result = _lookupMethodDocs(element as MethodElement);
         } else if (element.kind == ElementKind.GETTER) {
-          result = enclosing
-              .lookUpInheritedConcreteGetter(element.name!, element.library!)
-              ?.documentationComment;
+          result = _lookupGetterDocs(element as PropertyAccessorElement);
         } else if (element.kind == ElementKind.SETTER) {
-          result = enclosing
-              .lookUpInheritedConcreteSetter(element.name!, element.library!)
-              ?.documentationComment;
+          result = _lookupSetterDocs(element as PropertyAccessorElement);
         }
       }
     }
 
     return result == null ? null : stripDartdoc(result);
+  }
+
+  String? _lookupMethodDocs(MethodElement element) {
+    var enclosing = element.enclosingElement as InterfaceElement;
+    var superMethod = enclosing.thisType
+        .lookUpMethod2(element.name, element.library, inherited: true);
+    return superMethod == null
+        ? null
+        : (superMethod.documentationComment ?? _lookupMethodDocs(superMethod));
+  }
+
+  String? _lookupGetterDocs(PropertyAccessorElement element) {
+    var enclosing = element.enclosingElement as InterfaceElement;
+    var accessor = enclosing.thisType
+        .lookUpGetter2(element.name, element.library, inherited: true);
+    return accessor == null
+        ? null
+        : (accessor.documentationComment ?? _lookupGetterDocs(accessor));
+  }
+
+  String? _lookupSetterDocs(PropertyAccessorElement element) {
+    var enclosing = element.enclosingElement as InterfaceElement;
+    var accessor = enclosing.thisType
+        .lookUpSetter2(element.name, element.library, inherited: true);
+    return accessor == null
+        ? null
+        : (accessor.documentationComment ?? _lookupSetterDocs(accessor));
   }
 }
 

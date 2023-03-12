@@ -119,7 +119,12 @@ abstract class DocEntity {
 
   DocContainer? get parentPackage => parent?.parentPackage;
 
-  Future<void> generate(Directory dir, {required Logger logger});
+  Future<void> generate(
+    Directory dir, {
+    required Logger logger,
+    Stats? stats,
+    bool quiet = false,
+  });
 
   Iterable<DocEntity> get breadcrumbs {
     var result = <DocEntity>[];
@@ -144,14 +149,21 @@ class DocFile extends DocEntity {
   DocFile(super.parent, super.name, this.path, this.contentGenerator);
 
   @override
-  Future<void> generate(Directory dir, {required Logger logger}) async {
+  Future<void> generate(
+    Directory dir, {
+    required Logger logger,
+    Stats? stats,
+    bool quiet = false,
+  }) async {
     var page = await contentGenerator(workspace, this);
     var fileContents = await workspace.generateWorkspacePage(this, page);
     var file = File(p.join(dir.path, path));
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(fileContents);
 
-    logger.stdout('  $path');
+    stats?.genFile(file);
+
+    if (!quiet) logger.stdout('  $path');
   }
 
   @override
@@ -184,15 +196,19 @@ class DocContainer extends DocEntity {
   }
 
   @override
-  Future<void> generate(Directory dir, {required Logger logger}) async {
-    // todo: always generate an index file
-
+  Future<void> generate(
+    Directory dir, {
+    required Logger logger,
+    Stats? stats,
+    bool quiet = false,
+  }) async {
     // mainFile
-    await mainFile?.generate(dir, logger: logger);
+    // todo: always generate an index file
+    await mainFile?.generate(dir, logger: logger, stats: stats);
 
     // children
     for (var child in children) {
-      await child.generate(dir, logger: logger);
+      await child.generate(dir, logger: logger, stats: stats, quiet: true);
     }
   }
 
@@ -215,18 +231,23 @@ class DocWorkspace extends DocContainer {
   DocWorkspace get workspace => this;
 
   @override
-  Future<void> generate(Directory dir, {required Logger logger}) async {
+  Future<void> generate(
+    Directory dir, {
+    required Logger logger,
+    Stats? stats,
+    bool quiet = false,
+  }) async {
     // mainFile
-    await mainFile?.generate(dir, logger: logger);
+    await mainFile?.generate(dir, logger: logger, stats: stats);
 
     // navFiles
     for (var navElement in navFiles) {
-      await navElement.generate(dir, logger: logger);
+      await navElement.generate(dir, logger: logger, stats: stats, quiet: true);
     }
 
     // children
     for (var child in children) {
-      await child.generate(dir, logger: logger);
+      await child.generate(dir, logger: logger, stats: stats);
     }
   }
 
