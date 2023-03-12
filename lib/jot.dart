@@ -1,13 +1,17 @@
 /// Woot there some docs.
+///
+/// To create a new [DocWorkspace], see [DocWorkspace.fromPackage].
+///
+/// To generate docs, see [DocWorkspace.generate].
 
 import 'dart:io';
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:jot/src/html.dart';
 import 'package:path/path.dart' as p;
 
 import 'src/analysis.dart';
+import 'src/api.dart';
 import 'src/workspace.dart';
 
 export 'src/workspace.dart';
@@ -29,6 +33,9 @@ class Jot {
 
     var htmlTemplate = await HtmlTemplate.initDir(outDir);
     var workspace = DocWorkspace.fromPackage(htmlTemplate, inDir);
+    // todo:
+    var packageName = workspace.name.substring('package:'.length);
+    var api = Api();
 
     Progress? progress = log.progress('resolving public libraries');
 
@@ -55,24 +62,24 @@ class Jot {
         dartLibraryPath,
       )) as DocContainer;
 
+      var library = api.addLibrary(packageName, resolvedLibrary.element);
+
       packageContainer.mainFile = DocFile(
         workspace,
         dartLibraryPath,
         htmlOutputPath,
-        libraryGenerator(resolvedLibrary.element),
+        libraryGenerator(library),
       );
 
-      var exportNamespace = resolvedLibrary.element.exportNamespace;
-      var elements = exportNamespace.definedNames.values
-          .where((element) => element.isPublic);
-
-      for (var clazz in elements.whereType<InterfaceElement>()) {
-        var path = '${p.withoutExtension(dartLibraryPath)}/${clazz.name}.html';
+      for (var itemContainer
+          in library.allChildren.whereType<ItemContainer>()) {
+        var path =
+            '${p.withoutExtension(dartLibraryPath)}/${itemContainer.name}.html';
         packageContainer.addChild(DocFile(
           packageContainer,
-          clazz.name,
+          itemContainer.name,
           path,
-          interfaceElementGenerator(clazz),
+          itemContainerGenerator(itemContainer),
         ));
       }
     }

@@ -1,5 +1,3 @@
-# Foo contents
-
 ## Hey there
 
 sdfsdf
