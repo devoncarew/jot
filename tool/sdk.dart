@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:args/args.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:jot/jot.dart';
 import 'package:jot/src/analysis.dart';
+import 'package:jot/src/api.dart';
 import 'package:jot/src/html.dart';
 import 'package:jot/src/utils.dart';
 import 'package:path/path.dart' as p;
@@ -72,6 +72,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     'index.html',
     markdownGenerator(File(p.join(sdkDir.path, 'lib', 'api_readme.md'))),
   );
+  final api = Api();
 
   // TODO: categorize into regular, experimental, and deprecated libraries
 
@@ -94,24 +95,22 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
       'dart:$name',
     )) as DocContainer;
 
+    var library = api.addLibrary('sdk', libraryElement.element);
+
     packageContainer.mainFile = DocFile(
       workspace,
       'dart:$name',
       '$name.html',
-      libraryGenerator(libraryElement.element),
+      libraryGenerator(library),
     );
 
-    var exportNamespace = libraryElement.element.exportNamespace;
-    var elements = exportNamespace.definedNames.values
-        .where((element) => element.isPublic);
-
-    for (var clazz in elements.whereType<InterfaceElement>()) {
-      var path = '$name/${clazz.name}.html';
+    for (var itemContainer in library.allChildren.whereType<ItemContainer>()) {
+      var path = '$name/${itemContainer.name}.html';
       packageContainer.addChild(DocFile(
         packageContainer,
-        clazz.name,
+        itemContainer.name,
         path,
-        interfaceElementGenerator(clazz),
+        itemContainerGenerator(itemContainer),
       ));
     }
   }

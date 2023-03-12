@@ -4,7 +4,12 @@ import 'utils.dart';
 
 // todo: sanitize html (see lib/src/render/documentation_renderer.dart from
 //       dartdoc)
+
 // todo: link resolver
+
+// todo: markdown files can create id attributes
+
+// todo: ensure that element docs cannot create id attributes
 
 class MarkdownResults {
   final String html;
@@ -13,14 +18,27 @@ class MarkdownResults {
   MarkdownResults(this.html, this.outline);
 }
 
+// todo: handle resolving references
 String convertMarkdown(String markdown) {
   return markdownToHtml(
     markdown,
     extensionSet: ExtensionSet.gitHubWeb,
     enableTagfilter: true,
+    linkResolver: (String name, [String? title]) {
+      // todo:
+      return Element.text('code', name);
+    },
   );
 }
 
+String firstSentence(String markdown) {
+  return markdown
+      .split('\n')
+      .takeWhile((line) => line.trim().isNotEmpty)
+      .join('\n');
+}
+
+// todo: handle resolving references
 MarkdownResults convertMarkdownWithOutline(String markdown) {
   final document = Document(extensionSet: ExtensionSet.gitHubWeb);
 

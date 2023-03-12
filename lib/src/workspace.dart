@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart' as yaml;
 
+import 'api.dart';
 import 'html.dart';
 import 'markdown.dart';
+import 'render.dart';
 import 'utils.dart';
 
 typedef FileContentGenerator = Future<GenerationResults> Function(
@@ -40,46 +41,71 @@ FileContentGenerator plaintextGenerator(File markdownFile) {
   };
 }
 
-FileContentGenerator libraryGenerator(LibraryElement libraryElement) {
+FileContentGenerator libraryGenerator(Library library) {
   return (DocWorkspace workspace, DocFile file) async {
-    var exportNamespace = libraryElement.exportNamespace;
-    var elements = exportNamespace.definedNames.values
-        .where((element) => element.isPublic);
-
     var buf = StringBuffer();
 
     if (file.parentPackage != null) {
       var packageRef = '${file.parentPackage!.name}/${file.name}';
-      buf.writeln('<pre><code>$packageRef</code></pre>');
+      buf.writeln('<h1>$packageRef</h1>');
     }
 
-    var docs = libraryElement.documentationComment;
-    if (docs != null) {
-      buf.writeln(convertMarkdown(stripDartdoc(docs)));
+    if (library.docs != null) {
+      buf.writeln(convertMarkdown(library.docs!));
     }
 
-    buf.writeln([
-      '<ul>',
-      // ...resolvedLibrary.element.topLevelElements
-      //     .map((e) => '<li>${e.name}</li>'),
-      ...elements.map((e) => '<li>${e.name}</li>'),
-      // ...resolvedLibrary.element.libraryExports
-      //     .map((e) => '<li>${e.name}</li>'),
-      '</ul>',
-    ].join('\n'));
+    var outline = Outline();
+    var outlineRenderer = OutlineRenderer();
 
-    return GenerationResults(buf.toString());
+    for (var group in library.groups.values) {
+      buf.writeln('<h2 id="${group.name}">${group.name}</h2>');
+      outline.add(Heading(group.name, id: group.name, level: 2));
+
+      for (var item in group.items) {
+        buf.writeln('<h3 id="${item.name}">${item.name}</h3>');
+        outline.add(Heading(outlineRenderer.render(group.type, item),
+            id: item.name, level: 3));
+        if (item.docs != null) {
+          if (item is ItemContainer) {
+            buf.writeln(convertMarkdown(firstSentence(item.docs!)));
+          } else {
+            buf.writeln(convertMarkdown(item.docs!));
+          }
+        }
+      }
+    }
+
+    return GenerationResults(buf.toString(), outline);
   };
 }
 
-FileContentGenerator interfaceElementGenerator(InterfaceElement clazz) {
+FileContentGenerator itemContainerGenerator(ItemContainer itemContainer) {
   return (DocWorkspace workspace, DocFile file) async {
-    var buf = StringBuffer('<pre>${clazz.name}</pre>');
-    var docs = clazz.documentationComment;
-    if (docs != null) {
-      buf.writeln('<p>${convertMarkdown(stripDartdoc(docs))}</p>');
+    var buf = StringBuffer();
+    buf.writeln('<h1>${itemContainer.name}</h1>');
+
+    if (itemContainer.docs != null) {
+      buf.writeln(convertMarkdown(itemContainer.docs!));
     }
-    return GenerationResults(buf.toString());
+
+    var outline = Outline();
+    var outlineRenderer = OutlineRenderer();
+
+    for (var group in itemContainer.groups.values) {
+      buf.writeln('<h2 id="${group.name}">${group.name}</h2>');
+      outline.add(Heading(group.name, id: group.name, level: 2));
+
+      for (var item in group.items) {
+        buf.writeln('<h3 id="${item.name}">${item.name}</h3>');
+        outline.add(Heading(outlineRenderer.render(group.type, item),
+            id: item.name, level: 3));
+        if (item.docs != null) {
+          buf.writeln(convertMarkdown(item.docs!));
+        }
+      }
+    }
+
+    return GenerationResults(buf.toString(), outline);
   };
 }
 

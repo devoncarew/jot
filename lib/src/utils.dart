@@ -34,6 +34,10 @@ $fragment$formattingSuffix
   return source.trim();
 }
 
+String titleCase(String str) {
+  return str.substring(0, 1).toUpperCase() + str.substring(1);
+}
+
 // String processMarkdown(String markdown) {
 //   final RegExp regexp = RegExp(r'(\[[\w\.]+\])');
 //   return markdown.split('\n').map((line) {
