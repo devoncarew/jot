@@ -1,9 +1,5 @@
 include: package:lints/recommended.yaml
 
-# analyzer:
-#   exclude:
-#     - path/to/excluded/files/**
-
-# linter:
-#   rules:
-#     - camel_case_types
+linter:
+  rules:
+    - unawaited_futures

@@ -123,3 +123,35 @@ class Heading {
   @override
   String toString() => id == null ? '$label h$level' : '$label h$level ($id)';
 }
+
+class Stats {
+  final Stopwatch timer = Stopwatch();
+  int fileCount = 0;
+  int byteCount = 0;
+
+  void start() {
+    timer.start();
+  }
+
+  void genFile(File file) {
+    fileCount++;
+    byteCount += file.lengthSync();
+  }
+
+  String get elapsedSeconds =>
+      (timer.elapsedMilliseconds / 1000.0).toStringAsFixed(1);
+
+  String get sizeDesc {
+    const bytesPerMB = 1024.0 * 1024;
+
+    if (byteCount >= bytesPerMB) {
+      return '${(byteCount / (1024.0 * 1024.0)).toStringAsFixed(1)}MB';
+    } else {
+      return '${byteCount ~/ 1024.0}k';
+    }
+  }
+
+  void stop() {
+    timer.stop();
+  }
+}

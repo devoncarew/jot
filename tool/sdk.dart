@@ -51,8 +51,9 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
 
   log.stdout('SDK ${sdkDir.path}');
   log.stdout('Version $version');
-  log.stdout('Generating SDK documentation...');
   log.stdout('');
+
+  log.stdout('Resolving SDK libraries...');
 
   // parse the libraries file
   var librariesFile = File(p.join(sdkDir.path, 'lib', 'libraries.json'));
@@ -63,7 +64,8 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   var analysisHelper = AnalysisHelper.sdk(sdkDir);
 
   // create the workspace
-  var htmlTemplate = await HtmlTemplate.initDir(outDir);
+  var stats = Stats()..start();
+  var htmlTemplate = await HtmlTemplate.initDir(outDir, stats: stats);
   var workspace = DocWorkspace('Dart SDK', htmlTemplate: htmlTemplate);
   workspace.footer = 'Dart SDK $version';
   workspace.mainFile = DocFile(
@@ -84,7 +86,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     var libraryUri = libraryUriFor(name, libraries);
     if (libraryUri == null) continue;
 
-    print('dart:$name, $libraryUri');
+    log.stdout('  dart:$name, $libraryUri');
 
     var libFile = File(p.join(libDir.path, libraryUri));
     var libraryElement =
@@ -115,11 +117,19 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     }
   }
 
-  log.stdout('');
-
   // generate
-  // todo: generation stats
-  workspace.generate(outDir, logger: log);
+  log.stdout('');
+  log.stdout('Generating docs...');
+
+  await workspace.generate(outDir, logger: log, stats: stats);
+
+  stats.stop();
+
+  log.stdout('');
+  // "1,347 symbols, 82% have documentation, 4 libraries, 8MB of html, 0.3s"
+  log.stdout('Wrote docs to ${p.relative(outDir.path)} in '
+      '${stats.elapsedSeconds}s (${stats.fileCount} files, '
+      '${stats.sizeDesc}).');
 }
 
 String? libraryUriFor(String name, Map<String, dynamic> libraries) {

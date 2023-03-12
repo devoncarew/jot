@@ -13,8 +13,7 @@
 
 + item (documentable, backed by an element)
 + items
-+ group
-+ group ordering
++ group and group ordering
 
 ## Testing
 
@@ -40,5 +39,5 @@
 + cli just supports documenting packages
 + more sophisticated use cases (dart sdk, flutter) should use the package as a
   library
-- fast
++ fast
 - configuration via a yaml file
