@@ -62,7 +62,7 @@ class OutlineRenderer extends Renderer {
   String handleAccessor(Item item) {
     var prefix =
         (item.element as PropertyAccessorElement).isGetter ? 'get' : 'set';
-    return '$prefix ${item.name}';
+    return '$prefix\u00A0${item.name}';
   }
 
   @override

@@ -54,6 +54,8 @@ FileContentGenerator libraryGenerator(Library library) {
       buf.writeln(convertMarkdown(library.docs!));
     }
 
+    var pageItemRenderer = OutlineRenderer();
+
     var outline = Outline();
     var outlineRenderer = OutlineRenderer();
 
@@ -62,7 +64,10 @@ FileContentGenerator libraryGenerator(Library library) {
       outline.add(Heading(group.name, id: group.name, level: 2));
 
       for (var item in group.items) {
-        buf.writeln('<h3 id="${item.name}">${item.name}</h3>');
+        // todo: have Item get an 'anchorId' property
+
+        buf.writeln('<h3 id="${item.name}">'
+            '${pageItemRenderer.render(group.type, item)}</h3>');
         outline.add(Heading(outlineRenderer.render(group.type, item),
             id: item.name, level: 3));
         if (item.docs != null) {
@@ -88,6 +93,8 @@ FileContentGenerator itemContainerGenerator(ItemContainer itemContainer) {
       buf.writeln(convertMarkdown(itemContainer.docs!));
     }
 
+    var pageItemRenderer = OutlineRenderer();
+
     var outline = Outline();
     var outlineRenderer = OutlineRenderer();
 
@@ -96,7 +103,8 @@ FileContentGenerator itemContainerGenerator(ItemContainer itemContainer) {
       outline.add(Heading(group.name, id: group.name, level: 2));
 
       for (var item in group.items) {
-        buf.writeln('<h3 id="${item.name}">${item.name}</h3>');
+        buf.writeln(
+            '<h3 id="${item.name}">${pageItemRenderer.render(group.type, item)}</h3>');
         outline.add(Heading(outlineRenderer.render(group.type, item),
             id: item.name, level: 3));
         if (item.docs != null) {
