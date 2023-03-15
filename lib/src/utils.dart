@@ -77,7 +77,8 @@ class Outline {
   }
 
   String get asHtml {
-    var buf = StringBuffer('<ul id="toc" class="section-nav">');
+    var buf = StringBuffer(
+        '<ul class="table-of-contents table-of-contents__left-border">');
     for (var item in items) {
       buf.writeln(item.asHtml);
     }
@@ -106,11 +107,12 @@ class Heading {
   }
 
   String get asHtml {
-    var buf = StringBuffer('<li class="toc-entry nav-item toc-h$level">');
+    var buf = StringBuffer('<li>');
     var href = id == null ? '' : 'href="#$id"';
-    buf.writeln('<a class="nav-link" $href>$label</a>');
+    buf.writeln(
+        '<a class="table-of-contents__link toc-highlight" $href>$label</a>');
     if (children.isNotEmpty) {
-      buf.writeln('<ul class="nav">');
+      buf.writeln('<ul>');
       for (var child in children) {
         buf.writeln(child.asHtml);
       }

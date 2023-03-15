@@ -7,17 +7,22 @@ import 'utils.dart';
 
 class HtmlTemplate {
   static Future<HtmlTemplate> initDir(Directory dir, {Stats? stats}) async {
-    final cssData = await _loadResourceData('styles.css');
-    final cssFile = File(p.join(dir.path, 'styles.css'));
-    cssFile.writeAsStringSync(cssData);
-    stats?.genFile(cssFile);
+    final styleLightFile = File(p.join(dir.path, 'styles-light.css'));
+    var styleData = await _loadResourceData(styleLightFile.name);
+    styleLightFile.writeAsStringSync(styleData);
+    stats?.genFile(styleLightFile);
 
-    final iconData = await _loadResourceData('dart.svg');
-    final iconFile = File(p.join(dir.path, 'dart.svg'));
-    iconFile.writeAsStringSync(iconData);
-    stats?.genFile(iconFile);
+    final styleDarkFile = File(p.join(dir.path, 'styles-dark.css'));
+    styleData = await _loadResourceData(styleDarkFile.name);
+    styleDarkFile.writeAsStringSync(styleData);
+    stats?.genFile(styleDarkFile);
 
-    final htmlData = await _loadResourceData('template.html');
+    final scriptFile = File(p.join(dir.path, 'script.js'));
+    final scriptData = await _loadResourceData(scriptFile.name);
+    scriptFile.writeAsStringSync(scriptData);
+    stats?.genFile(scriptFile);
+
+    final htmlData = await _loadResourceData('index.html');
     return HtmlTemplate._(htmlData);
   }
 
@@ -33,7 +38,7 @@ class HtmlTemplate {
     String breadcrumbs = '',
     String pageContent = '',
     String toc = '',
-    String footerSection = '',
+    String footer = '',
   }) {
     return htmlTemplateData
         .replaceAll('{{ page-title }}', pageTitle)
@@ -43,7 +48,7 @@ class HtmlTemplate {
         .replaceFirst('{{ breadcrumbs }}', breadcrumbs)
         .replaceFirst('{{ page-content }}', pageContent)
         .replaceFirst('{{ toc }}', toc)
-        .replaceFirst('{{ footer-section }}', footerSection);
+        .replaceFirst('{{ footer }}', footer);
   }
 }
 

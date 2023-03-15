@@ -8,6 +8,7 @@
 - libraries should have a section for symbols exported from other libs
 - classes should have a section for symbols inherited from parent classes
 - use pragmas to control dartdoc specific imports
+- support front-matter for markdown files?
 
 ## Model elements
 
@@ -27,7 +28,8 @@
 
 ## Page layout and nav
 
-- SPA
++ dart script
+- full SPA
 
 ## Search
 

@@ -70,7 +70,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   workspace.footer = 'Dart SDK $version';
   workspace.mainFile = DocFile(
     workspace,
-    'Dart SDK',
+    'Readme',
     'index.html',
     markdownGenerator(File(p.join(sdkDir.path, 'lib', 'api_readme.md'))),
   );

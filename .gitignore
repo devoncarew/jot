@@ -4,3 +4,6 @@ pubspec.lock
 
 doc/api/
 doc/sdk/
+
+lib/resources/script.js.deps
+lib/resources/script.js.map
