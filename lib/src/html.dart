@@ -33,6 +33,7 @@ class HtmlTemplate {
   String templateSubtitute({
     required String pageTitle,
     required String pathPrefix,
+    required String pageRef,
     String navbar = '',
     String sideNav = '',
     String breadcrumbs = '',
@@ -43,6 +44,7 @@ class HtmlTemplate {
     return htmlTemplateData
         .replaceAll('{{ page-title }}', pageTitle)
         .replaceAll('{{ prefix }}', pathPrefix)
+        .replaceAll('{{ pageRef }}', pageRef)
         .replaceFirst('{{ navbar }}', navbar)
         .replaceFirst('{{ sidenav }}', sideNav)
         .replaceFirst('{{ breadcrumbs }}', breadcrumbs)
