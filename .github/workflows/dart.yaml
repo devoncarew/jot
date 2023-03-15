@@ -32,5 +32,8 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed .
         if: ${{matrix.run-tests}}
 
+      - run: dart compile js -o lib/resources/script.js -O2 web/main.dart
+        if: ${{matrix.run-tests}}
+
       - run: dart test
         if: ${{matrix.run-tests}}

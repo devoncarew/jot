@@ -53,10 +53,6 @@
       width: 100%;
     }
 
-    .searchBox {
-      padding: var(--ifm-navbar-item-padding-vertical) var(--ifm-navbar-item-padding-horizontal);
-    }
-
     .colorModeToggle {
       height: 2rem;
       width: 2rem;
@@ -75,10 +71,6 @@
     [data-theme=dark] .lightToggleIcon,
     [data-theme=light] .darkToggleIcon {
       display: none;
-    }
-
-    .docItemContainer {
-      /* todo: */
     }
 
     .breadcrumbsContainer {
@@ -160,7 +152,11 @@
           </button>
         </div>
 
-        <div class="searchBox"> Search </div>
+        <form class="margin-left--sm">
+          <div class="navbar__search">
+            <input class="navbar__search-input" placeholder="Search" id="search">
+          </div>
+        </form>
       </div>
     </div>
     <div role="presentation" class="navbar-sidebar__backdrop"></div>
@@ -188,15 +184,15 @@
 
     <!-- main -->
 
-    <main class="docMainContainer">
-      <div class="container padding-top--md padding-bottom--lg">
+    <main class="docMainContainer" id="doc-main-container" data-path="{{ pageRef }}">
+      <div class="container padding-top--md padding-bottom--lg" id="doc-main-child" data-path="{{ pageRef }}">
         <div class="row">
           <div class="col docItemCol">
 
-            <div class="docItemContainer">
+            <div>
               <article>
 
-                <nav class="theme-doc-breadcrumbs breadcrumbsContainer" aria-label="Breadcrumbs">
+                <nav class="theme-doc-breadcrumbs breadcrumbsContainer">
                   <ul class="breadcrumbs">
 
                     {{ breadcrumbs }}
