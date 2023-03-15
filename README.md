@@ -12,3 +12,9 @@ An experimental documentation generator for Dart; the main design features are:
 - few configuration options for the CLI tool
 - designed to be used as a library for sophisticated use cases (documenting the
   Dart SDK, the Flutter SDK, ...)
+
+## Infima and Docusaurus
+
+The CSS, page layout, and SPA navigation for this API generator are sourced from
+the excellent [Infima](https://infima.dev/) and
+[Docusaurus](https://docusaurus.io/) projects.

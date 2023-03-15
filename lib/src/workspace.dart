@@ -48,6 +48,8 @@ FileContentGenerator libraryGenerator(Library library) {
     if (file.parentPackage != null) {
       var packageRef = '${file.parentPackage!.name}/${file.name}';
       buf.writeln('<h1>$packageRef</h1>');
+    } else {
+      buf.writeln('<h1>${file.name}</h1>');
     }
 
     if (library.docs != null) {
@@ -139,7 +141,13 @@ abstract class DocEntity {
     DocEntity? item = this;
 
     while (item != null) {
-      result.add(item);
+      if (item is DocFile) {
+        result.add(item);
+      } else if (item is DocContainer) {
+        if (!result.contains(item.mainFile)) {
+          result.add(item.mainFile!);
+        }
+      }
       item = item.parent;
     }
 
@@ -222,6 +230,12 @@ class DocContainer extends DocEntity {
 
   @override
   String toString() => 'DocContainer $name';
+
+  bool hasChild(DocFile page) {
+    if (mainFile == page) return true;
+    if (children.contains(page)) return true;
+    return false;
+  }
 }
 
 class DocWorkspace extends DocContainer {
@@ -276,14 +290,14 @@ class DocWorkspace extends DocContainer {
     ].map((target) {
       String active = '';
       if (navFiles.contains(file) && target == file) {
-        active = ' active';
+        active = ' navbar__link--active';
       } else if (!navFiles.contains(file) && target == mainFile) {
-        active = ' active';
+        active = ' navbar__link--active';
       }
 
       var href = file == target ? '' : 'href="${pathTo(target, from: file)}"';
       var name = target == mainFile ? 'Docs' : target.name;
-      return '<li><a $href class="nav-link$active">$name</a></li>';
+      return '<a $href class="navbar__item navbar__link$active">$name</a>';
     }).join(' ');
 
     // side nav
@@ -291,15 +305,33 @@ class DocWorkspace extends DocContainer {
 
     // breadcrumbs
     var breadcrumbs = file.breadcrumbs;
-    if (file == workspace.mainFile) {
-      breadcrumbs = breadcrumbs.take(1);
+    if (breadcrumbs.length == 1) {
+      breadcrumbs = [];
     }
     var breadcrumbsContent = breadcrumbs.map((entity) {
       var target =
           entity is DocFile ? entity : (entity as DocContainer).mainFile!;
-      var active = file == target ? ' active' : '';
-      var href = file == target ? '' : 'href="${pathTo(target, from: file)}"';
-      return '<a $href class="breadcrumb-item$active">${entity.name}</a>';
+      var href = 'href="${pathTo(target, from: file)}"';
+
+      if (workspace.mainFile == target) {
+        return '''
+          <li class="breadcrumbs__item">
+            <a aria-label="Home page" class="breadcrumbs__link" $href>
+              <svg viewBox="0 0 24 24" class="breadcrumbHomeIcon">
+                <path
+                  d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z"
+                  fill="currentColor">
+                </path>
+              </svg>
+            </a>
+          </li>''';
+      } else if (file == target) {
+        return '<li class="breadcrumbs__item breadcrumbs__item--active">'
+            '<span class="breadcrumbs__link">${entity.name}</span></li>';
+      } else {
+        return '<li class="breadcrumbs__item">'
+            '<a $href class="breadcrumbs__link">${entity.name}</a></li>';
+      }
     }).join(' ');
 
     var pathPrefix =
@@ -314,44 +346,50 @@ class DocWorkspace extends DocContainer {
       breadcrumbs: breadcrumbsContent,
       pageContent: page.contents,
       toc: page.outline?.asHtml ?? '',
-      footerSection: footer ?? '',
+      footer: footer ?? '',
     );
   }
 
-  String _genSidenav(DocFile page, DocEntity entity, {bool? ext}) {
-    // class='collapsed' on a hrefs to toggle a header closed
-    // class='collapse' on ul's to hide the children
-
+  String _genSidenav(DocFile page, DocEntity entity) {
     if (entity is DocWorkspace) {
-      var buf = StringBuffer('<ul class="nav flex-column">');
-      buf.writeln(_genSidenav(page, entity.mainFile!, ext: true));
+      var buf = StringBuffer('<ul class="theme-doc-sidebar-menu menu__list">');
+      buf.writeln(_genSidenav(page, entity.mainFile!));
       for (var child in entity.children) {
-        buf.writeln(_genSidenav(page, child, ext: child is DocFile));
+        buf.writeln(_genSidenav(page, child));
       }
       buf.writeln('</ul>');
       return buf.toString();
     } else if (entity is DocFile) {
-      var active = entity == page ? ' active' : '';
-      var extClass = (ext ?? false) ? ' external' : '';
-      return '<li class="nav-item">'
-          '<a href="${pathTo(entity, from: page)}" '
-          'class="nav-link$active$extClass">${entity.name}</a>'
+      var active = entity == page ? 'menu__link--active' : '';
+
+      return '<li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item">'
+          '<a class="menu__link $active" '
+          '  href="${pathTo(entity, from: page)}">${entity.name}</a>'
           '</li>';
     } else {
       entity as DocContainer;
 
-      var buf = StringBuffer('<li class="nav-item">');
+      // todo: add 'menu__list-item--collapsed' once the SPA is working
+      var buf = StringBuffer('<li class="theme-doc-sidebar-item-category '
+          'theme-doc-sidebar-item-category-level-1 menu__list-item">');
 
-      var active = entity.mainFile == page ? ' active' : '';
+      var activeContains = entity.hasChild(page) ? 'menu__link--active' : '';
       var href = '';
       if (entity.mainFile != null) {
         href = 'href="${pathTo(entity.mainFile!, from: page)}"';
       }
-      buf.writeln('<a $href class="nav-link$active" data-toggle="collapse">'
-          '${entity.name}</a>');
+
+      var menuActive =
+          entity.mainFile == page ? 'menu__list-item-collapsible--active' : '';
+
+      buf.writeln('''
+        <div class="menu__list-item-collapsible $menuActive">
+          <a $href class="menu__link menu__link--sublist $activeContains">${entity.name}</a>
+          <button type="button" class="clean-btn menu__caret"></button>
+        </div>''');
 
       if (entity.children.isNotEmpty) {
-        buf.writeln('<ul class="nav flex-column">');
+        buf.writeln('<ul class="menu__list">');
         for (var child in entity.children) {
           buf.writeln(_genSidenav(page, child));
         }
@@ -389,19 +427,22 @@ class DocWorkspace extends DocContainer {
         .whereType<File>()
         .where((f) => p.extension(f.path) == '.md' || f.name == 'LICENSE')) {
       var name = p.relative(file.path, from: dir.path);
+      var title =
+          titleCase(p.basenameWithoutExtension(file.path).toLowerCase());
+
       var path = '${p.withoutExtension(name)}.html';
       if (name == 'README.md') {
-        workspace.mainFile = DocFile(
-            workspace, workspace.name, 'index.html', markdownGenerator(file));
+        workspace.mainFile =
+            DocFile(workspace, title, 'index.html', markdownGenerator(file));
       } else if (name == 'CHANGELOG.md' || name == 'LICENSE.md') {
         workspace.navFiles
-            .add(DocFile(workspace, name, path, markdownGenerator(file)));
+            .add(DocFile(workspace, title, path, markdownGenerator(file)));
       } else if (name == 'LICENSE') {
         workspace.navFiles
-            .add(DocFile(workspace, name, path, plaintextGenerator(file)));
+            .add(DocFile(workspace, title, path, plaintextGenerator(file)));
       } else {
         workspace
-            .addChild(DocFile(workspace, name, path, markdownGenerator(file)));
+            .addChild(DocFile(workspace, title, path, markdownGenerator(file)));
       }
     }
 
@@ -412,9 +453,11 @@ class DocWorkspace extends DocContainer {
           .whereType<File>()
           .where((f) => p.extension(f.path) == '.md')) {
         var name = file.name;
+        var title =
+            titleCase(p.basenameWithoutExtension(file.path).toLowerCase());
         var path = '${p.withoutExtension(name)}.html';
         workspace
-            .addChild(DocFile(workspace, name, path, markdownGenerator(file)));
+            .addChild(DocFile(workspace, title, path, markdownGenerator(file)));
       }
     }
 
