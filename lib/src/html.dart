@@ -6,6 +6,8 @@ import 'package:path/path.dart' as p;
 import 'utils.dart';
 
 class HtmlTemplate {
+  // todo: put these in a resources directory
+
   static Future<HtmlTemplate> initDir(Directory dir, {Stats? stats}) async {
     final styleLightFile = File(p.join(dir.path, 'styles-light.css'));
     var styleData = await _loadResourceData(styleLightFile.name);

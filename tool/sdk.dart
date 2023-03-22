@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -47,7 +46,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   if (!outDir.existsSync()) outDir.createSync(recursive: true);
 
   var versionFile = File(p.join(sdkDir.path, 'version'));
-  final version = versionFile.readAsStringSync().trim();
+  final version = _parserSdkVersion(versionFile);
 
   log.stdout('SDK ${sdkDir.path}');
   log.stdout('Version $version');
@@ -55,10 +54,11 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
 
   log.stdout('Resolving SDK libraries...');
 
-  // parse the libraries file
-  var librariesFile = File(p.join(sdkDir.path, 'lib', 'libraries.json'));
-  var libraries =
-      jsonDecode(librariesFile.readAsStringSync()) as Map<String, dynamic>;
+  // // todo:
+  // // parse the libraries file
+  // var librariesFile = File(p.join(sdkDir.path, 'lib', 'libraries.json'));
+  // var libraries =
+  //     jsonDecode(librariesFile.readAsStringSync()) as Map<String, dynamic>;
 
   // set up the analysis context
   var analysisHelper = AnalysisHelper.sdk(sdkDir);
@@ -76,38 +76,53 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   );
   final api = Api();
 
-  // TODO: categorize into regular, experimental, and deprecated libraries
+  // TODO: categorize into regular, experimental, and unstable libraries
+  final libs = Libs();
 
   final libDir = Directory(p.join(sdkDir.path, 'lib'));
-  for (var dir in libDir.listSyncSorted().whereType<Directory>()) {
-    var name = dir.name;
-    if (name.startsWith('_')) continue;
+  for (var lib in [
+    ...libs.stableLibs,
+    ...libs.unstableLibs,
+    ...libs.experimentalLibs,
+  ]) {
+    log.stdout('  dart:${lib.name} [${lib.maturity}]');
 
-    var libraryUri = libraryUriFor(name, libraries);
-    if (libraryUri == null) continue;
-
-    log.stdout('  dart:$name, $libraryUri');
-
-    var libFile = File(p.join(libDir.path, libraryUri));
+    var libFile = File(p.join(libDir.path, lib.uri));
     var libraryElement =
         await analysisHelper.getLibraryByUri(libFile.uri.toString());
 
-    var packageContainer = workspace.addChild(DocContainer(
-      workspace,
-      'dart:$name',
+    DocContainer parent = workspace;
+
+    // introduce new containers for non-stable libraries
+    if (lib.maturity != 'stable') {
+      final maturityTitle = titleCase(lib.maturity);
+
+      if (workspace.getChild(maturityTitle) != null) {
+        parent = workspace.getChild(maturityTitle) as DocContainer;
+      } else {
+        parent = workspace.addChild(DocContainer(
+          workspace,
+          maturityTitle,
+        )) as DocContainer;
+      }
+    }
+
+    var packageContainer = parent.addChild(DocContainer(
+      parent,
+      'dart:${lib.name}',
     )) as DocContainer;
 
     var library = api.addLibrary('sdk', libraryElement.element);
 
     packageContainer.mainFile = DocFile(
-      workspace,
-      'dart:$name',
-      '$name.html',
+      packageContainer,
+      'dart:${lib.name}',
+      '${lib.name}.html',
       libraryGenerator(library),
     );
 
     for (var itemContainer in library.allChildren.whereType<ItemContainer>()) {
-      var path = '$name/${itemContainer.name}.html';
+      var path = '${lib.name}/${itemContainer.name}.html';
       packageContainer.addChild(DocFile(
         packageContainer,
         itemContainer.name,
@@ -130,6 +145,18 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   log.stdout('Wrote docs to ${p.relative(outDir.path)} in '
       '${stats.elapsedSeconds}s (${stats.fileCount} files, '
       '${stats.sizeDesc}).');
+}
+
+String _parserSdkVersion(File versionFile) {
+  var version = versionFile.readAsStringSync().trim();
+  if (version.contains(' ')) {
+    version = version.substring(0, version.indexOf(' '));
+  }
+  if (version.contains('-edge.')) {
+    // Dart SDK 3.0.0-edge.3ad45940d6e...a585d088639f5
+    version = version.substring(0, version.lastIndexOf('.'));
+  }
+  return version;
 }
 
 String? libraryUriFor(String name, Map<String, dynamic> libraries) {
@@ -194,4 +221,240 @@ void validateSdk(Directory sdk) {
     stderr.writeln('Invalid SDK (${sdk.path}) - missing libraries file');
     exit(1);
   }
+}
+
+// TODO: temporary until the SDK gets an undated libraries.json file
+final Map<String, Map<String, Object>> sdkLibraries = {
+  "async": {
+    "uri": "async/async.dart",
+    "categories": ["client", "server"],
+    "maturity": "stable"
+  },
+  "cli": {
+    "uri": "cli/cli.dart",
+    "categories": ["server"],
+    "maturity": "unstable"
+  },
+  "collection": {
+    "uri": "collection/collection.dart",
+    "categories": ["client", "server", "embedded"],
+    "maturity": "stable"
+  },
+  "convert": {
+    "uri": "convert/convert.dart",
+    "categories": ["client", "server"],
+    "maturity": "stable"
+  },
+  "core": {
+    "uri": "core/core.dart",
+    "categories": ["client", "server", "embedded"],
+    "maturity": "stable"
+  },
+  "developer": {
+    "uri": "developer/developer.dart",
+    "categories": ["client", "server", "embedded"],
+    "maturity": "unstable"
+  },
+  "ffi": {
+    "uri": "ffi/ffi.dart",
+    "categories": ["server"],
+    "maturity": "stable"
+  },
+  "html": {
+    "uri": "html/dart2js/html_dart2js.dart",
+    "categories": ["client"],
+    "maturity": "stable"
+  },
+  "indexed_db": {
+    "uri": "indexed_db/dart2js/indexed_db_dart2js.dart",
+    "categories": ["client"],
+    "maturity": "stable"
+  },
+  "io": {
+    "uri": "io/io.dart",
+    "categories": ["server"]
+  },
+  "isolate": {
+    "uri": "isolate/isolate.dart",
+    "categories": ["client", "server"],
+    "maturity": "stable"
+  },
+  "js": {
+    "uri": "js/js.dart",
+    "categories": ["client"],
+    "maturity": "stable"
+  },
+  "js_util": {
+    "uri": "js_util/js_util.dart",
+    "categories": ["client"],
+    "maturity": "stable"
+  },
+  "math": {
+    "uri": "math/math.dart",
+    "categories": ["client", "server", "embedded"],
+    "maturity": "stable"
+  },
+  "mirrors": {
+    "uri": "mirrors/mirrors.dart",
+    "categories": ["client", "server"],
+    "maturity": "unstable"
+  },
+  "svg": {
+    "uri": "svg/dart2js/svg_dart2js.dart",
+    "categories": ["client"],
+    "maturity": "stable"
+  },
+  "typed_data": {
+    "uri": "typed_data/typed_data.dart",
+    "categories": ["client", "server", "embedded"],
+    "maturity": "stable"
+  },
+  "web_audio": {
+    "uri": "web_audio/dart2js/web_audio_dart2js.dart",
+    "categories": ["client"],
+    "maturity": "stable"
+  },
+  "web_gl": {
+    "uri": "web_gl/dart2js/web_gl_dart2js.dart",
+    "categories": ["client"],
+    "maturity": "stable"
+  },
+  "_async_await_error_codes": {
+    "uri": "_internal/js_runtime/lib/synced/async_await_error_codes.dart",
+    "documented": false
+  },
+  "_dart2js_runtime_metrics": {
+    "uri": "_internal/js_runtime/lib/dart2js_runtime_metrics.dart",
+    "documented": false
+  },
+  "_foreign_helper": {
+    "uri": "_internal/js_runtime/lib/foreign_helper.dart",
+    "documented": false
+  },
+  "_http": {"uri": "_http/http.dart", "documented": false},
+  "_interceptors": {
+    "uri": "_internal/js_runtime/lib/interceptors.dart",
+    "documented": false
+  },
+  "_internal": {"uri": "internal/internal.dart", "documented": false},
+  "_js": {
+    "uri": "js/_js.dart",
+    "categories": ["client"],
+    "documented": false
+  },
+  "_js_annotations": {"uri": "js/_js_annotations.dart", "documented": false},
+  "_js_embedded_names": {
+    "uri": "_internal/js_runtime/lib/synced/embedded_names.dart",
+    "documented": false
+  },
+  "_js_helper": {
+    "uri": "_internal/js_runtime/lib/js_helper.dart",
+    "documented": false
+  },
+  "_js_names": {
+    "uri": "_internal/js_runtime/lib/js_names.dart",
+    "documented": false
+  },
+  "_js_primitives": {
+    "uri": "_internal/js_runtime/lib/js_primitives.dart",
+    "documented": false
+  },
+  "_js_shared_embedded_names": {
+    "uri": "_internal/js_shared/lib/synced/embedded_names.dart",
+    "documented": false
+  },
+  "_js_types": {
+    "uri": "_internal/js_shared/lib/js_types.dart",
+    "documented": false
+  },
+  "_late_helper": {
+    "uri": "_internal/js_runtime/lib/late_helper.dart",
+    "documented": false
+  },
+  "_load_library_priority": {
+    "uri": "_internal/js_runtime/lib/synced/load_library_priority.dart",
+    "documented": false
+  },
+  "_metadata": {"uri": "html/html_common/metadata.dart", "documented": false},
+  "_native_typed_data": {
+    "uri": "_internal/js_runtime/lib/native_typed_data.dart",
+    "documented": false,
+    "implementation": true
+  },
+  "_recipe_syntax": {
+    "uri": "_internal/js_shared/lib/synced/recipe_syntax.dart",
+    "documented": false
+  },
+  "_rti": {"uri": "_internal/js_shared/lib/rti.dart", "documented": false},
+  "html_common": {
+    "uri": "html/html_common/html_common.dart",
+    "categories": ["client"],
+    "maturity": "stable",
+    "documented": false,
+    "implementation": true
+  },
+  "js_interop": {
+    "uri": "js_interop/js_interop.dart",
+    "categories": ["client"],
+    "maturity": "experimental",
+  },
+  "wasm": {
+    "uri": "wasm/wasm_types.dart",
+    "categories": ["client"],
+    "maturity": "experimental",
+  },
+  "nativewrappers": {
+    "uri": "html/dartium/nativewrappers.dart",
+    "categories": ["client"],
+    "documented": false,
+    "implementation": true
+  }
+};
+
+class Libs {
+  final List<Lib> libs = [];
+
+  Libs() {
+    for (var name in sdkLibraries.keys.toList()..sort()) {
+      // "core": {
+      //   "uri": "core/core.dart",
+      //   "categories": ["client", "server", "embedded"],
+      //     'core', 'web;, 'cli'?
+      //   "maturity": "stable"
+      // },
+
+      var lib = sdkLibraries[name]!;
+      var uri = lib['uri'] as String;
+      var maturity = lib['maturity'] as String?; // ?? 'stable'
+      var categories = (lib['categories'] as List?) ?? [];
+      var documented = (lib['documented'] as bool?) ?? true;
+      var implementation = (lib['implementation'] as bool?) ?? false;
+
+      if (documented && !implementation) {
+        libs.add(Lib(
+          name,
+          uri,
+          maturity: maturity ?? 'stable',
+          categories: categories.cast<String>(),
+        ));
+      }
+    }
+  }
+
+  Iterable<Lib> get stableLibs => libs.where((lib) => lib.maturity == 'stable');
+
+  Iterable<Lib> get unstableLibs =>
+      libs.where((lib) => lib.maturity == 'unstable');
+
+  Iterable<Lib> get experimentalLibs =>
+      libs.where((lib) => lib.maturity == 'experimental');
+}
+
+class Lib {
+  final String name;
+  final String uri;
+  final String maturity;
+  final List<String> categories;
+
+  Lib(this.name, this.uri, {required this.maturity, required this.categories});
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart' as yaml;
 
@@ -144,7 +145,7 @@ abstract class DocEntity {
       if (item is DocFile) {
         result.add(item);
       } else if (item is DocContainer) {
-        if (!result.contains(item.mainFile)) {
+        if (item.mainFile != null && !result.contains(item.mainFile)) {
           result.add(item.mainFile!);
         }
       }
@@ -203,12 +204,28 @@ class DocContainer extends DocEntity {
     // TODO: have a default mainfile?
   }
 
+  int get itemCount {
+    int count = mainFile == null ? 0 : 1;
+    for (var child in children) {
+      if (child is DocContainer) {
+        count += child.itemCount;
+      } else {
+        count++;
+      }
+    }
+    return count;
+  }
+
   @override
   DocContainer? get parentPackage => isPackage ? this : parent?.parentPackage;
 
   DocEntity addChild(DocEntity entity) {
     children.add(entity);
     return entity;
+  }
+
+  DocEntity? getChild(String name) {
+    return children.firstWhereOrNull((c) => c.name == name);
   }
 
   @override
@@ -316,7 +333,7 @@ class DocWorkspace extends DocContainer {
       if (workspace.mainFile == target) {
         return '''
           <li class="breadcrumbs__item">
-            <a class="breadcrumbs__link" $href data-jot>
+            <a class="breadcrumbs__link" $href>
               <svg viewBox="0 0 24 24" class="breadcrumbHomeIcon">
                 <path
                   d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z"
@@ -330,7 +347,7 @@ class DocWorkspace extends DocContainer {
             '<span class="breadcrumbs__link">${entity.name}</span></li>';
       } else {
         return '<li class="breadcrumbs__item">'
-            '<a $href class="breadcrumbs__link" data-jot>${entity.name}</a></li>';
+            '<a $href class="breadcrumbs__link">${entity.name}</a></li>';
       }
     }).join(' ');
 
@@ -352,6 +369,8 @@ class DocWorkspace extends DocContainer {
   }
 
   String _genSidenav(DocFile page, DocEntity entity) {
+    final menusStartClosed = entity.workspace.itemCount > 12;
+
     if (entity is DocWorkspace) {
       var buf = StringBuffer('<ul class="theme-doc-sidebar-menu menu__list">');
       buf.writeln(_genSidenav(page, entity.mainFile!));
@@ -363,16 +382,16 @@ class DocWorkspace extends DocContainer {
     } else if (entity is DocFile) {
       var active = entity == page ? 'menu__link--active' : '';
 
-      return '<li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item">'
+      return '<li class="theme-doc-sidebar-item-link menu__list-item">'
           '<a class="menu__link $active" '
           '  href="${pathTo(entity, from: page)}" data-jot>${entity.name}</a>'
           '</li>';
     } else {
       entity as DocContainer;
 
-      // todo: add 'menu__list-item--collapsed' once the SPA is working
+      final collapsed = menusStartClosed ? 'menu__list-item--collapsed' : '';
       var buf = StringBuffer('<li class="theme-doc-sidebar-item-category '
-          'theme-doc-sidebar-item-category-level-1 menu__list-item">');
+          '$collapsed menu__list-item">');
 
       var activeContains = entity.hasChild(page) ? 'menu__link--active' : '';
       var href = '';
