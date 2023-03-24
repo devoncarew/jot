@@ -16,6 +16,8 @@
       --doc-sidebar-width: 300px;
       --doc-sidebar-hidden-width: 30px;
 
+      --ifm-h1-font-size: 2.5rem;
+
       --ifm-footer-padding-vertical: var(--ifm-spacing-vertical);
     }
 
@@ -116,6 +118,14 @@
       overflow-y: auto;
       position: sticky;
       top: calc(var(--ifm-navbar-height) + 1rem);
+    }
+
+    .markdown td p {
+      margin-bottom: 0;
+    }
+
+    .markdown td {
+      vertical-align: top;
     }
   </style>
 </head>

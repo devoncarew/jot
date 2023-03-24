@@ -7,3 +7,10 @@ doc/sdk/
 
 lib/resources/script.js.deps
 lib/resources/script.js.map
+
+site/args/
+site/code_builder/
+site/jot/
+site/path/
+site/sdk/
+.firebase/

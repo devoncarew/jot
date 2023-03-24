@@ -73,4 +73,9 @@ class OutlineRenderer extends Renderer {
       return '${item.name}()';
     }
   }
+
+  @override
+  String handleFunction(Item item) {
+    return '${item.name}()';
+  }
 }

@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 
 import 'src/analysis.dart';
 import 'src/api.dart';
+import 'src/generate.dart';
 import 'src/utils.dart';
 import 'src/workspace.dart';
 
@@ -39,6 +40,7 @@ class Jot {
     // todo:
     var packageName = workspace.name.substring('package:'.length);
     var api = Api();
+    workspace.api = api;
 
     Progress? progress = log.progress('Resolving public libraries');
 
@@ -74,16 +76,19 @@ class Jot {
         libraryGenerator(library),
       );
 
+      api.addResolution(resolvedLibrary.element, packageContainer.mainFile!);
+
       for (var itemContainer
           in library.allChildren.whereType<ItemContainer>()) {
         var path =
             '${p.withoutExtension(dartLibraryPath)}/${itemContainer.name}.html';
-        packageContainer.addChild(DocFile(
+        var docFile = packageContainer.addChild(DocFile(
           packageContainer,
           itemContainer.name,
           path,
           itemContainerGenerator(itemContainer),
-        ));
+        )) as DocFile;
+        api.addResolution(itemContainer.element, docFile);
       }
     }
 
@@ -94,6 +99,7 @@ class Jot {
     log.stdout('Generating docs...');
 
     // generate docs
+    // todo: switch this to use a Generator instance
     await workspace.generate(outDir, logger: log, stats: stats);
 
     stats.stop();

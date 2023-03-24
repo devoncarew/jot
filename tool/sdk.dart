@@ -5,6 +5,7 @@ import 'package:cli_util/cli_logging.dart';
 import 'package:jot/jot.dart';
 import 'package:jot/src/analysis.dart';
 import 'package:jot/src/api.dart';
+import 'package:jot/src/generate.dart';
 import 'package:jot/src/html.dart';
 import 'package:jot/src/utils.dart';
 import 'package:path/path.dart' as p;
@@ -75,6 +76,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     markdownGenerator(File(p.join(sdkDir.path, 'lib', 'api_readme.md'))),
   );
   final api = Api();
+  workspace.api = api;
 
   // TODO: categorize into regular, experimental, and unstable libraries
   final libs = Libs();
@@ -121,14 +123,17 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
       libraryGenerator(library),
     );
 
+    api.addResolution(libraryElement.element, packageContainer.mainFile!);
+
     for (var itemContainer in library.allChildren.whereType<ItemContainer>()) {
       var path = '${lib.name}/${itemContainer.name}.html';
-      packageContainer.addChild(DocFile(
+      var docFile = packageContainer.addChild(DocFile(
         packageContainer,
         itemContainer.name,
         path,
         itemContainerGenerator(itemContainer),
-      ));
+      )) as DocFile;
+      api.addResolution(itemContainer.element, docFile);
     }
   }
 

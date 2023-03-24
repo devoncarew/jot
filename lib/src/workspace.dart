@@ -13,7 +13,7 @@ import 'render.dart';
 import 'utils.dart';
 
 typedef FileContentGenerator = Future<GenerationResults> Function(
-    DocWorkspace workspace, DocFile file);
+    DocWorkspace workspace, DocFile thisFile);
 
 class GenerationResults {
   final String contents;
@@ -23,11 +23,11 @@ class GenerationResults {
 }
 
 FileContentGenerator emptyContentGenerator =
-    (DocWorkspace workspace, DocFile file) =>
+    (DocWorkspace workspace, DocFile thisFile) =>
         Future.value(GenerationResults(''));
 
 FileContentGenerator markdownGenerator(File markdownFile) {
-  return (DocWorkspace workspace, DocFile file) async {
+  return (DocWorkspace workspace, DocFile thisFile) async {
     var content = markdownFile.readAsStringSync();
     var results = convertMarkdownWithOutline(content);
     return GenerationResults(results.html, results.outline);
@@ -35,60 +35,15 @@ FileContentGenerator markdownGenerator(File markdownFile) {
 }
 
 FileContentGenerator plaintextGenerator(File markdownFile) {
-  return (DocWorkspace workspace, DocFile file) async {
+  return (DocWorkspace workspace, DocFile thisFile) async {
     var content = markdownFile.readAsStringSync();
     var pageContent = htmlEscape.convert(content);
     return GenerationResults('<pre>$pageContent</pre>');
   };
 }
 
-FileContentGenerator libraryGenerator(Library library) {
-  return (DocWorkspace workspace, DocFile file) async {
-    var buf = StringBuffer();
-
-    if (file.parentPackage != null) {
-      var packageRef = '${file.parentPackage!.name}/${file.name}';
-      buf.writeln('<h1>$packageRef</h1>');
-    } else {
-      buf.writeln('<h1>${file.name}</h1>');
-    }
-
-    if (library.docs != null) {
-      buf.writeln(convertMarkdown(library.docs!));
-    }
-
-    var pageItemRenderer = OutlineRenderer();
-
-    var outline = Outline();
-    var outlineRenderer = OutlineRenderer();
-
-    for (var group in library.groups.values) {
-      buf.writeln('<h2 id="${group.name}">${group.name}</h2>');
-      outline.add(Heading(group.name, id: group.name, level: 2));
-
-      for (var item in group.items) {
-        // todo: have Item get an 'anchorId' property
-
-        buf.writeln('<h3 id="${item.name}">'
-            '${pageItemRenderer.render(group.type, item)}</h3>');
-        outline.add(Heading(outlineRenderer.render(group.type, item),
-            id: item.name, level: 3));
-        if (item.docs != null) {
-          if (item is ItemContainer) {
-            buf.writeln(convertMarkdown(firstSentence(item.docs!)));
-          } else {
-            buf.writeln(convertMarkdown(item.docs!));
-          }
-        }
-      }
-    }
-
-    return GenerationResults(buf.toString(), outline);
-  };
-}
-
 FileContentGenerator itemContainerGenerator(ItemContainer itemContainer) {
-  return (DocWorkspace workspace, DocFile file) async {
+  return (DocWorkspace workspace, DocFile thisFile) async {
     var buf = StringBuffer();
     buf.writeln('<h1>${itemContainer.name}</h1>');
 
@@ -259,6 +214,9 @@ class DocWorkspace extends DocContainer {
   final HtmlTemplate htmlTemplate;
   final List<DocFile> navFiles = [];
   String? footer;
+
+  // todo: temp; move this field to a Generator instance
+  Api? api;
 
   DocWorkspace(String name, {super.isPackage, required this.htmlTemplate})
       : super(null, name) {

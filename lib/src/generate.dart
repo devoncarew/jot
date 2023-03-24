@@ -1,3 +1,100 @@
+import '../jot.dart';
+import 'api.dart';
+import 'markdown.dart';
+import 'render.dart';
+import 'utils.dart';
+
+class Generator {
+  final DocWorkspace workspace;
+  final Api api;
+
+  Generator({required this.workspace, required this.api});
+}
+
+FileContentGenerator libraryGenerator(Library library) {
+  return (DocWorkspace workspace, DocFile thisFile) async {
+    return LibraryGenerator(
+      library: library,
+      workspace: workspace,
+      thisFile: thisFile,
+    ).generate();
+  };
+}
+
+class LibraryGenerator {
+  final Library library;
+  final DocWorkspace workspace;
+  final DocFile thisFile;
+
+  LibraryGenerator({
+    required this.library,
+    required this.workspace,
+    required this.thisFile,
+  });
+
+  GenerationResults generate() {
+    var buf = StringBuffer();
+
+    var api = workspace.api!;
+
+    if (thisFile.parentPackage != null) {
+      var packageRef = '${thisFile.parentPackage!.name}/${thisFile.name}';
+      buf.writeln('<h1>$packageRef</h1>');
+    } else {
+      buf.writeln('<h1>${thisFile.name}</h1>');
+    }
+
+    if (library.docs != null) {
+      buf.writeln(convertMarkdown(library.docs!));
+    }
+
+    var pageItemRenderer = OutlineRenderer();
+
+    var outline = Outline();
+    var outlineRenderer = OutlineRenderer();
+
+    for (var group in library.groups.values) {
+      buf.writeln('<h2 id="${group.name}">${group.name}</h2>');
+      outline.add(Heading(group.name, id: group.name, level: 2));
+
+      if (group.containerType) {
+        buf.writeln('<table>');
+
+        for (var item in group.items) {
+          buf.write('<tr><td>');
+          buf.writeln(api.hrefOrSpan(
+            pageItemRenderer.render(group.type, item),
+            item.element,
+            from: thisFile,
+          ));
+          buf.write('</td>');
+          buf.write('<td>');
+          if (item.docs != null) {
+            buf.writeln(convertMarkdown(firstSentence(item.docs!)));
+          }
+          buf.write('</td></tr>');
+        }
+
+        buf.writeln('</table>');
+      } else {
+        for (var item in group.items) {
+          // todo: have Item get an 'anchorId' property
+
+          buf.writeln('<h3 id="${item.name}">'
+              '${pageItemRenderer.render(group.type, item)}</h3>');
+          outline.add(Heading(outlineRenderer.render(group.type, item),
+              id: item.name, level: 3));
+          if (item.docs != null) {
+            buf.writeln(convertMarkdown(item.docs!));
+          }
+        }
+      }
+    }
+
+    return GenerationResults(buf.toString(), outline);
+  }
+}
+
 // void generate(LibraryElement library, File destFile) {
 //   var referencePath = p.relative(library.source.fullName, from: libDir.path);
 
