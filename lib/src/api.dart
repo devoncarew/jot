@@ -1,11 +1,14 @@
 import 'dart:collection';
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:path/path.dart' as p;
 
+import '../jot.dart';
 import 'utils.dart';
 
 class Api {
   final List<Package> packages = [];
+  final Resolver resolver = Resolver();
 
   Library addLibrary(String packageName, LibraryElement element) {
     if (!packages.any((p) => p.name == packageName)) {
@@ -16,6 +19,19 @@ class Api {
     var library = Library(element);
     package.libraries.add(library);
     return library;
+  }
+
+  // todo: specialize libraries, classes?
+  void addResolution(Element element, DocFile file) {
+    resolver.addResolution(element, file);
+  }
+
+  String? resolve(Element element, {DocFile? from}) {
+    return resolver.resolve(element, from: from);
+  }
+
+  String hrefOrSpan(String text, Element element, {DocFile? from}) {
+    return resolver.hrefOrSpan(text, element, from: from);
   }
 }
 
@@ -145,6 +161,8 @@ class Group implements Comparable<Group> {
 
   String get name => type.title;
 
+  bool get containerType => type.containerType;
+
   @override
   int compareTo(Group other) {
     return type.index - other.type.index;
@@ -163,9 +181,9 @@ enum GroupType implements Comparable<GroupType> {
   function('Functions', {ElementKind.FUNCTION}),
   functionTypeAlias('Function Type Aliases', {ElementKind.FUNCTION_TYPE_ALIAS}),
   typeAlias('Type Aliases', {ElementKind.TYPE_ALIAS}),
-  $class('Classes', {ElementKind.CLASS}),
-  $enum('Enums', {ElementKind.ENUM}),
-  $extension('Extensions', {ElementKind.EXTENSION}),
+  $class('Classes', {ElementKind.CLASS}, containerType: true),
+  $enum('Enums', {ElementKind.ENUM}, containerType: true),
+  $extension('Extensions', {ElementKind.EXTENSION}, containerType: true),
 
   // catch-all
   skip('Skip', {
@@ -177,8 +195,9 @@ enum GroupType implements Comparable<GroupType> {
 
   final String title;
   final Set<Object> elementKinds;
+  final bool containerType;
 
-  const GroupType(this.title, this.elementKinds);
+  const GroupType(this.title, this.elementKinds, {this.containerType = false});
 
   @override
   int compareTo(GroupType other) {
@@ -194,5 +213,38 @@ enum GroupType implements Comparable<GroupType> {
     }
     print('*** ${element.kind} ***');
     return GroupType.other;
+  }
+}
+
+class Resolver {
+  // libraries and classes to files
+  // elements to urls
+
+  Map<Element, DocFile> mappings = {};
+
+  void addResolution(Element element, DocFile file) {
+    mappings[element] = file;
+  }
+
+  String? resolve(Element element, {DocFile? from}) {
+    var target = mappings[element];
+    if (target == null) return null;
+
+    if (from != null) {
+      return p.relative(target.path, from: p.dirname(from.path));
+    } else {
+      return target.path;
+    }
+  }
+
+  // todo: html encode 'text'
+  String hrefOrSpan(String text, Element element, {DocFile? from}) {
+    var ref = resolve(element, from: from);
+
+    if (ref != null) {
+      return '<a href="$ref">$text</a>';
+    } else {
+      return '<span>$text</span>';
+    }
   }
 }

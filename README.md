@@ -15,6 +15,5 @@ An experimental documentation generator for Dart; the main design features are:
 
 ## Infima and Docusaurus
 
-The CSS, page layout, and SPA navigation for this API generator are sourced from
-the excellent [Infima](https://infima.dev/) and
-[Docusaurus](https://docusaurus.io/) projects.
+The CSS page layout for this API generator are sourced from the excellent
+[Infima](https://infima.dev/) and [Docusaurus](https://docusaurus.io/) projects.

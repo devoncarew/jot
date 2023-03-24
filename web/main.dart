@@ -137,7 +137,9 @@ class Jot {
     var filePath = docMainChild.attributes['data-path']!;
     var parentPath = filePath;
     if (filePath.contains('/')) {
-      parentPath = filePath.substring(0, filePath.lastIndexOf('/'));
+      parentPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
+    } else {
+      parentPath = '';
     }
 
     // todo: don't allow urls to escape the dir root
@@ -153,7 +155,7 @@ class Jot {
 
         var url = relPath.startsWith('#')
             ? '$urlBase$filePath$relPath'
-            : '$urlBase$parentPath/$relPath';
+            : '$urlBase$parentPath$relPath';
         _swapFor(normalize(url), updateHistory: true);
       });
     }
