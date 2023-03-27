@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
@@ -9,7 +8,6 @@ import 'package:yaml/yaml.dart' as yaml;
 import 'api.dart';
 import 'html.dart';
 import 'markdown.dart';
-import 'render.dart';
 import 'utils.dart';
 
 typedef FileContentGenerator = Future<GenerationResults> Function(
@@ -37,41 +35,8 @@ FileContentGenerator markdownGenerator(File markdownFile) {
 FileContentGenerator plaintextGenerator(File markdownFile) {
   return (DocWorkspace workspace, DocFile thisFile) async {
     var content = markdownFile.readAsStringSync();
-    var pageContent = htmlEscape.convert(content);
+    var pageContent = htmlEscape(content);
     return GenerationResults('<pre>$pageContent</pre>');
-  };
-}
-
-FileContentGenerator itemContainerGenerator(ItemContainer itemContainer) {
-  return (DocWorkspace workspace, DocFile thisFile) async {
-    var buf = StringBuffer();
-    buf.writeln('<h1>${itemContainer.name}</h1>');
-
-    if (itemContainer.docs != null) {
-      buf.writeln(convertMarkdown(itemContainer.docs!));
-    }
-
-    var pageItemRenderer = OutlineRenderer();
-
-    var outline = Outline();
-    var outlineRenderer = OutlineRenderer();
-
-    for (var group in itemContainer.groups.values) {
-      buf.writeln('<h2 id="${group.name}">${group.name}</h2>');
-      outline.add(Heading(group.name, id: group.name, level: 2));
-
-      for (var item in group.items) {
-        buf.writeln(
-            '<h3 id="${item.name}">${pageItemRenderer.render(group.type, item)}</h3>');
-        outline.add(Heading(outlineRenderer.render(group.type, item),
-            id: item.name, level: 3));
-        if (item.docs != null) {
-          buf.writeln(convertMarkdown(item.docs!));
-        }
-      }
-    }
-
-    return GenerationResults(buf.toString(), outline);
   };
 }
 
@@ -117,6 +82,9 @@ abstract class DocEntity {
 class DocFile extends DocEntity {
   final String path;
   final FileContentGenerator contentGenerator;
+
+  /// If set, the script to specify in an import.
+  String? importScript;
 
   DocFile(super.parent, super.name, this.path, this.contentGenerator);
 
@@ -174,7 +142,7 @@ class DocContainer extends DocEntity {
   @override
   DocContainer? get parentPackage => isPackage ? this : parent?.parentPackage;
 
-  DocEntity addChild(DocEntity entity) {
+  T addChild<T extends DocEntity>(T entity) {
     children.add(entity);
     return entity;
   }
@@ -327,8 +295,6 @@ class DocWorkspace extends DocContainer {
   }
 
   String _genSidenav(DocFile page, DocEntity entity) {
-    final menusStartClosed = entity.workspace.itemCount > 12;
-
     if (entity is DocWorkspace) {
       var buf = StringBuffer('<ul class="theme-doc-sidebar-menu menu__list">');
       buf.writeln(_genSidenav(page, entity.mainFile!));
@@ -347,22 +313,21 @@ class DocWorkspace extends DocContainer {
     } else {
       entity as DocContainer;
 
-      final collapsed = menusStartClosed ? 'menu__list-item--collapsed' : '';
+      // keep menus open if they're in the parent path
+      final collapsed =
+          entity.hasChild(page) ? '' : 'menu__list-item--collapsed';
       var buf = StringBuffer('<li class="theme-doc-sidebar-item-category '
           '$collapsed menu__list-item">');
 
-      var activeContains = entity.hasChild(page) ? 'menu__link--active' : '';
+      var active = entity.mainFile == page ? 'menu__link--active' : '';
       var href = '';
       if (entity.mainFile != null) {
         href = 'href="${pathTo(entity.mainFile!, from: page)}"';
       }
 
-      var menuActive =
-          entity.mainFile == page ? 'menu__list-item-collapsible--active' : '';
-
       buf.writeln('''
-        <div class="menu__list-item-collapsible $menuActive">
-          <a $href class="menu__link menu__link--sublist $activeContains" data-jot>${entity.name}</a>
+        <div class="menu__list-item-collapsible">
+          <a $href class="menu__link menu__link--sublist $active" data-jot>${entity.name}</a>
           <button type="button" class="clean-btn menu__caret"></button>
         </div>''');
 

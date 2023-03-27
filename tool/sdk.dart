@@ -4,7 +4,6 @@ import 'package:args/args.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:jot/jot.dart';
 import 'package:jot/src/analysis.dart';
-import 'package:jot/src/api.dart';
 import 'package:jot/src/generate.dart';
 import 'package:jot/src/html.dart';
 import 'package:jot/src/utils.dart';
@@ -78,7 +77,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   final api = Api();
   workspace.api = api;
 
-  // TODO: categorize into regular, experimental, and unstable libraries
+  // categorize into regular, experimental, and unstable libraries
   final libs = Libs();
 
   final libDir = Directory(p.join(sdkDir.path, 'lib'));
@@ -105,34 +104,38 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
         parent = workspace.addChild(DocContainer(
           workspace,
           maturityTitle,
-        )) as DocContainer;
+        ));
       }
     }
 
     var packageContainer = parent.addChild(DocContainer(
       parent,
       'dart:${lib.name}',
-    )) as DocContainer;
+    ));
 
     var library = api.addLibrary('sdk', libraryElement.element);
 
-    packageContainer.mainFile = DocFile(
+    var file = DocFile(
       packageContainer,
       'dart:${lib.name}',
       '${lib.name}.html',
       libraryGenerator(library),
     );
+    file.importScript = file.name;
+    packageContainer.mainFile = file;
 
     api.addResolution(libraryElement.element, packageContainer.mainFile!);
 
-    for (var itemContainer in library.allChildren.whereType<ItemContainer>()) {
+    for (var itemContainer in library.allChildrenSorted.whereType<Items>()) {
       var path = '${lib.name}/${itemContainer.name}.html';
       var docFile = packageContainer.addChild(DocFile(
         packageContainer,
         itemContainer.name,
         path,
-        itemContainerGenerator(itemContainer),
-      )) as DocFile;
+        itemContainer is ExtensionElementItems
+            ? extensionElementGenerator(itemContainer)
+            : interfaceElementGenerator(itemContainer as InterfaceElementItems),
+      ));
       api.addResolution(itemContainer.element, docFile);
     }
   }

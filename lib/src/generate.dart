@@ -1,5 +1,4 @@
 import '../jot.dart';
-import 'api.dart';
 import 'markdown.dart';
 import 'render.dart';
 import 'utils.dart';
@@ -11,7 +10,7 @@ class Generator {
   Generator({required this.workspace, required this.api});
 }
 
-FileContentGenerator libraryGenerator(Library library) {
+FileContentGenerator libraryGenerator(LibraryItemContainer library) {
   return (DocWorkspace workspace, DocFile thisFile) async {
     return LibraryGenerator(
       library: library,
@@ -22,7 +21,7 @@ FileContentGenerator libraryGenerator(Library library) {
 }
 
 class LibraryGenerator {
-  final Library library;
+  final LibraryItemContainer library;
   final DocWorkspace workspace;
   final DocFile thisFile;
 
@@ -33,13 +32,19 @@ class LibraryGenerator {
   });
 
   GenerationResults generate() {
+    var codeRenderer = CodeRepresentationRenderer();
+
     var buf = StringBuffer();
 
     var api = workspace.api!;
 
-    if (thisFile.parentPackage != null) {
-      var packageRef = '${thisFile.parentPackage!.name}/${thisFile.name}';
-      buf.writeln('<h1>$packageRef</h1>');
+    if (thisFile.importScript != null) {
+      buf.writeln('<h1>${thisFile.name}</h1>');
+      buf.writeln(
+        "<pre class=\"declaration\">"
+        "<code>import '${thisFile.importScript}';</code>"
+        "</pre>",
+      );
     } else {
       buf.writeln('<h1>${thisFile.name}</h1>');
     }
@@ -50,12 +55,8 @@ class LibraryGenerator {
 
     var pageItemRenderer = OutlineRenderer();
 
-    var outline = Outline();
-    var outlineRenderer = OutlineRenderer();
-
     for (var group in library.groups.values) {
-      buf.writeln('<h2 id="${group.name}">${group.name}</h2>');
-      outline.add(Heading(group.name, id: group.name, level: 2));
+      buf.writeln('<h2 id="${group.anchorId}">${group.name}</h2>');
 
       if (group.containerType) {
         buf.writeln('<table>');
@@ -68,7 +69,7 @@ class LibraryGenerator {
             from: thisFile,
           ));
           buf.write('</td>');
-          buf.write('<td>');
+          buf.write('<td class="item-docs">');
           if (item.docs != null) {
             buf.writeln(convertMarkdown(firstSentence(item.docs!)));
           }
@@ -78,15 +79,34 @@ class LibraryGenerator {
         buf.writeln('</table>');
       } else {
         for (var item in group.items) {
-          // todo: have Item get an 'anchorId' property
-
-          buf.writeln('<h3 id="${item.name}">'
-              '${pageItemRenderer.render(group.type, item)}</h3>');
-          outline.add(Heading(outlineRenderer.render(group.type, item),
-              id: item.name, level: 3));
+          buf.writeln(
+            '<h3 id="${item.anchorId}">${pageItemRenderer.render(group.type, item)}'
+            '<span class="symbol-type">${item.element.kind.displayName}</span>'
+            '</h3>',
+          );
+          buf.write(codeRenderer.writeAnnotations(item));
+          buf.writeln(
+            '<pre class="declaration"><code>'
+            '${codeRenderer.render(group.type, item)}'
+            '</code></pre>',
+          );
           if (item.docs != null) {
             buf.writeln(convertMarkdown(item.docs!));
           }
+        }
+      }
+    }
+
+    var outline = Outline();
+    var outlineRenderer = OutlineRenderer();
+
+    for (var group in library.groups.values) {
+      outline.add(Heading(group.name, id: group.anchorId, level: 2));
+
+      if (!group.containerType) {
+        for (var item in group.items) {
+          outline.add(Heading(outlineRenderer.render(group.type, item),
+              id: item.anchorId, level: 3));
         }
       }
     }
@@ -95,195 +115,158 @@ class LibraryGenerator {
   }
 }
 
-// void generate(LibraryElement library, File destFile) {
-//   var referencePath = p.relative(library.source.fullName, from: libDir.path);
+FileContentGenerator interfaceElementGenerator(
+    InterfaceElementItems interfaceElementItems) {
+  return (DocWorkspace workspace, DocFile thisFile) async {
+    return InterfaceElementGenerator(
+      classItems: interfaceElementItems,
+      workspace: workspace,
+      thisFile: thisFile,
+    ).generate();
+  };
+}
 
-//   final buf = StringBuffer();
-//   buf.writeln('# $referencePath');
-//   buf.writeln();
-//   var comment = library.documentationComment;
-//   if (comment != null) {
-//     buf.writeln(processMarkdown(stripDartdoc(comment)));
-//     buf.writeln();
-//   }
+class InterfaceElementGenerator {
+  final InterfaceElementItems classItems;
+  final DocWorkspace workspace;
+  final DocFile thisFile;
 
-//   var exportNamespace = library.exportNamespace;
-//   var elements =
-//       exportNamespace.definedNames.values.where((element) => isPublic(element));
+  InterfaceElementGenerator({
+    required this.classItems,
+    required this.workspace,
+    required this.thisFile,
+  });
 
-//   for (var element in elements) {
-//     if (element is! ExecutableElement) continue;
-//     emitExecutableElement(element, buf);
-//   }
+  GenerationResults generate() {
+    var codeRenderer = CodeRepresentationRenderer();
 
-//   for (var element in elements) {
-//     if (element is! ClassElement) continue;
-//     emitInterfaceElement(element, buf);
-//   }
+    var buf = StringBuffer();
+    buf.writeln('<h1>${classItems.name}</h1>');
+    buf.write(codeRenderer.writeAnnotations(classItems));
+    buf.writeln(
+      '<pre class="declaration"><code>'
+      '${codeRenderer.render(classItems.type, classItems)}'
+      '</code></pre>',
+    );
 
-//   for (var element in elements) {
-//     if (element is! EnumElement) continue;
-//     emitInterfaceElement(element, buf);
-//   }
+    if (classItems.docs != null) {
+      buf.writeln(convertMarkdown(classItems.docs!));
+    }
 
-//   destFile.parent.createSync(recursive: true);
-//   destFile.writeAsStringSync('${buf.toString().trimRight()}\n');
-// }
+    var pageItemRenderer = OutlineRenderer();
 
-// void emitInterfaceElement(InterfaceElement element, StringBuffer buf) {
-//   var title = element is EnumElement ? 'Enum' : 'Class';
-//   var kind = element is EnumElement ? 'enum' : 'class';
-//   var modifiers = '';
-//   if (element is ClassElement) {
-//     modifiers = element.isAbstract ? 'abstract ' : '';
-//   }
-//   buf.writeln('## $title ${element.name}');
-//   buf.writeln();
-//   buf.writeln('```dart');
-//   buf.writeln('$modifiers$kind ${element.name}');
-//   buf.writeln('```');
-//   buf.writeln();
-//   var comment = element.documentationComment;
-//   if (comment != null) {
-//     buf.writeln(processMarkdown(stripDartdoc(comment)));
-//     buf.writeln();
-//   }
+    for (var group in classItems.groups.values) {
+      buf.writeln('<h2 id="${group.anchorId}">${group.name}</h2>');
 
-//   // fields
-//   for (var field in element.fields) {
-//     if (!isPublic(field)) continue;
-//     if (field.isSynthetic) continue;
+      for (var item in group.items) {
+        buf.writeln(
+          '<h3 id="${item.anchorId}">${pageItemRenderer.render(group.type, item)}'
+          '<span class="symbol-type">${item.element.kind.displayName}</span>'
+          '</h3>',
+        );
+        buf.write(codeRenderer.writeAnnotations(item));
+        buf.writeln(
+          '<pre class="declaration"><code>'
+          '${codeRenderer.render(group.type, item)}'
+          '</code></pre>',
+        );
+        if (item.docs != null) {
+          buf.writeln(convertMarkdown(item.docs!));
+        }
+      }
+    }
 
-//     var desc = element is EnumElement ? 'value ' : '';
-//     var fieldTypeDesc = field.type.getDisplayString(withNullability: true);
-//     var modifiers = field.isFinal ? 'final ' : '';
-//     buf.writeln('### $desc${field.name}');
-//     buf.writeln();
-//     buf.writeln('```dart');
-//     buf.writeln(dartFormat('$modifiers$fieldTypeDesc ${field.name}', ';'));
-//     buf.writeln('```');
-//     buf.writeln();
-//     var comment = field.documentationComment;
-//     if (comment != null) {
-//       buf.writeln(processMarkdown(stripDartdoc(comment)));
-//       buf.writeln();
-//     }
-//   }
+    var outline = Outline();
+    var outlineRenderer = OutlineRenderer();
 
-//   // constructors
-//   for (var ctor in element.constructors) {
-//     if (!isPublic(ctor)) continue;
+    for (var group in classItems.groups.values) {
+      outline.add(Heading(group.name, id: group.anchorId, level: 2));
 
-//     var typeDesc = ctor.returnType.getDisplayString(withNullability: true);
-//     var paramDesc = describeMethodParameters(ctor.parameters);
-//     var name = ctor.isGenerative ? element.name : ctor.name;
-//     buf.writeln('### $name()');
-//     buf.writeln();
-//     buf.writeln('```dart');
-//     buf.writeln(dartFormat('$typeDesc ${ctor.name}($paramDesc)', '{}'));
-//     buf.writeln('```');
-//     buf.writeln();
-//     var comment = ctor.documentationComment;
-//     if (comment != null) {
-//       buf.writeln(processMarkdown(stripDartdoc(comment)));
-//       buf.writeln();
-//     }
-//   }
+      for (var item in group.items) {
+        outline.add(Heading(outlineRenderer.render(group.type, item),
+            id: item.anchorId, level: 3));
+      }
+    }
 
-//   // getters and setters
-//   for (var accessor in element.accessors) {
-//     if (!isPublic(accessor)) continue;
-//     if (accessor.isSynthetic) continue;
+    return GenerationResults(buf.toString(), outline);
+  }
+}
 
-//     buf.writeln('### ${accessor.isGetter ? 'get' : 'set'} ${accessor.name}');
-//     buf.writeln();
-//     buf.writeln('```dart');
-//     if (accessor.isGetter) {
-//       var typeDesc =
-//           accessor.returnType.getDisplayString(withNullability: true);
-//       buf.writeln(dartFormat('$typeDesc get ${accessor.name}', '=> null;'));
-//     } else {
-//       var paramDesc = describeMethodParameters(accessor.parameters);
-//       buf.writeln(dartFormat('set ${accessor.name}($paramDesc)', ';'));
-//     }
-//     buf.writeln('```');
-//     buf.writeln();
-//     var comment = accessor.documentationComment;
-//     if (comment != null) {
-//       buf.writeln(processMarkdown(stripDartdoc(comment)));
-//       buf.writeln();
-//     }
-//   }
+FileContentGenerator extensionElementGenerator(
+    ExtensionElementItems extensionItems) {
+  return (DocWorkspace workspace, DocFile thisFile) async {
+    return ExtentionElementGenerator(
+      extensionItems: extensionItems,
+      workspace: workspace,
+      thisFile: thisFile,
+    ).generate();
+  };
+}
 
-//   // methods
-//   for (var method in element.methods) {
-//     if (!isPublic(method)) continue;
+class ExtentionElementGenerator {
+  final ExtensionElementItems extensionItems;
+  final DocWorkspace workspace;
+  final DocFile thisFile;
 
-//     var typeDesc = method.returnType.getDisplayString(withNullability: true);
-//     var paramDesc = describeMethodParameters(method.parameters);
-//     var modifiers = method.isStatic ? 'static ' : '';
-//     buf.writeln('### ${method.name}()');
-//     buf.writeln();
-//     buf.writeln('```dart');
-//     buf.writeln(
-//         modifiers + dartFormat('$typeDesc ${method.name}($paramDesc)', '{}'));
-//     buf.writeln('```');
-//     buf.writeln();
-//     var comment = method.documentationComment;
-//     if (comment != null) {
-//       buf.writeln(processMarkdown(stripDartdoc(comment)));
-//       buf.writeln();
-//     }
-//   }
-// }
+  ExtentionElementGenerator({
+    required this.extensionItems,
+    required this.workspace,
+    required this.thisFile,
+  });
 
-// void emitExecutableElement(ExecutableElement element, StringBuffer buf) {
-//   var typeDesc = element.returnType.getDisplayString(withNullability: true);
-//   var paramDesc = describeMethodParameters(element.parameters);
-//   buf.writeln('## ${element.name}()');
-//   buf.writeln();
-//   buf.writeln('```dart');
-//   buf.writeln(dartFormat('$typeDesc ${element.name}($paramDesc)', '{}'));
-//   buf.writeln('```');
-//   buf.writeln();
-//   var comment = element.documentationComment;
-//   if (comment != null) {
-//     buf.writeln(processMarkdown(stripDartdoc(comment)));
-//     buf.writeln();
-//   }
-// }
+  GenerationResults generate() {
+    // todo: customize for extensions
 
-// String describeMethodParameters(List<ParameterElement> parameters) {
-//   var buf = StringBuffer();
+    var codeRenderer = CodeRepresentationRenderer();
 
-//   var inNamed = false;
-//   var inPositional = false;
+    var buf = StringBuffer();
+    buf.writeln('<h1>${extensionItems.name}</h1>');
+    buf.write(codeRenderer.writeAnnotations(extensionItems));
+    buf.writeln(
+      '<pre class="declaration"><code>'
+      '${codeRenderer.render(extensionItems.type, extensionItems)}'
+      '</code></pre>',
+    );
 
-//   for (var param in parameters) {
-//     if (buf.isNotEmpty) buf.write(', ');
+    if (extensionItems.docs != null) {
+      buf.writeln(convertMarkdown(extensionItems.docs!));
+    }
 
-//     if (!inNamed && !inPositional) {
-//       if (param.isNamed) {
-//         inNamed = true;
-//         buf.write('{ ');
-//       } else if (param.isOptionalPositional) {
-//         inPositional = true;
-//         buf.write('[] ');
-//       }
-//     }
+    var pageItemRenderer = OutlineRenderer();
 
-//     param.appendToWithoutDelimiters(buf, withNullability: true);
-//   }
+    for (var group in extensionItems.groups.values) {
+      buf.writeln('<h2 id="${group.anchorId}">${group.name}</h2>');
 
-//   if (buf.length >= 68) {
-//     buf.write(',');
-//   }
+      for (var item in group.items) {
+        buf.writeln(
+          '<h3 id="${item.anchorId}">${pageItemRenderer.render(group.type, item)}'
+          '<span class="symbol-type">${item.element.kind.displayName}</span>'
+          '</h3>',
+        );
+        buf.write(codeRenderer.writeAnnotations(item));
+        buf.writeln(
+          '<pre class="declaration"><code>'
+          '${codeRenderer.render(group.type, item)}'
+          '</code></pre>',
+        );
+        if (item.docs != null) {
+          buf.writeln(convertMarkdown(item.docs!));
+        }
+      }
+    }
 
-//   if (inNamed) {
-//     buf.write(' }');
-//   } else if (inPositional) {
-//     buf.write(' ]');
-//   }
+    var outline = Outline();
+    var outlineRenderer = OutlineRenderer();
 
-//   return buf.toString();
-// }
+    for (var group in extensionItems.groups.values) {
+      outline.add(Heading(group.name, id: group.anchorId, level: 2));
+
+      for (var item in group.items) {
+        outline.add(Heading(outlineRenderer.render(group.type, item),
+            id: item.anchorId, level: 3));
+      }
+    }
+
+    return GenerationResults(buf.toString(), outline);
+  }
+}

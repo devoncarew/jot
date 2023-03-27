@@ -29,11 +29,17 @@
 ## Page layout and nav
 
 + dart script
-- full SPA
++ full SPA
 
 ## Search
 
 - simple, comprehensive
+
+## Server
+
+- have a server mode; allow preview of docs, and refreshing will pick up file
+  changes and re-generate (to allow a quick edit-refresh workflow for updating
+  docs)
 
 ## Generation
 
@@ -43,3 +49,12 @@
   library
 + fast
 - configuration via a yaml file
+
+## Misc
+
+- have a method to convert from an element to a valid in-page ID (we're using
+  the element name currently but that's not robust, like for operator names)
+
+## API
+
+- fix issues with top-level vars vs. getters vs setters in the model
