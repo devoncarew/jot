@@ -10,13 +10,13 @@ class Api {
   final List<Package> packages = [];
   final Resolver resolver = Resolver();
 
-  Library addLibrary(String packageName, LibraryElement element) {
+  LibraryItemContainer addLibrary(String packageName, LibraryElement element) {
     if (!packages.any((p) => p.name == packageName)) {
       packages.add(Package(packageName));
     }
 
     var package = packages.firstWhere((p) => p.name == packageName);
-    var library = Library(element);
+    var library = LibraryItemContainer(element);
     package.libraries.add(library);
     return library;
   }
@@ -37,7 +37,7 @@ class Api {
 
 class Package implements Comparable<Package> {
   final String name;
-  final List<Library> libraries = [];
+  final List<LibraryItemContainer> libraries = [];
 
   Package(this.name);
 
@@ -47,40 +47,16 @@ class Package implements Comparable<Package> {
   }
 }
 
-class Library extends ItemContainer {
-  Library(super.element) {
-    var exportNamespace = element.exportNamespace;
-    var elements = exportNamespace.definedNames.values
-        .where((element) => element.isPublic);
-
-    for (var e in elements.where((e) => e.isPublic)) {
-      if (e is InterfaceElement) {
-        var itemContainer = ItemContainer(e);
-        addChild(itemContainer);
-
-        for (var child in e.children.where((e) => e.isPublic)) {
-          if (child.isSynthetic) continue;
-
-          itemContainer.addChild(Item(child));
-        }
-      } else {
-        addChild(Item(e));
-      }
-    }
-  }
-
-  @override
-  LibraryElement get element => super.element as LibraryElement;
-}
-
 class Item {
   final Element element;
+
+  late final GroupType type = GroupType.typeFor(element);
 
   Item(this.element);
 
   // todo: make this more robust
   String get name {
-    var result = element.name!;
+    var result = element.displayName;
     if (result.isEmpty) {
       // todo: for now, assume this is a ctor
       result = element.enclosingElement!.name!;
@@ -88,7 +64,27 @@ class Item {
     return result;
   }
 
+  String get anchorId => stringToAnchorId(name);
+
   late String? docs = _calculateDocs();
+
+  ClassElement get asClass => element as ClassElement;
+
+  ExtensionElement get asExtension => element as ExtensionElement;
+
+  EnumElement get asEnum => element as EnumElement;
+
+  FieldElement get asField => element as FieldElement;
+
+  PropertyAccessorElement get asAccessor => element as PropertyAccessorElement;
+
+  MethodElement get asMethod => element as MethodElement;
+
+  FunctionElement get asFunction => element as FunctionElement;
+
+  ConstructorElement get asConstructor => element as ConstructorElement;
+
+  TypeAliasElement get asTypeAlias => element as TypeAliasElement;
 
   String? _calculateDocs() {
     var result = element.documentationComment;
@@ -136,21 +132,83 @@ class Item {
   }
 }
 
-class ItemContainer extends Item {
+abstract class Items extends Item {
   final Map<GroupType, Group> groups = SplayTreeMap();
 
-  ItemContainer(super.element);
+  Items(super.element);
 
-  void addChild(Item item) {
+  T addChild<T extends Item>(T item) {
     var groupType = GroupType.typeFor(item.element);
     if (groupType != GroupType.skip) {
       groups.putIfAbsent(groupType, () => Group(groupType)).items.add(item);
     }
+    return item;
   }
 
   Iterable<Item> get allChildren {
     return groups.entries.expand((entry) => entry.value.items);
   }
+
+  List<Item> get allChildrenSorted {
+    var items = allChildren.toList();
+    items.sort((a, b) => adjustedLexicalCompare(a.name, b.name));
+    return items;
+  }
+}
+
+class InterfaceElementItems extends Items {
+  InterfaceElementItems(InterfaceElement element) : super(element);
+
+  @override
+  InterfaceElement get element => super.element as InterfaceElement;
+}
+
+class ExtensionElementItems extends Items {
+  ExtensionElementItems(ExtensionElement element) : super(element);
+
+  @override
+  ExtensionElement get element => super.element as ExtensionElement;
+}
+
+class LibraryItemContainer extends Items {
+  LibraryItemContainer(super.element) {
+    var exportNamespace = element.exportNamespace;
+    var elements = exportNamespace.definedNames.values
+        .where((element) => element.isPublic)
+        .toList();
+    elements.sort((a, b) => adjustedLexicalCompare(a.name ?? '', b.name ?? ''));
+
+    for (var e in elements) {
+      if (e is InterfaceElement) {
+        var interfaceElement = e;
+
+        var interfaceElementChildren =
+            addChild(InterfaceElementItems(interfaceElement));
+
+        for (var child in interfaceElement.children.where((c) => c.isPublic)) {
+          if (child.isSynthetic) continue;
+
+          interfaceElementChildren.addChild(Item(child));
+        }
+      } else if (e is ExtensionElement) {
+        var extensionElement = e;
+
+        var extensionElementChildren =
+            addChild(ExtensionElementItems(extensionElement));
+
+        for (var child in extensionElement.children.where((c) => c.isPublic)) {
+          if (child.isSynthetic) continue;
+
+          extensionElementChildren.addChild(Item(child));
+        }
+      } else {
+        addChild(Item(e));
+      }
+    }
+  }
+
+  @override
+  LibraryElement get element => super.element as LibraryElement;
 }
 
 class Group implements Comparable<Group> {
@@ -161,6 +219,8 @@ class Group implements Comparable<Group> {
 
   String get name => type.title;
 
+  String get anchorId => stringToAnchorId(name);
+
   bool get containerType => type.containerType;
 
   @override
@@ -170,6 +230,8 @@ class Group implements Comparable<Group> {
 }
 
 enum GroupType implements Comparable<GroupType> {
+  // todo: records? mixins?
+
   // class members
   constructor('Constructors', {ElementKind.CONSTRUCTOR}),
   field('Fields', {ElementKind.FIELD}),
@@ -181,9 +243,10 @@ enum GroupType implements Comparable<GroupType> {
   function('Functions', {ElementKind.FUNCTION}),
   functionTypeAlias('Function Type Aliases', {ElementKind.FUNCTION_TYPE_ALIAS}),
   typeAlias('Type Aliases', {ElementKind.TYPE_ALIAS}),
-  $class('Classes', {ElementKind.CLASS}, containerType: true),
   $enum('Enums', {ElementKind.ENUM}, containerType: true),
+  $class('Classes', {ElementKind.CLASS}, containerType: true),
   $extension('Extensions', {ElementKind.EXTENSION}, containerType: true),
+  //$record('Records', {ElementKind.RECORD}, containerType: true),
 
   // catch-all
   skip('Skip', {

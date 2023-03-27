@@ -16,6 +16,7 @@ import 'src/generate.dart';
 import 'src/utils.dart';
 import 'src/workspace.dart';
 
+export 'src/api.dart';
 export 'src/workspace.dart';
 
 // todo: hoist to another isolate to get better progress reporting
@@ -37,7 +38,6 @@ class Jot {
 
     var htmlTemplate = await HtmlTemplate.initDir(outDir, stats: stats);
     var workspace = DocWorkspace.fromPackage(htmlTemplate, inDir);
-    // todo:
     var packageName = workspace.name.substring('package:'.length);
     var api = Api();
     workspace.api = api;
@@ -65,7 +65,7 @@ class Jot {
       var packageContainer = workspace.addChild(DocContainer(
         workspace,
         dartLibraryPath,
-      )) as DocContainer;
+      ));
 
       var library = api.addLibrary(packageName, resolvedLibrary.element);
 
@@ -74,20 +74,23 @@ class Jot {
         dartLibraryPath,
         htmlOutputPath,
         libraryGenerator(library),
-      );
+      )..importScript = 'package:$packageName/$dartLibraryPath';
 
       api.addResolution(resolvedLibrary.element, packageContainer.mainFile!);
 
-      for (var itemContainer
-          in library.allChildren.whereType<ItemContainer>()) {
+      for (var itemContainer in library.allChildrenSorted.whereType<Items>()) {
         var path =
             '${p.withoutExtension(dartLibraryPath)}/${itemContainer.name}.html';
-        var docFile = packageContainer.addChild(DocFile(
+        var docFile = DocFile(
           packageContainer,
           itemContainer.name,
           path,
-          itemContainerGenerator(itemContainer),
-        )) as DocFile;
+          itemContainer is ExtensionElementItems
+              ? extensionElementGenerator(itemContainer)
+              : interfaceElementGenerator(
+                  itemContainer as InterfaceElementItems),
+        );
+        packageContainer.addChild(docFile);
         api.addResolution(itemContainer.element, docFile);
       }
     }

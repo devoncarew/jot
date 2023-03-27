@@ -3,14 +3,19 @@ import 'dart:html';
 import 'interop.dart';
 import 'utils.dart';
 
-// TODO: gracefully disable some functionality if we're running from the
-//       filesystem
-
 // todo: remember the scroll position of the page content?
 
 // todo: improve animation of the sidenav opening / closing
 
 // todo: search ui
+
+// todo: update the outline view active element as the content area scrolls
+
+// todo: manage content area scroll with history push / pop
+
+// todo: move the data-path from doc-main-container to body
+
+final Path p = Path();
 
 void main() {
   // The web url that serves as the base of the generated content.
@@ -29,7 +34,7 @@ String _calcUrlBase() {
   var loc = window.location.href;
   var rel = _docMainContainer.attributes['data-path']!;
   for (var _ in rel.split('/')) {
-    loc = loc.substring(0, loc.lastIndexOf('/'));
+    loc = p.parent(loc);
   }
   return '$loc/';
 }
@@ -43,7 +48,12 @@ class Jot {
 
   Jot({required this.urlBase, required this.initialUrl}) {
     navManager = NavManager(urlBase: urlBase);
-    sidebarManager = SidebarManager(urlBase: urlBase);
+    sidebarManager = SidebarManager(this, urlBase: urlBase);
+  }
+
+  String get baseRel {
+    final rel = _docMainContainer.attributes['data-path']!;
+    return p.parent(rel);
   }
 
   void setup() {
@@ -53,9 +63,8 @@ class Jot {
       var light = document.documentElement!.attributes['data-theme'] == 'light';
 
       var stylesLink = $id<LinkElement>('theme-stylesheet');
-      var href = stylesLink.href;
-      var parent = href.substring(0, href.lastIndexOf('/'));
-      stylesLink.href = '$parent/styles-${light ? 'dark' : 'light'}.css';
+      stylesLink.href =
+          '$urlBase${light ? 'styles-dark.css' : 'styles-light.css'}';
       document.documentElement!.attributes['data-theme'] =
           light ? 'dark' : 'light';
     });
@@ -86,8 +95,10 @@ class Jot {
       anchor.onClick.listen((event) {
         event.preventDefault();
 
+        final relParent = p.parent(initialUrl);
         final relPath = anchor.attributes['href']!;
-        _swapFor('$urlBase$relPath', updateHistory: true);
+        final url = p.normalize(p.join(relParent, relPath));
+        _swapFor(url, updateHistory: true);
       });
     }
 
@@ -135,12 +146,7 @@ class Jot {
     var docMainChild = $id('doc-main-child');
 
     var filePath = docMainChild.attributes['data-path']!;
-    var parentPath = filePath;
-    if (filePath.contains('/')) {
-      parentPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
-    } else {
-      parentPath = '';
-    }
+    var parentPath = p.parent(filePath);
 
     // todo: don't allow urls to escape the dir root
 
@@ -155,32 +161,19 @@ class Jot {
 
         var url = relPath.startsWith('#')
             ? '$urlBase$filePath$relPath'
-            : '$urlBase$parentPath$relPath';
-        _swapFor(normalize(url), updateHistory: true);
+            : '$urlBase${p.join(parentPath, relPath)}';
+        _swapFor(p.normalize(url), updateHistory: true);
       });
     }
   }
 }
 
-String normalize(String path) {
-  if (!path.contains('..')) return path;
-
-  var tokens = path.split('/');
-
-  while (tokens.contains('..')) {
-    var index = tokens.indexOf('..');
-    tokens.removeAt(index - 1);
-    tokens.removeAt(index - 1);
-  }
-
-  return tokens.join('/');
-}
-
 class SidebarManager {
+  final Jot jot;
   final String urlBase;
   late Element _nav;
 
-  SidebarManager({required this.urlBase}) {
+  SidebarManager(this.jot, {required this.urlBase}) {
     _nav = querySelector('aside.docSidebarContainer')!;
 
     // hook up sidenav menu collapse buttons
@@ -196,16 +189,18 @@ class SidebarManager {
   void updateActive(Uri uri) {
     uri = uri.removeFragment();
 
-    String rel = uri.toString().substring(urlBase.length);
+    var rel = uri.toString().substring(urlBase.length);
     if (rel.startsWith('/')) {
       rel = rel.substring(1);
     }
+    rel = p.normalize(p.relative(rel, from: jot.baseRel));
 
     AnchorElement? itemAnchor;
 
     // all a hrefs should not have menu__link--active except for the active one
     for (var anchor in _nav.querySelectorAll<AnchorElement>('a[data-jot]')) {
       var href = anchor.attributes['href'];
+
       if (href == rel) itemAnchor = anchor;
       anchor.classes.toggle('menu__link--active', href == rel);
     }
@@ -242,6 +237,7 @@ class NavManager {
     uri = uri.removeFragment();
 
     var rel = uri.toString().substring(urlBase.length);
+    // todo:
     if (rel.startsWith('/')) {
       rel = rel.substring(1);
     }

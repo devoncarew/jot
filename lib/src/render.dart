@@ -1,5 +1,8 @@
 import 'package:analyzer/dart/element/element.dart';
-import 'package:jot/src/api.dart';
+import 'package:analyzer/dart/element/type.dart';
+
+import 'api.dart';
+import 'utils.dart';
 
 abstract class Renderer {
   String render(GroupType type, Item item) {
@@ -21,10 +24,10 @@ abstract class Renderer {
         return handleFunctionTypeAlias(item);
       case GroupType.typeAlias:
         return handleTypeAlias(item);
-      case GroupType.$class:
-        return handleClass(item);
       case GroupType.$enum:
         return handleEnum(item);
+      case GroupType.$class:
+        return handleClass(item);
       case GroupType.$extension:
         return handleExtension(item);
 
@@ -52,10 +55,9 @@ abstract class Renderer {
 class OutlineRenderer extends Renderer {
   @override
   String handleConstructor(Item item) {
-    var name = item.element.name!;
-    var parent = item.element.enclosingElement!;
-    name = name.isEmpty ? parent.name! : '${parent.name}.$name';
-    return '$name()';
+    var element = item.asConstructor;
+    var arity = element.parameters.isEmpty ? '' : '...';
+    return '${element.displayName}($arity)';
   }
 
   @override
@@ -67,15 +69,260 @@ class OutlineRenderer extends Renderer {
 
   @override
   String handleMethod(Item item) {
-    if ((item.element as ExecutableElement).isOperator) {
+    var element = item.asMethod;
+    if (element.isOperator) {
       return item.name;
     } else {
-      return '${item.name}()';
+      var arity = element.parameters.isEmpty ? '' : '...';
+      return '${item.name}($arity)';
     }
   }
 
   @override
   String handleFunction(Item item) {
-    return '${item.name}()';
+    var element = item.asFunction;
+    var arity = element.parameters.isEmpty ? '' : '...';
+    return '${item.name}($arity)';
+  }
+}
+
+class CodeRepresentationRenderer extends Renderer {
+  String writeAnnotations(Item item) {
+    var element = item.element;
+    if (element.metadata.isEmpty) return '';
+
+    var buf = StringBuffer('<p class="annotations-container">\n');
+    if (element.metadata.isNotEmpty) {
+      for (var annotation in element.metadata) {
+        var meta = annotation.element;
+        if (meta == null) continue;
+
+        var text = annotation.toSource();
+        buf.writeln('<span class="badge badge--secondary">'
+            '${htmlEscape(text)}</span>');
+        // buf.writeln('<code class="annotation">@$name</code>');
+      }
+    }
+
+    buf.writeln('</p>');
+    return buf.toString();
+  }
+
+  String describeMethodParameters(ExecutableElement element) {
+    var parameters = element.parameters;
+
+    var buf = StringBuffer();
+
+    var inNamed = false;
+    var inPositional = false;
+
+    for (var param in parameters) {
+      if (buf.isNotEmpty) buf.write(', ');
+
+      if (!inNamed && !inPositional) {
+        if (param.isNamed) {
+          inNamed = true;
+          buf.write('{');
+        } else if (param.isOptionalPositional) {
+          inPositional = true;
+          buf.write('[');
+        }
+      }
+
+      param.appendToWithoutDelimiters(buf, withNullability: true);
+    }
+
+    if (buf.length >= 58) {
+      buf.write(',');
+    }
+
+    if (inNamed) {
+      buf.write(' }');
+    } else if (inPositional) {
+      buf.write(' ]');
+    }
+
+    return buf.toString();
+  }
+
+  @override
+  String handleDefault(Item item) {
+    var element = item.element;
+
+    var buf = StringBuffer();
+
+    buf.write('${element.kind.name} ');
+    buf.write(element.name);
+
+    return htmlEscape(buf.toString());
+  }
+
+  @override
+  String handleClass(Item item) {
+    var element = item.asClass;
+
+    var buf = StringBuffer();
+
+    buf.write('class ');
+    // todo: type parameters
+    buf.write(element.name);
+
+    // todo: superclasses, interfaces, ...
+
+    buf.writeln(' { ... }');
+
+    return htmlEscape(buf.toString());
+  }
+
+  @override
+  String handleExtension(Item item) {
+    var element = item.asExtension;
+
+    var buf = StringBuffer();
+
+    buf.write('extension ');
+    // todo: type parameters
+    buf.write('${element.name} ');
+    // todo: handle typedef extensions (i.e., 'int Function(T, T)')
+    buf.write('on ${element.extendedType.element?.name} ');
+    buf.writeln('{ ... }');
+
+    return htmlEscape(buf.toString());
+  }
+
+  @override
+  String handleField(Item item) {
+    var element = item.asField;
+
+    var buf = StringBuffer();
+    // todo: have utility code to visit modifiers
+    if (element.isLate) buf.write('late ');
+    if (element.isConst) buf.write('const ');
+    if (element.isFinal) buf.write('final ');
+    if (element.isStatic) buf.write('static ');
+
+    buf.write('${renderDartType(element.type)} ');
+
+    buf.write(element.name);
+
+    return htmlEscape(buf.toString());
+  }
+
+  @override
+  String handleAccessor(Item item) {
+    var element = item.asAccessor;
+
+    var buf = StringBuffer();
+
+    if (element.isStatic) buf.write('static ');
+
+    if (element.isGetter) {
+      // type get name
+      buf.write('${renderDartType(element.returnType)} ');
+      buf.writeln('get ${element.name}');
+    } else {
+      // set name(type value)
+      buf.write('set ${element.name}(');
+      buf.write('${renderDartType(element.returnType)} ');
+      buf.writeln(' value)');
+    }
+
+    return htmlEscape(buf.toString());
+  }
+
+  @override
+  String handleConstructor(Item item) {
+    var element = item.asConstructor;
+
+    var buf = StringBuffer();
+    // todo: have utility code to visit modifiers
+
+    var isConst = false;
+
+    if (element.isFactory) {
+      buf.write('factory ');
+    } else if (element.isConst) {
+      buf.write('const ');
+      isConst = true;
+    }
+
+    buf.write('${element.displayName}(');
+    buf.write(describeMethodParameters(element));
+    buf.writeln(')');
+
+    return htmlEscape(DartFormat.asConstructor(
+      buf.toString(),
+      className: element.enclosingElement.name,
+      isConst: isConst,
+    ));
+  }
+
+  @override
+  String handleMethod(Item item) {
+    var element = item.asMethod;
+
+    var buf = StringBuffer();
+    // todo: have utility code to visit modifiers
+    // if (element.isLate) buf.write('late ');
+    // if (element.isConst) buf.write('const ');
+    // if (element.isFinal) buf.write('final ');
+    if (element.isStatic) buf.write('static ');
+
+    buf.write('${renderDartType(element.returnType)} ');
+
+    if (element.isOperator) buf.write('operator ');
+    buf.write('${element.displayName}(');
+    buf.write(describeMethodParameters(element));
+    buf.writeln(')');
+
+    return htmlEscape(DartFormat.asMethod(buf.toString()));
+  }
+
+  @override
+  String handleFunction(Item item) {
+    var element = item.asFunction;
+
+    var buf = StringBuffer();
+    // todo: have utility code to visit modifiers
+    // if (element.isLate) buf.write('late ');
+    // if (element.isConst) buf.write('const ');
+    // if (element.isFinal) buf.write('final ');
+    // if (element.isStatic) buf.write('static ');
+
+    buf.write('${renderDartType(element.returnType)} ');
+
+    buf.write('${element.name}(');
+    buf.write(describeMethodParameters(element));
+    buf.writeln(')');
+
+    return htmlEscape(DartFormat.asFunction(buf.toString()));
+  }
+
+  @override
+  String handleFunctionTypeAlias(Item item) {
+    var element = item.asTypeAlias;
+
+    // typedef name = void Function(String msg);
+    var buf = StringBuffer('typedef ');
+    buf.write('${element.name} = ');
+    buf.writeln(renderDartType(element.aliasedType));
+
+    return htmlEscape(DartFormat.asTypeAlias(buf.toString()));
+  }
+
+  @override
+  String handleTypeAlias(Item item) {
+    var element = item.asTypeAlias;
+
+    // typedef IntList = List<int>;
+    var buf = StringBuffer('typedef ');
+    buf.write('${element.name} = ');
+    buf.writeln(renderDartType(element.aliasedType));
+
+    return htmlEscape(DartFormat.asTypeAlias(buf.toString()));
+  }
+
+  String renderDartType(DartType type) {
+    return type.getDisplayString(withNullability: true);
   }
 }

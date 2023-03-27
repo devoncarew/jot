@@ -122,12 +122,52 @@
       --ifm-h1-font-size: 2.5rem;
     }
 
+    .markdown h3 {
+      border-bottom: 1px solid #555;
+      padding-bottom: 0.3em;
+      margin-bottom: 20px;
+    }
+
     .markdown td p {
       margin-bottom: 0;
     }
 
     .markdown td {
       vertical-align: top;
+    }
+
+    td.item-docs {
+      width: 100%;
+    }
+
+    p.annotations-container {
+      text-align: start;
+      margin-bottom: 16px;
+    }
+
+    .markdown code.annotation {
+      margin-right: 0.5em;
+      padding-left: 0.25em;
+      padding-right: 0.25em;
+    }
+
+    .markdown>pre {
+      /* margin-left: 2em; */
+      margin-right: 0;
+    }
+
+    .markdown>pre.declaration {
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    /* todo: clean up the css here */
+    .markdown span.symbol-type {
+      float: right;
+      font-size: 14px;
+      line-height: 2.7em;
+      text-emphasis: none;
+      color: #777;
     }
   </style>
 </head>
