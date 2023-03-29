@@ -9,6 +9,9 @@ import 'utils.dart';
 class Api {
   final List<Package> packages = [];
   final Resolver resolver = Resolver();
+  final Map<Element, Item> elementItemMap = {};
+
+  Api();
 
   LibraryItemContainer addLibrary(String packageName, LibraryElement element) {
     if (!packages.any((p) => p.name == packageName)) {
@@ -19,6 +22,55 @@ class Api {
     var library = LibraryItemContainer(element);
     package.libraries.add(library);
     return library;
+  }
+
+  void finish() {
+    // populate the element item map
+    for (var package in packages) {
+      for (var library in package.libraries) {
+        _process(library);
+      }
+    }
+
+    // todo: perform calculations; super, children, ...
+    elementItemMap.values.forEach(_calculateFor);
+  }
+
+  void _process(Item item) {
+    elementItemMap[item.element] = item;
+
+    if (item is Items) {
+      item.allChildren.forEach(_process);
+    }
+  }
+
+  void _calculateFor(Item item) {
+    if (item.element is InterfaceElement) {
+      var element = item.element as InterfaceElement;
+
+      var superItem = itemForElement(element.supertype?.element);
+      superItem?.addRelationship(item, RelationshipKind.$subclasses);
+
+      for (var $interface in element.interfaces) {
+        var interfaceItem = itemForElement($interface.element);
+        interfaceItem?.addRelationship(item, RelationshipKind.$implements);
+      }
+
+      for (var $mixin in element.mixins) {
+        var interfaceItem = itemForElement($mixin.element);
+        interfaceItem?.addRelationship(item, RelationshipKind.$mixes);
+      }
+    } else if (item.element is ExtensionElement) {
+      var element = item.element as ExtensionElement;
+
+      var extendedElement = element.extendedType.element;
+      var extendedItem = itemForElement(extendedElement);
+      extendedItem?.addRelationship(item, RelationshipKind.$extended);
+    }
+  }
+
+  Item? itemForElement(Element? element) {
+    return elementItemMap[element];
   }
 
   // todo: specialize libraries, classes?
@@ -47,10 +99,12 @@ class Package implements Comparable<Package> {
   }
 }
 
+typedef RelationshipMap = Map<RelationshipKind, List<Item>>;
+
 class Item {
   final Element element;
-
   late final GroupType type = GroupType.typeFor(element);
+  final RelationshipMap relationships = SplayTreeMap();
 
   Item(this.element);
 
@@ -85,6 +139,10 @@ class Item {
   ConstructorElement get asConstructor => element as ConstructorElement;
 
   TypeAliasElement get asTypeAlias => element as TypeAliasElement;
+
+  void addRelationship(Item item, RelationshipKind kind) {
+    relationships.putIfAbsent(kind, () => []).add(item);
+  }
 
   String? _calculateDocs() {
     var result = element.documentationComment;
@@ -154,6 +212,15 @@ abstract class Items extends Item {
     items.sort((a, b) => adjustedLexicalCompare(a.name, b.name));
     return items;
   }
+
+  void sort() {
+    for (var entry in groups.entries) {
+      // have enums retain their declaration order
+      if (entry.key == GroupType.enumValue) continue;
+
+      entry.value.sort();
+    }
+  }
 }
 
 class InterfaceElementItems extends Items {
@@ -190,6 +257,8 @@ class LibraryItemContainer extends Items {
 
           interfaceElementChildren.addChild(Item(child));
         }
+
+        interfaceElementChildren.sort();
       } else if (e is ExtensionElement) {
         var extensionElement = e;
 
@@ -201,6 +270,8 @@ class LibraryItemContainer extends Items {
 
           extensionElementChildren.addChild(Item(child));
         }
+
+        extensionElementChildren.sort();
       } else {
         addChild(Item(e));
       }
@@ -223,6 +294,10 @@ class Group implements Comparable<Group> {
 
   bool get containerType => type.containerType;
 
+  void sort() {
+    items.sort((a, b) => adjustedLexicalCompare(a.name, b.name));
+  }
+
   @override
   int compareTo(Group other) {
     return type.index - other.type.index;
@@ -234,6 +309,7 @@ enum GroupType implements Comparable<GroupType> {
 
   // class members
   constructor('Constructors', {ElementKind.CONSTRUCTOR}),
+  enumValue('Values', {}),
   field('Fields', {ElementKind.FIELD}),
   accessor('Accessors', {ElementKind.GETTER, ElementKind.SETTER}),
   method('Methods', {ElementKind.METHOD}),
@@ -267,8 +343,12 @@ enum GroupType implements Comparable<GroupType> {
     return index - other.index;
   }
 
+  /// Return the [GroupType] for the given [element].
   static GroupType typeFor(Element element) {
     final kind = element.kind;
+    if (element is FieldElement && element.isEnumConstant) {
+      return GroupType.enumValue;
+    }
     for (var val in GroupType.values) {
       if (val.elementKinds.contains(kind)) {
         return val;
@@ -309,5 +389,21 @@ class Resolver {
     } else {
       return '<span>$text</span>';
     }
+  }
+}
+
+enum RelationshipKind implements Comparable<RelationshipKind> {
+  $subclasses('Subclassed by'),
+  $implements('Implemented by'),
+  $mixes('Mixed into'),
+  $extended('Extended by');
+
+  final String title;
+
+  const RelationshipKind(this.title);
+
+  @override
+  int compareTo(RelationshipKind other) {
+    return index - other.index;
   }
 }

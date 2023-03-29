@@ -304,11 +304,11 @@ class DocWorkspace extends DocContainer {
       buf.writeln('</ul>');
       return buf.toString();
     } else if (entity is DocFile) {
-      var active = entity == page ? 'menu__link--active' : '';
+      var active = entity == page ? ' menu__link--active' : '';
 
-      return '<li class="theme-doc-sidebar-item-link menu__list-item">'
-          '<a class="menu__link $active" '
-          '  href="${pathTo(entity, from: page)}" data-jot>${entity.name}</a>'
+      return '<li class="menu__list-item">'
+          '<a class="menu__link$active" '
+          'href="${pathTo(entity, from: page)}" data-jot>${entity.name}</a>'
           '</li>';
     } else {
       entity as DocContainer;

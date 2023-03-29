@@ -10,6 +10,7 @@ lib/resources/script.js.map
 
 site/args/
 site/code_builder/
+site/collection/
 site/jot/
 site/path/
 site/sdk/
