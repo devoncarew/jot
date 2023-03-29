@@ -6,23 +6,25 @@ import 'package:path/path.dart' as p;
 import 'utils.dart';
 
 class HtmlTemplate {
-  // todo: put these in a resources directory
-
   static Future<HtmlTemplate> initDir(Directory dir, {Stats? stats}) async {
-    final styleLightFile = File(p.join(dir.path, 'styles-light.css'));
-    var styleData = await _loadResourceData(styleLightFile.name);
-    styleLightFile.writeAsStringSync(styleData);
-    stats?.genFile(styleLightFile);
+    const resources = [
+      'script.js',
+      'styles.css',
+      'styles-dark.css',
+      'styles-light.css',
+      'toggle-dark.svg',
+      'toggle-light.svg',
+    ];
 
-    final styleDarkFile = File(p.join(dir.path, 'styles-dark.css'));
-    styleData = await _loadResourceData(styleDarkFile.name);
-    styleDarkFile.writeAsStringSync(styleData);
-    stats?.genFile(styleDarkFile);
-
-    final scriptFile = File(p.join(dir.path, 'script.js'));
-    final scriptData = await _loadResourceData(scriptFile.name);
-    scriptFile.writeAsStringSync(scriptData);
-    stats?.genFile(scriptFile);
+    for (var resource in resources) {
+      final file = File(p.join(dir.path, 'resources', resource));
+      if (!file.parent.existsSync()) {
+        file.parent.createSync(recursive: true);
+      }
+      var styleData = await _loadResourceData(resource);
+      file.writeAsStringSync(styleData);
+      stats?.genFile(file);
+    }
 
     final htmlData = await _loadResourceData('index.html');
     return HtmlTemplate._(htmlData);
@@ -43,7 +45,7 @@ class HtmlTemplate {
     String toc = '',
     String footer = '',
   }) {
-    return htmlTemplateData
+    var results = htmlTemplateData
         .replaceAll('{{ page-title }}', pageTitle)
         .replaceAll('{{ prefix }}', pathPrefix)
         .replaceAll('{{ pageRef }}', pageRef)
@@ -53,6 +55,34 @@ class HtmlTemplate {
         .replaceFirst('{{ page-content }}', pageContent)
         .replaceFirst('{{ toc }}', toc)
         .replaceFirst('{{ footer }}', footer);
+
+    var lastWasBlank = false;
+
+    results = results
+        .split('\n')
+        .map((line) {
+          line = line.trimRight();
+
+          if (line.endsWith('-->') && line.trim().startsWith('<!--')) {
+            line = '';
+          }
+
+          if (line.isEmpty) {
+            if (lastWasBlank) {
+              return null;
+            } else {
+              lastWasBlank = true;
+              return line;
+            }
+          } else {
+            lastWasBlank = false;
+            return line;
+          }
+        })
+        .whereType<String>()
+        .join('\n');
+
+    return '$results\n';
   }
 }
 

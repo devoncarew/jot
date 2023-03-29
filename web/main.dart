@@ -64,7 +64,7 @@ class Jot {
 
       var stylesLink = $id<LinkElement>('theme-stylesheet');
       stylesLink.href =
-          '$urlBase${light ? 'styles-dark.css' : 'styles-light.css'}';
+          '${urlBase}resources/styles-${light ? 'dark' : 'light'}.css';
       document.documentElement!.attributes['data-theme'] =
           light ? 'dark' : 'light';
     });

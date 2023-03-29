@@ -1,5 +1,3 @@
-/// Woot there some docs.
-///
 /// To create a new [DocWorkspace], see [DocWorkspace.fromPackage].
 ///
 /// To generate docs, see [DocWorkspace.generate].
@@ -96,9 +94,12 @@ class Jot {
     }
 
     cancelProgress();
-    log.stdout('');
 
     // build model
+    api.finish();
+
+    // generate
+    log.stdout('');
     log.stdout('Generating docs...');
 
     // generate docs

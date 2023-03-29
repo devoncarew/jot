@@ -148,7 +148,9 @@ class InterfaceElementGenerator {
       '${codeRenderer.render(classItems.type, classItems)}'
       '</code></pre>',
     );
-
+    writeAncestors(buf);
+    writeChildRelationships(
+        buf, classItems.relationships, thisFile, workspace.api!);
     if (classItems.docs != null) {
       buf.writeln(convertMarkdown(classItems.docs!));
     }
@@ -158,20 +160,39 @@ class InterfaceElementGenerator {
     for (var group in classItems.groups.values) {
       buf.writeln('<h2 id="${group.anchorId}">${group.name}</h2>');
 
-      for (var item in group.items) {
-        buf.writeln(
-          '<h3 id="${item.anchorId}">${pageItemRenderer.render(group.type, item)}'
-          '<span class="symbol-type">${item.element.kind.displayName}</span>'
-          '</h3>',
-        );
-        buf.write(codeRenderer.writeAnnotations(item));
-        buf.writeln(
-          '<pre class="declaration"><code>'
-          '${codeRenderer.render(group.type, item)}'
-          '</code></pre>',
-        );
-        if (item.docs != null) {
-          buf.writeln(convertMarkdown(item.docs!));
+      if (group.type == GroupType.enumValue) {
+        // For enums, add a 'values' table.
+        buf.writeln('<table>');
+
+        // todo: also include information about the enum's value
+
+        for (var item in group.items) {
+          buf.write('<tr>');
+          buf.writeln('<td id="${item.anchorId}">${item.name}</td>');
+          buf.write('<td class="item-docs">');
+          if (item.docs != null) {
+            buf.writeln(convertMarkdown(item.docs!));
+          }
+          buf.write('</td></tr>');
+        }
+
+        buf.writeln('</table>');
+      } else {
+        for (var item in group.items) {
+          buf.writeln(
+            '<h3 id="${item.anchorId}">${pageItemRenderer.render(group.type, item)}'
+            '<span class="symbol-type">${item.element.kind.displayName}</span>'
+            '</h3>',
+          );
+          buf.write(codeRenderer.writeAnnotations(item));
+          buf.writeln(
+            '<pre class="declaration"><code>'
+            '${codeRenderer.render(group.type, item)}'
+            '</code></pre>',
+          );
+          if (item.docs != null) {
+            buf.writeln(convertMarkdown(item.docs!));
+          }
         }
       }
     }
@@ -182,13 +203,55 @@ class InterfaceElementGenerator {
     for (var group in classItems.groups.values) {
       outline.add(Heading(group.name, id: group.anchorId, level: 2));
 
-      for (var item in group.items) {
-        outline.add(Heading(outlineRenderer.render(group.type, item),
-            id: item.anchorId, level: 3));
+      if (group.type != GroupType.enumValue) {
+        for (var item in group.items) {
+          outline.add(Heading(outlineRenderer.render(group.type, item),
+              id: item.anchorId, level: 3));
+        }
       }
     }
 
     return GenerationResults(buf.toString(), outline);
+  }
+
+  void writeAncestors(StringBuffer out) {
+    var buf = StringBuffer();
+    final api = workspace.api!;
+
+    var element = classItems.element;
+    var superElement = element.supertype?.element;
+    if (superElement != null) {
+      buf.writeln('<tr><td class="item-title">Extends</td>');
+      buf.write('<td class="item-docs">');
+      var ref = api.hrefOrSpan(superElement.name, superElement, from: thisFile);
+      buf.write('<code>$ref</code></td></tr>');
+    }
+
+    if (element.interfaces.isNotEmpty) {
+      buf.writeln('<tr><td class="item-title">Implements</td>');
+      buf.write('<td class="item-docs">');
+      buf.write(element.interfaces
+          .map((i) => api.hrefOrSpan(i.element.name, i.element, from: thisFile))
+          .map((s) => '<code>$s</code>')
+          .join(', '));
+      buf.write('</td></tr>');
+    }
+
+    if (element.mixins.isNotEmpty) {
+      buf.writeln('<tr><td class="item-title">Mixins</td>');
+      buf.write('<td class="item-docs">');
+      buf.write(element.mixins
+          .map((m) => api.hrefOrSpan(m.element.name, m.element, from: thisFile))
+          .map((s) => '<code>$s</code>')
+          .join(', '));
+      buf.write('</td></tr>');
+    }
+
+    if (buf.isNotEmpty) {
+      out.writeln('<table>');
+      out.write(buf.toString());
+      out.writeln('</table>');
+    }
   }
 }
 
@@ -227,7 +290,9 @@ class ExtentionElementGenerator {
       '${codeRenderer.render(extensionItems.type, extensionItems)}'
       '</code></pre>',
     );
-
+    writeAncestors(buf);
+    writeChildRelationships(
+        buf, extensionItems.relationships, thisFile, workspace.api!);
     if (extensionItems.docs != null) {
       buf.writeln(convertMarkdown(extensionItems.docs!));
     }
@@ -269,4 +334,48 @@ class ExtentionElementGenerator {
 
     return GenerationResults(buf.toString(), outline);
   }
+
+  void writeAncestors(StringBuffer out) {
+    var buf = StringBuffer();
+    final api = workspace.api!;
+
+    var element = extensionItems.asExtension;
+    var extendedElement = element.extendedType.element;
+    if (extendedElement != null && extendedElement.name != null) {
+      buf.writeln('<tr><td class="item-title">Extension on</td>');
+      buf.write('<td class="item-docs">');
+      var ref = api.hrefOrSpan(extendedElement.name!, extendedElement,
+          from: thisFile);
+      buf.write('<code>$ref</code></td></tr>');
+    }
+
+    if (buf.isNotEmpty) {
+      out.writeln('<table>');
+      out.write(buf.toString());
+      out.writeln('</table>');
+    }
+  }
+}
+
+void writeChildRelationships(StringBuffer buf, RelationshipMap relationships,
+    DocFile thisFile, Api api) {
+  if (relationships.isEmpty) return;
+
+  buf.writeln('<table>');
+
+  for (var kind in relationships.keys) {
+    buf.write('<tr>');
+    buf.write('<td class="item-title">${kind.title}</td>');
+
+    buf.write('<td class="item-docs">');
+    var items = relationships[kind]!;
+    items.sort((a, b) => adjustedLexicalCompare(a.name, b.name));
+    buf.write(items.map((item) {
+      var ref = api.hrefOrSpan(item.name, item.element, from: thisFile);
+      return '<code>$ref</code>';
+    }).join(', '));
+    buf.writeln('</td></tr>');
+  }
+
+  buf.writeln('</table>');
 }

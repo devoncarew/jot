@@ -1,0 +1,177 @@
+:root {
+  --doc-sidebar-width: 300px;
+  --doc-sidebar-hidden-width: 30px;
+
+  --ifm-footer-padding-vertical: var(--ifm-spacing-vertical);
+}
+
+[data-theme=dark]:root {
+  --ifm-background-color: #1b1b1d;
+  --ifm-footer-background-color: #2b3137;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.docPage {
+  display: flex;
+  width: 100%;
+}
+
+.docSidebarContainer {
+  border-right: 1px solid var(--ifm-toc-border-color);
+  -webkit-clip-path: inset(0);
+  clip-path: inset(0);
+  display: block;
+  margin-top: calc(var(--ifm-navbar-height)*-1);
+  transition: width var(--ifm-transition-fast) ease;
+  width: var(--doc-sidebar-width);
+  will-change: width;
+}
+
+.docMainContainer {
+  flex-grow: 1;
+  max-width: calc(100% - var(--doc-sidebar-width));
+  display: flex;
+  width: 100%;
+}
+
+.colorModeToggle {
+  height: 2rem;
+  width: 2rem;
+}
+
+.toggleButton {
+  align-items: center;
+  border-radius: 50%;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  transition: background var(--ifm-transition-fast);
+  width: 100%;
+}
+
+[data-theme=dark] .lightToggleIcon,
+[data-theme=light] .darkToggleIcon {
+  display: none;
+}
+
+.breadcrumbsContainer {
+  margin-bottom: 0.8rem;
+  --ifm-breadcrumb-size-multiplier: 0.8;
+}
+
+.breadcrumbHomeIcon {
+  height: 1.1rem;
+  position: relative;
+  top: 1px;
+  vertical-align: top;
+  width: 1.1rem;
+}
+
+.sidebarViewport {
+  height: 100%;
+  max-height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-top: var(--ifm-navbar-height);
+  width: var(--doc-sidebar-width);
+}
+
+.menu_jmj1 {
+  padding: 0.5rem 0 0.5rem 0.5rem;
+  scrollbar-gutter: stable;
+  flex-grow: 1;
+}
+
+.docItemCol {
+  max-width: 75% !important;
+}
+
+.tableOfContents {
+  max-height: calc(100vh - var(--ifm-navbar-height) - 2rem);
+  overflow-y: auto;
+  position: sticky;
+  top: calc(var(--ifm-navbar-height) + 1rem);
+}
+
+.markdown h1:first-child {
+  --ifm-h1-font-size: 2.5rem;
+}
+
+.markdown h3 {
+  border-bottom: 1px solid #555;
+  padding-bottom: 0.3em;
+  margin-bottom: 20px;
+}
+
+.markdown td p {
+  margin-bottom: 0;
+}
+
+.markdown td {
+  vertical-align: top;
+}
+
+td.item-title {
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+td.item-docs {
+  width: 100%;
+}
+
+p.annotations-container {
+  text-align: start;
+  margin-bottom: 16px;
+}
+
+.markdown code.annotation {
+  margin-right: 0.5em;
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+}
+
+.markdown>pre {
+  /* margin-left: 2em; */
+  margin-right: 0;
+}
+
+.markdown>pre.declaration {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* todo: clean up the css here */
+.markdown span.symbol-type {
+  float: right;
+  font-size: 14px;
+  line-height: 2.7em;
+  text-emphasis: none;
+  color: #777;
+}
+
+.markdown code a {
+  color: var(--ifm-color-primary-lighter);
+  padding: 0 2px;
+}
+
+.markdown code a:hover {
+  color: var(--ifm-link-color);
+}
+
+a.code,
+span.code {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: var(--ifm-code-font-size);
+}

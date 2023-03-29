@@ -140,6 +140,9 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     }
   }
 
+  // build model
+  api.finish();
+
   // generate
   log.stdout('');
   log.stdout('Generating docs...');

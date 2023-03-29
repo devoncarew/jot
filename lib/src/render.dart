@@ -163,12 +163,20 @@ class CodeRepresentationRenderer extends Renderer {
 
     var buf = StringBuffer();
 
-    buf.write('class ');
-    // todo: type parameters
-    buf.write(element.name);
+    buf.write(element.getDisplayString(withNullability: true));
 
-    // todo: superclasses, interfaces, ...
+    buf.writeln(' { ... }');
 
+    return htmlEscape(buf.toString());
+  }
+
+  @override
+  String handleEnum(Item item) {
+    var element = item.asEnum;
+
+    var buf = StringBuffer();
+
+    buf.write(element.getDisplayString(withNullability: true));
     buf.writeln(' { ... }');
 
     return htmlEscape(buf.toString());
@@ -180,12 +188,8 @@ class CodeRepresentationRenderer extends Renderer {
 
     var buf = StringBuffer();
 
-    buf.write('extension ');
-    // todo: type parameters
-    buf.write('${element.name} ');
-    // todo: handle typedef extensions (i.e., 'int Function(T, T)')
-    buf.write('on ${element.extendedType.element?.name} ');
-    buf.writeln('{ ... }');
+    buf.write(element.getDisplayString(withNullability: true));
+    buf.writeln(' { ... }');
 
     return htmlEscape(buf.toString());
   }
