@@ -32,11 +32,10 @@ class LibraryGenerator {
   });
 
   GenerationResults generate() {
-    var codeRenderer = CodeRepresentationRenderer();
+    var api = workspace.api!;
+    var linkedCodeRenderer = LinkedCodeRenderer(api.resolver, thisFile);
 
     var buf = StringBuffer();
-
-    var api = workspace.api!;
 
     if (thisFile.importScript != null) {
       buf.writeln('<h1>${thisFile.name}</h1>');
@@ -50,7 +49,21 @@ class LibraryGenerator {
     }
 
     if (library.docs != null) {
-      buf.writeln(convertMarkdown(library.docs!));
+      // todo: also support resolution for class contexts
+      // todo: also support resolution for method contexts
+      // todo: also support compound references - Class.field, Class.method
+
+      // todo: see CommentReferenceResolver
+      // todo: and:
+      //   https://github.com/dart-lang/dartdoc/blob/master/lib/src/comment_references/parser.dart
+
+      // // SomeParsedLibraryResult, ParsedLibraryResult
+      // var sdsdf =
+      //     library.element.session.getParsedLibraryByElement(library.element);
+      // parseString(content: 'String');
+
+      buf.writeln(convertMarkdown(library.docs!,
+          linkResolver: library.markdownLinkResolver(api.resolver)));
     }
 
     var pageItemRenderer = OutlineRenderer();
@@ -71,7 +84,8 @@ class LibraryGenerator {
           buf.write('</td>');
           buf.write('<td class="item-docs">');
           if (item.docs != null) {
-            buf.writeln(convertMarkdown(firstSentence(item.docs!)));
+            buf.writeln(convertMarkdown(firstSentence(item.docs!),
+                linkResolver: item.markdownLinkResolver(api.resolver)));
           }
           buf.write('</td></tr>');
         }
@@ -84,14 +98,11 @@ class LibraryGenerator {
             '<span class="symbol-type">${item.element.kind.displayName}</span>'
             '</h3>',
           );
-          buf.write(codeRenderer.writeAnnotations(item));
-          buf.writeln(
-            '<pre class="declaration"><code>'
-            '${codeRenderer.render(group.type, item)}'
-            '</code></pre>',
-          );
+          buf.write(CodeRepresentationRenderer.writeAnnotations(item));
+          buf.writeln(linkedCodeRenderer.render(group.type, item));
           if (item.docs != null) {
-            buf.writeln(convertMarkdown(item.docs!));
+            buf.writeln(convertMarkdown(item.docs!,
+                linkResolver: item.markdownLinkResolver(api.resolver)));
           }
         }
       }
@@ -138,21 +149,23 @@ class InterfaceElementGenerator {
   });
 
   GenerationResults generate() {
-    var codeRenderer = CodeRepresentationRenderer();
+    var api = workspace.api!;
+
+    // todo: replace some uses of codeRenderer with linkedCodeRenderer
+
+    // var codeRenderer = CodeRepresentationRenderer();
+    var linkedCodeRenderer = LinkedCodeRenderer(api.resolver, thisFile);
 
     var buf = StringBuffer();
     buf.writeln('<h1>${classItems.name}</h1>');
-    buf.write(codeRenderer.writeAnnotations(classItems));
-    buf.writeln(
-      '<pre class="declaration"><code>'
-      '${codeRenderer.render(classItems.type, classItems)}'
-      '</code></pre>',
-    );
+    buf.write(CodeRepresentationRenderer.writeAnnotations(classItems));
+    buf.writeln(linkedCodeRenderer.render(classItems.type, classItems));
     writeAncestors(buf);
     writeChildRelationships(
         buf, classItems.relationships, thisFile, workspace.api!);
     if (classItems.docs != null) {
-      buf.writeln(convertMarkdown(classItems.docs!));
+      buf.writeln(convertMarkdown(classItems.docs!,
+          linkResolver: classItems.markdownLinkResolver(api.resolver)));
     }
 
     var pageItemRenderer = OutlineRenderer();
@@ -171,7 +184,8 @@ class InterfaceElementGenerator {
           buf.writeln('<td id="${item.anchorId}">${item.name}</td>');
           buf.write('<td class="item-docs">');
           if (item.docs != null) {
-            buf.writeln(convertMarkdown(item.docs!));
+            buf.writeln(convertMarkdown(item.docs!,
+                linkResolver: item.markdownLinkResolver(api.resolver)));
           }
           buf.write('</td></tr>');
         }
@@ -184,14 +198,11 @@ class InterfaceElementGenerator {
             '<span class="symbol-type">${item.element.kind.displayName}</span>'
             '</h3>',
           );
-          buf.write(codeRenderer.writeAnnotations(item));
-          buf.writeln(
-            '<pre class="declaration"><code>'
-            '${codeRenderer.render(group.type, item)}'
-            '</code></pre>',
-          );
+          buf.write(CodeRepresentationRenderer.writeAnnotations(item));
+          buf.writeln(linkedCodeRenderer.render(group.type, item));
           if (item.docs != null) {
-            buf.writeln(convertMarkdown(item.docs!));
+            buf.writeln(convertMarkdown(item.docs!,
+                linkResolver: item.markdownLinkResolver(api.resolver)));
           }
         }
       }
@@ -278,23 +289,20 @@ class ExtentionElementGenerator {
   });
 
   GenerationResults generate() {
-    // todo: customize for extensions
+    var api = workspace.api!;
 
-    var codeRenderer = CodeRepresentationRenderer();
+    var linkedCodeRenderer = LinkedCodeRenderer(api.resolver, thisFile);
 
     var buf = StringBuffer();
     buf.writeln('<h1>${extensionItems.name}</h1>');
-    buf.write(codeRenderer.writeAnnotations(extensionItems));
-    buf.writeln(
-      '<pre class="declaration"><code>'
-      '${codeRenderer.render(extensionItems.type, extensionItems)}'
-      '</code></pre>',
-    );
+    buf.write(CodeRepresentationRenderer.writeAnnotations(extensionItems));
+    buf.writeln(linkedCodeRenderer.render(extensionItems.type, extensionItems));
     writeAncestors(buf);
     writeChildRelationships(
         buf, extensionItems.relationships, thisFile, workspace.api!);
     if (extensionItems.docs != null) {
-      buf.writeln(convertMarkdown(extensionItems.docs!));
+      buf.writeln(convertMarkdown(extensionItems.docs!,
+          linkResolver: extensionItems.markdownLinkResolver(api.resolver)));
     }
 
     var pageItemRenderer = OutlineRenderer();
@@ -308,14 +316,11 @@ class ExtentionElementGenerator {
           '<span class="symbol-type">${item.element.kind.displayName}</span>'
           '</h3>',
         );
-        buf.write(codeRenderer.writeAnnotations(item));
-        buf.writeln(
-          '<pre class="declaration"><code>'
-          '${codeRenderer.render(group.type, item)}'
-          '</code></pre>',
-        );
+        buf.write(CodeRepresentationRenderer.writeAnnotations(item));
+        buf.writeln(linkedCodeRenderer.render(group.type, item));
         if (item.docs != null) {
-          buf.writeln(convertMarkdown(item.docs!));
+          buf.writeln(convertMarkdown(item.docs!,
+              linkResolver: item.markdownLinkResolver(api.resolver)));
         }
       }
     }
