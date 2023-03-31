@@ -18,15 +18,31 @@ class MarkdownResults {
   MarkdownResults(this.html, this.outline);
 }
 
+typedef MarkdownLinkResolver = String? Function(String reference);
+
 // todo: handle resolving references
-String convertMarkdown(String markdown) {
+String convertMarkdown(
+  String markdown, {
+  MarkdownLinkResolver? linkResolver,
+}) {
   return markdownToHtml(
     markdown,
     extensionSet: ExtensionSet.gitHubWeb,
     enableTagfilter: true,
     linkResolver: (String name, [String? title]) {
-      // todo:
-      return Element.text('code', name);
+      String? href;
+
+      if (linkResolver != null) {
+        href = linkResolver(name);
+      }
+
+      if (href == null) {
+        return Element.text('span', name)..attributes['class'] = 'code';
+      } else {
+        return Element.text('a', name)
+          ..attributes['href'] = href
+          ..attributes['class'] = 'code';
+      }
     },
   );
 }

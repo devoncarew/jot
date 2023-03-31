@@ -1,3 +1,4 @@
+dart bin/jot.dart -o site/analyzer ../../dart-lang/sdk/sdk/pkg/analyzer
 dart bin/jot.dart -o site/args ../../dart-lang/args
 dart bin/jot.dart -o site/code_builder ../../dart-lang/code_builder
 dart bin/jot.dart -o site/collection ../../dart-lang/collection

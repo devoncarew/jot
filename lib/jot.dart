@@ -1,16 +1,18 @@
 /// To create a new [DocWorkspace], see [DocWorkspace.fromPackage].
 ///
 /// To generate docs, see [DocWorkspace.generate].
+///
+/// Also, [String], [Object], [p.join], [Logger].
 
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
-import 'package:jot/src/html.dart';
 import 'package:path/path.dart' as p;
 
 import 'src/analysis.dart';
 import 'src/api.dart';
 import 'src/generate.dart';
+import 'src/html.dart';
 import 'src/utils.dart';
 import 'src/workspace.dart';
 

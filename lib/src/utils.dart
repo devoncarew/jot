@@ -195,8 +195,26 @@ class DartFormat {
     );
   }
 
+  static String asField(String str) {
+    return _dartFormat(
+      str,
+      ';',
+      prefix: 'class Foo {',
+      suffix: '}',
+      trimIndent: true,
+    );
+  }
+
   static String asTypeAlias(String str) {
     return _dartFormat(str, ';');
+  }
+
+  static String asClass(String str) {
+    return _dartFormat(str, ' {}');
+  }
+
+  static String asEnum(String str) {
+    return _dartFormat(str, ' { foo }');
   }
 
   static String _dartFormat(

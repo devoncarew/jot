@@ -93,6 +93,15 @@ body {
   flex-grow: 1;
 }
 
+.menu__list-item-collapsible {
+  flex-wrap: nowrap;
+}
+
+.menu__link {
+  overflow-x: clip;
+  text-overflow: ellipsis;
+}
+
 .docItemCol {
   max-width: 75% !important;
 }
@@ -152,6 +161,10 @@ p.annotations-container {
   margin-right: 0;
 }
 
+.markdown pre.declaration code a {
+  padding: 0;
+}
+
 /* todo: clean up the css here */
 .markdown span.symbol-type {
   float: right;
@@ -164,6 +177,10 @@ p.annotations-container {
 .markdown code a {
   color: var(--ifm-color-primary-lighter);
   padding: 0 2px;
+}
+
+.markdown a.code {
+  color: var(--ifm-color-primary-lighter);
 }
 
 .markdown code a:hover {

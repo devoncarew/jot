@@ -1,9 +1,13 @@
 import 'dart:collection';
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/scope.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/dart/element/scope.dart';
 import 'package:path/path.dart' as p;
 
 import '../jot.dart';
+import 'markdown.dart';
 import 'utils.dart';
 
 class Api {
@@ -73,12 +77,11 @@ class Api {
     return elementItemMap[element];
   }
 
-  // todo: specialize libraries, classes?
   void addResolution(Element element, DocFile file) {
     resolver.addResolution(element, file);
   }
 
-  String? resolve(Element element, {DocFile? from}) {
+  String? resolve(Element? element, {DocFile? from}) {
     return resolver.resolve(element, from: from);
   }
 
@@ -106,6 +109,8 @@ class Item {
   late final GroupType type = GroupType.typeFor(element);
   final RelationshipMap relationships = SplayTreeMap();
 
+  Scope? _scope;
+
   Item(this.element);
 
   // todo: make this more robust
@@ -117,6 +122,8 @@ class Item {
     }
     return result;
   }
+
+  Scope get scope => _scope ??= _calcScope(element)!;
 
   String get anchorId => stringToAnchorId(name);
 
@@ -187,6 +194,57 @@ class Item {
     return accessor == null
         ? null
         : (accessor.documentationComment ?? _lookupSetterDocs(accessor));
+  }
+
+  MarkdownLinkResolver markdownLinkResolver(Resolver resolver) {
+    return (String ref) {
+      var result = resolver.resolveDocReference(
+        ref,
+        context: this,
+        fromFile: resolver.fileFor(element),
+      );
+
+      // todo: log this?
+      // if (result == null) {
+      //   print('    unresolved: [$ref] from ${element.displayName}');
+      // }
+
+      return result;
+    };
+  }
+
+  static Scope? _calcScope(Element element) {
+    // todo: more of these scopes could be cached / looked up by Item
+
+    if (element is CompilationUnitElement) {
+      return _calcScope(element.enclosingElement);
+    }
+
+    if (element is LibraryElement) {
+      return element.scope;
+    } else if (element is ExtensionElement) {
+      return ExtensionScope(_calcScope(element.enclosingElement)!, element);
+    } else if (element is InterfaceElement) {
+      return InterfaceScope(_calcScope(element.enclosingElement)!, element);
+    } else if (element is MethodElement) {
+      return FormalParameterScope(
+          _calcScope(element.enclosingElement)!, element.parameters);
+    } else if (element is FunctionElement) {
+      return FormalParameterScope(
+          _calcScope(element.enclosingElement)!, element.parameters);
+    } else if (element is ConstructorElement) {
+      return ConstructorInitializerScope(
+          _calcScope(element.enclosingElement)!, element);
+    } else if (element is PropertyAccessorElement) {
+      return LocalScope(_calcScope(element.enclosingElement)!)..add(element);
+    } else if (element is FieldElement) {
+      return LocalScope(_calcScope(element.enclosingElement)!)..add(element);
+    } else if (element is TypeAliasElement) {
+      return _calcScope(element.enclosingElement);
+    } else {
+      print('scope not found for ${element.runtimeType}');
+      return null;
+    }
   }
 }
 
@@ -369,7 +427,16 @@ class Resolver {
     mappings[element] = file;
   }
 
-  String? resolve(Element element, {DocFile? from}) {
+  DocFile? fileFor(Element element) {
+    var file = mappings[element];
+    if (file != null) return file;
+
+    file = mappings[element.enclosingElement];
+
+    return file;
+  }
+
+  String? resolve(Element? element, {DocFile? from}) {
     var target = mappings[element];
     if (target == null) return null;
 
@@ -390,6 +457,19 @@ class Resolver {
       return '<span>$text</span>';
     }
   }
+
+  /// Returns a Uri if the reference is resolved.
+  String? resolveDocReference(
+    String reference, {
+    required Item context,
+    DocFile? fromFile,
+  }) {
+    // TODO: handle dotted references (Foo.bar, ...)
+
+    var scope = context.scope;
+    var element = scope.lookup(reference).getter;
+    return resolve(element, from: fromFile);
+  }
 }
 
 enum RelationshipKind implements Comparable<RelationshipKind> {
@@ -406,4 +486,118 @@ enum RelationshipKind implements Comparable<RelationshipKind> {
   int compareTo(RelationshipKind other) {
     return index - other.index;
   }
+}
+
+/// A StringBuffer like class that allows you to write out Element references,
+/// dart format the written text, and emit the result as html with the element
+/// references converted to html links.
+class LinkedText {
+  final Resolver resolver;
+  final DocFile fromFile;
+
+  final List<_ElementSpan> _elementSpans = [];
+
+  final StringBuffer _buf = StringBuffer();
+  int _charIndex = 0;
+
+  LinkedText(this.resolver, this.fromFile);
+
+  void write(String str) {
+    for (int i = 0; i < str.length; i++) {
+      if (str[i].trim().isNotEmpty) {
+        _charIndex++;
+      }
+    }
+    _buf.write(str);
+  }
+
+  void writeElement(String str, Element element) {
+    _elementSpans.add(_ElementSpan(element, _charIndex, str));
+    _charIndex += str.length;
+    _buf.write(str);
+  }
+
+  String emitHtml(String Function(String) formatHelper, [String suffix = '']) {
+    var fmt = formatHelper(_buf.toString());
+
+    List<dynamic> chunks =
+        _chunks(fmt, _elementSpans, _spanStarts(fmt)).toList();
+
+    var html = chunks.map((chunk) {
+      if (chunk is String) {
+        return htmlEscape(chunk);
+      } else {
+        var span = chunk as _ElementSpan;
+
+        var uri = resolver.resolve(span.element, from: fromFile);
+        if (uri == null) {
+          return htmlEscape(span.text);
+        } else {
+          return '<a href="$uri">${htmlEscape(span.text)}</a>';
+        }
+      }
+    }).join();
+
+    return '<pre class="declaration"><code>$html$suffix</code></pre>';
+  }
+
+  List<int> _spanStarts(String fmt) {
+    var result = <int>[];
+
+    var spans = _elementSpans.iterator;
+    if (!spans.moveNext()) return result;
+
+    int index = 0;
+    int i;
+
+    for (i = 0; i < fmt.length; i++) {
+      if (fmt[i].trim().isEmpty) continue;
+
+      if (index == spans.current.start) {
+        result.add(i);
+        if (!spans.moveNext()) return result;
+      }
+
+      index++;
+    }
+
+    return result;
+  }
+
+  // A List of Strings and _ElementSpans.
+  Iterable<dynamic> _chunks(
+      String fmt, List<_ElementSpan> spans, List<int> spanStarts) sync* {
+    int fmtIndex = 0;
+
+    for (int i = 0; i < spans.length; i++) {
+      var span = spans[i];
+      var spanStart = spanStarts[i];
+
+      if (fmtIndex < spanStart) {
+        yield fmt.substring(fmtIndex, spanStart);
+        fmtIndex = spanStart;
+      }
+
+      yield span;
+      fmtIndex = spanStart + span.text.length;
+    }
+
+    if (fmtIndex < fmt.length) {
+      yield fmt.substring(fmtIndex);
+    }
+  }
+
+  @override
+  String toString() => _buf.toString();
+}
+
+class _ElementSpan {
+  final Element element;
+  final int start;
+  String text;
+
+  _ElementSpan(this.element, this.start, this.text);
+
+  @override
+  String toString() => '[$text]';
 }

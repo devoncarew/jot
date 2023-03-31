@@ -2,16 +2,17 @@
 .dart_tool/
 pubspec.lock
 
-doc/api/
-doc/sdk/
+doc/
 
 lib/resources/script.js.deps
 lib/resources/script.js.map
 
+.firebase/
+
+site/analyzer/
 site/args/
 site/code_builder/
 site/collection/
 site/jot/
 site/path/
 site/sdk/
-.firebase/
