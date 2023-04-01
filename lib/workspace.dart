@@ -6,9 +6,9 @@ import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart' as yaml;
 
 import 'api.dart';
-import 'html.dart';
-import 'markdown.dart';
-import 'utils.dart';
+import 'src/html.dart';
+import 'src/markdown.dart';
+import 'src/utils.dart';
 
 typedef FileContentGenerator = Future<GenerationResults> Function(
     DocWorkspace workspace, DocFile thisFile);
@@ -20,11 +20,12 @@ class GenerationResults {
   GenerationResults(this.contents, [this.outline]);
 }
 
-FileContentGenerator emptyContentGenerator =
-    (DocWorkspace workspace, DocFile thisFile) =>
-        Future.value(GenerationResults(''));
+Future<GenerationResults> emptyContentGenerator(
+    DocWorkspace workspace, DocFile thisFile) {
+  return Future.value(GenerationResults(''));
+}
 
-FileContentGenerator markdownGenerator(File markdownFile) {
+FileContentGenerator createMarkdownGenerator(File markdownFile) {
   return (DocWorkspace workspace, DocFile thisFile) async {
     var content = markdownFile.readAsStringSync();
     var results = convertMarkdownWithOutline(content);
@@ -32,7 +33,7 @@ FileContentGenerator markdownGenerator(File markdownFile) {
   };
 }
 
-FileContentGenerator plaintextGenerator(File markdownFile) {
+FileContentGenerator createPlaintextGenerator(File markdownFile) {
   return (DocWorkspace workspace, DocFile thisFile) async {
     var content = markdownFile.readAsStringSync();
     var pageContent = htmlEscape(content);
@@ -88,6 +89,10 @@ class DocFile extends DocEntity {
 
   DocFile(super.parent, super.name, this.path, this.contentGenerator);
 
+  Future<GenerationResults> generatePageContents() {
+    return contentGenerator(workspace, this);
+  }
+
   @override
   Future<void> generate(
     Directory dir, {
@@ -95,8 +100,9 @@ class DocFile extends DocEntity {
     Stats? stats,
     bool quiet = false,
   }) async {
-    var page = await contentGenerator(workspace, this);
-    var fileContents = await workspace.generateWorkspacePage(this, page);
+    var pageContents = await generatePageContents();
+    var fileContents =
+        await workspace.generateWorkspacePage(this, pageContents);
     var file = File(p.join(dir.path, path));
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(fileContents);
@@ -128,7 +134,7 @@ class DocContainer extends DocEntity {
   }
 
   int get itemCount {
-    int count = mainFile == null ? 0 : 1;
+    var count = mainFile == null ? 0 : 1;
     for (var child in children) {
       if (child is DocContainer) {
         count += child.itemCount;
@@ -231,7 +237,7 @@ class DocWorkspace extends DocContainer {
       mainFile!,
       ...navFiles,
     ].map((target) {
-      String active = '';
+      var active = '';
       if (navFiles.contains(file) && target == file) {
         active = ' navbar__link--active';
       } else if (!navFiles.contains(file) && target == mainFile) {
@@ -375,17 +381,17 @@ class DocWorkspace extends DocContainer {
 
       var path = '${p.withoutExtension(name)}.html';
       if (name == 'README.md') {
-        workspace.mainFile =
-            DocFile(workspace, title, 'index.html', markdownGenerator(file));
+        workspace.mainFile = DocFile(
+            workspace, title, 'index.html', createMarkdownGenerator(file));
       } else if (name == 'CHANGELOG.md' || name == 'LICENSE.md') {
-        workspace.navFiles
-            .add(DocFile(workspace, title, path, markdownGenerator(file)));
+        workspace.navFiles.add(
+            DocFile(workspace, title, path, createMarkdownGenerator(file)));
       } else if (name == 'LICENSE') {
-        workspace.navFiles
-            .add(DocFile(workspace, title, path, plaintextGenerator(file)));
+        workspace.navFiles.add(
+            DocFile(workspace, title, path, createPlaintextGenerator(file)));
       } else {
-        workspace
-            .addChild(DocFile(workspace, title, path, markdownGenerator(file)));
+        workspace.addChild(
+            DocFile(workspace, title, path, createMarkdownGenerator(file)));
       }
     }
 
@@ -399,11 +405,34 @@ class DocWorkspace extends DocContainer {
         var title =
             titleCase(p.basenameWithoutExtension(file.path).toLowerCase());
         var path = '${p.withoutExtension(name)}.html';
-        workspace
-            .addChild(DocFile(workspace, title, path, markdownGenerator(file)));
+        workspace.addChild(
+            DocFile(workspace, title, path, createMarkdownGenerator(file)));
       }
     }
 
     return workspace;
+  }
+
+  DocFile? getForPath(String path) {
+    for (var file in navFiles) {
+      if (file.path == path) return file;
+    }
+
+    DocFile? check(DocContainer container, String path) {
+      if (container.mainFile?.path == path) return container.mainFile;
+
+      for (var child in container.children) {
+        if (child is DocFile) {
+          if (child.path == path) return child;
+        } else {
+          var result = check(child as DocContainer, path);
+          if (result != null) return result;
+        }
+      }
+
+      return null;
+    }
+
+    return check(this, path);
   }
 }

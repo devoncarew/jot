@@ -1,4 +1,7 @@
-import '../jot.dart';
+// ignore_for_file: lines_longer_than_80_chars
+
+import '../api.dart';
+import '../workspace.dart';
 import 'markdown.dart';
 import 'render.dart';
 import 'utils.dart';
@@ -40,9 +43,9 @@ class LibraryGenerator {
     if (thisFile.importScript != null) {
       buf.writeln('<h1>${thisFile.name}</h1>');
       buf.writeln(
-        "<pre class=\"declaration\">"
+        '<pre class="declaration">'
         "<code>import '${thisFile.importScript}';</code>"
-        "</pre>",
+        '</pre>',
       );
     } else {
       buf.writeln('<h1>${thisFile.name}</h1>');

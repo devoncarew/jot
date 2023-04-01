@@ -4,10 +4,10 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 
-import 'api.dart';
+import '../api.dart';
+import '../workspace.dart';
 import 'linked_builder.dart';
 import 'utils.dart';
-import 'workspace.dart';
 
 abstract class Renderer {
   String render(GroupType type, Item item) {
@@ -61,7 +61,7 @@ class OutlineRenderer extends Renderer {
   @override
   String handleConstructor(Item item) {
     var element = item.asConstructor;
-    var arity = element.parameters.isEmpty ? '' : '...';
+    var arity = element.parameters.isEmpty ? '' : '…';
     return '${element.displayName}($arity)';
   }
 
@@ -78,7 +78,7 @@ class OutlineRenderer extends Renderer {
     if (element.isOperator) {
       return item.name;
     } else {
-      var arity = element.parameters.isEmpty ? '' : '...';
+      var arity = element.parameters.isEmpty ? '' : '…';
       return '${item.name}($arity)';
     }
   }
@@ -86,7 +86,7 @@ class OutlineRenderer extends Renderer {
   @override
   String handleFunction(Item item) {
     var element = item.asFunction;
-    var arity = element.parameters.isEmpty ? '' : '...';
+    var arity = element.parameters.isEmpty ? '' : '…';
     return '${item.name}($arity)';
   }
 }
@@ -113,7 +113,7 @@ class CodeRepresentationRenderer extends Renderer {
     buf.write(element.getDisplayString(withNullability: true));
 
     var fmt = DartFormat.asClass(buf.toString());
-    return htmlEscape('$fmt { ... }');
+    return htmlEscape('$fmt { … }');
   }
 
   @override
@@ -123,7 +123,7 @@ class CodeRepresentationRenderer extends Renderer {
     var buf = StringBuffer();
 
     buf.write(element.getDisplayString(withNullability: true));
-    buf.writeln(' { ... }');
+    buf.writeln(' { … }');
 
     // todo: dartfmt
     return htmlEscape(buf.toString());
@@ -136,7 +136,7 @@ class CodeRepresentationRenderer extends Renderer {
     var buf = StringBuffer();
 
     buf.write(element.getDisplayString(withNullability: true));
-    buf.writeln(' { ... }');
+    buf.writeln(' { … }');
 
     // todo: dartfmt
     return htmlEscape(buf.toString());
@@ -364,7 +364,7 @@ class LinkedCodeRenderer extends Renderer {
     var text = LinkedText(resolver, fromFile);
     var builder = LinkedElementDisplayBuilder(text);
     builder.writeVariableElement(element);
-    return text.emitHtml((text) => DartFormat.asField(text));
+    return text.emitHtml(DartFormat.asField);
   }
 
   @override
@@ -374,7 +374,7 @@ class LinkedCodeRenderer extends Renderer {
     var text = LinkedText(resolver, fromFile);
     var builder = LinkedElementDisplayBuilder(text);
     builder.writeExecutableElement(element, element.displayName);
-    return text.emitHtml((text) => DartFormat.asMethod(text));
+    return text.emitHtml(DartFormat.asMethod);
   }
 
   @override
@@ -385,7 +385,7 @@ class LinkedCodeRenderer extends Renderer {
     var builder = LinkedElementDisplayBuilder(text);
     builder.writeExecutableElement(
         element, element.isOperator ? element.displayName : element.name);
-    return text.emitHtml((text) => DartFormat.asMethod(text));
+    return text.emitHtml(DartFormat.asMethod);
   }
 
   @override
@@ -395,7 +395,7 @@ class LinkedCodeRenderer extends Renderer {
     var text = LinkedText(resolver, fromFile);
     var builder = LinkedElementDisplayBuilder(text);
     builder.writeExecutableElement(element, element.name);
-    return text.emitHtml((text) => DartFormat.asFunction(text));
+    return text.emitHtml(DartFormat.asFunction);
   }
 
   @override
@@ -405,19 +405,18 @@ class LinkedCodeRenderer extends Renderer {
     var text = LinkedText(resolver, fromFile);
     var builder = LinkedElementDisplayBuilder(text);
     builder.writeTypeAliasElement(element as TypeAliasElementImpl);
-    return text.emitHtml((text) => DartFormat.asTypeAlias(text));
+    return text.emitHtml(DartFormat.asTypeAlias);
   }
 
-  // // todo:
-  // @override
-  // String handleTypeAlias(Item item) {
-  //   var element = item.asTypeAlias;
+  @override
+  String handleTypeAlias(Item item) {
+    var element = item.asTypeAlias;
 
-  //   var text = LinkedText(resolver, fromFile);
-  //   var builder = LinkedElementDisplayBuilder(text);
-  //   builder.writeTypeAliasElement(element as TypeAliasElementImpl);
-  //   return text.emitHtml((text) => DartFormat.asTypeAlias(text));
-  // }
+    var text = LinkedText(resolver, fromFile);
+    var builder = LinkedElementDisplayBuilder(text);
+    builder.writeTypeAliasElement(element as TypeAliasElementImpl);
+    return text.emitHtml(DartFormat.asTypeAlias);
+  }
 
   @override
   String handleClass(Item item) {
@@ -441,8 +440,7 @@ class LinkedCodeRenderer extends Renderer {
     //   text.writeElement($super.name, $super);
     // }
 
-    return text.emitHtml(
-        (unformatted) => DartFormat.asClass(unformatted), ' { ... }');
+    return text.emitHtml(DartFormat.asClass, ' { … }');
   }
 
   @override
@@ -452,7 +450,7 @@ class LinkedCodeRenderer extends Renderer {
     var text = LinkedText(resolver, fromFile);
     var builder = LinkedElementDisplayBuilder(text);
     builder.writeEnumElement(element);
-    return text.emitHtml((text) => DartFormat.asEnum(text), ' { ... }');
+    return text.emitHtml(DartFormat.asEnum, ' { … }');
   }
 
   @override
@@ -462,6 +460,6 @@ class LinkedCodeRenderer extends Renderer {
     var text = LinkedText(resolver, fromFile);
     var builder = LinkedElementDisplayBuilder(text);
     builder.writeExtensionElement(element);
-    return text.emitHtml((text) => DartFormat.asClass(text), ' { ... }');
+    return text.emitHtml(DartFormat.asClass, ' { … }');
   }
 }
