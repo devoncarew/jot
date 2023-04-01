@@ -50,7 +50,7 @@ class Path {
 
     var tokens = path.split('/');
 
-    for (int i = 0; i < tokens.length;) {
+    for (var i = 0; i < tokens.length;) {
       var token = tokens[i];
       if (token == '..' && i > 0 && tokens[i - 1] != '..') {
         tokens.removeAt(i);

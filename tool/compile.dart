@@ -14,10 +14,10 @@ void main(List<String> args) async {
   print('dart ${params.join(' ')}');
   var result = await Process.run(Platform.resolvedExecutable, params);
   if ((result.stdout as String).trim().isNotEmpty) {
-    stdout.write((result.stdout as String));
+    stdout.write(result.stdout as String);
   }
   if ((result.stderr as String).trim().isNotEmpty) {
-    stderr.write((result.stderr as String));
+    stderr.write(result.stderr as String);
   }
   exit(result.exitCode);
 }

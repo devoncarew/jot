@@ -79,7 +79,7 @@ class Jot {
     });
 
     $id('search').onKeyDown.listen((event) {
-      if (event.key == "Escape") {
+      if (event.key == 'Escape') {
         $id('search').blur();
       }
     });

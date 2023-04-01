@@ -6,7 +6,11 @@ import 'package:path/path.dart' as p;
 import 'utils.dart';
 
 class HtmlTemplate {
-  static Future<HtmlTemplate> initDir(Directory dir, {Stats? stats}) async {
+  static Future<HtmlTemplate> initDir(
+    Directory dir, {
+    Stats? stats,
+    bool writeResouces = true,
+  }) async {
     const resources = [
       'script.js',
       'styles.css',
@@ -16,14 +20,16 @@ class HtmlTemplate {
       'toggle-light.svg',
     ];
 
-    for (var resource in resources) {
-      final file = File(p.join(dir.path, 'resources', resource));
-      if (!file.parent.existsSync()) {
-        file.parent.createSync(recursive: true);
+    if (writeResouces) {
+      for (var resource in resources) {
+        final file = File(p.join(dir.path, 'resources', resource));
+        if (!file.parent.existsSync()) {
+          file.parent.createSync(recursive: true);
+        }
+        var styleData = await _loadResourceData(resource);
+        file.writeAsStringSync(styleData);
+        stats?.genFile(file);
       }
-      var styleData = await _loadResourceData(resource);
-      file.writeAsStringSync(styleData);
-      stats?.genFile(file);
     }
 
     final htmlData = await _loadResourceData('index.html');
@@ -86,7 +92,6 @@ class HtmlTemplate {
   }
 }
 
-// template.html
 Future<String> _loadResourceData(String name) async {
   var packageUri = Uri.parse('package:jot/resources/$name');
   var fileUri = await Isolate.resolvePackageUri(packageUri);

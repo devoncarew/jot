@@ -12,6 +12,8 @@ class AnalysisHelper {
 
   late AnalysisContextCollection _collection;
 
+  int _upToDate = DateTime.now().millisecondsSinceEpoch;
+
   AnalysisHelper.package(Directory packageDir) {
     _rootDir =
         Directory(p.join(p.canonicalize(packageDir.absolute.path), 'lib'));
@@ -40,6 +42,34 @@ class AnalysisHelper {
 
       yield lib;
     }
+  }
+
+  /// Check for any changed files and reanalyze changes.
+  ///
+  /// Returns `true` if any changed files had been detected.
+  Future<bool> reanalyzeChanges() async {
+    var hasChanges = false;
+
+    var context = _collection.contexts.first;
+
+    for (var path in context.contextRoot.analyzedFiles()) {
+      if (path.endsWith('.dart')) {
+        var modificationStamp = context.contextRoot.resourceProvider
+            .getFile(path)
+            .modificationStamp;
+
+        if (modificationStamp > _upToDate) {
+          hasChanges = true;
+          context.changeFile(path);
+        }
+      }
+    }
+
+    _upToDate = DateTime.now().millisecondsSinceEpoch;
+
+    await context.applyPendingFileChanges();
+
+    return hasChanges;
   }
 
   Iterable<File> get _publicFiles sync* {

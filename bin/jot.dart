@@ -15,7 +15,7 @@ void main(List<String> args) async {
     exit(64);
   }
 
-  bool help = results['help'];
+  var help = results['help'] as bool;
   if (help) {
     printUsage(parser);
     exit(0);
@@ -30,13 +30,23 @@ void main(List<String> args) async {
 
   Directory outDir;
   if (results.wasParsed('output')) {
-    outDir = Directory(results['output']);
+    outDir = Directory(results['output'] as String);
   } else {
-    outDir = Directory(p.join(inDir.path, results['output']));
+    outDir = Directory(p.join(inDir.path, results['output'] as String));
+  }
+
+  int? servePort;
+  if (results.wasParsed('serve')) {
+    servePort = int.tryParse(results['serve'] as String);
   }
 
   var jot = Jot(inDir: inDir, outDir: outDir);
-  await jot.generate();
+
+  if (servePort == null) {
+    await jot.generate();
+  } else {
+    await jot.serve(servePort);
+  }
 }
 
 ArgParser createArgsParser() {
@@ -52,6 +62,13 @@ ArgParser createArgsParser() {
       abbr: 'o',
       defaultsTo: 'doc/api',
       help: 'Configure the output directory.',
+    )
+    ..addOption(
+      'serve',
+      valueHelp: 'port',
+      help: 'Serve live docs from the documented package.\n'
+          'This only serves on localhost and is generally used during '
+          'development in an edit/refresh workflow.',
     );
 }
 

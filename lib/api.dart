@@ -6,9 +6,9 @@ import 'package:analyzer/dart/element/scope.dart';
 import 'package:analyzer/src/dart/element/scope.dart';
 import 'package:path/path.dart' as p;
 
-import '../jot.dart';
-import 'markdown.dart';
-import 'utils.dart';
+import 'src/markdown.dart';
+import 'src/utils.dart';
+import 'workspace.dart';
 
 class Api {
   final List<Package> packages = [];
@@ -53,23 +53,23 @@ class Api {
       var element = item.element as InterfaceElement;
 
       var superItem = itemForElement(element.supertype?.element);
-      superItem?.addRelationship(item, RelationshipKind.$subclasses);
+      superItem?._addRelationship(item, RelationshipKind.$subclasses);
 
       for (var $interface in element.interfaces) {
         var interfaceItem = itemForElement($interface.element);
-        interfaceItem?.addRelationship(item, RelationshipKind.$implements);
+        interfaceItem?._addRelationship(item, RelationshipKind.$implements);
       }
 
       for (var $mixin in element.mixins) {
         var interfaceItem = itemForElement($mixin.element);
-        interfaceItem?.addRelationship(item, RelationshipKind.$mixes);
+        interfaceItem?._addRelationship(item, RelationshipKind.$mixes);
       }
     } else if (item.element is ExtensionElement) {
       var element = item.element as ExtensionElement;
 
       var extendedElement = element.extendedType.element;
       var extendedItem = itemForElement(extendedElement);
-      extendedItem?.addRelationship(item, RelationshipKind.$extended);
+      extendedItem?._addRelationship(item, RelationshipKind.$extended);
     }
   }
 
@@ -102,6 +102,8 @@ class Package implements Comparable<Package> {
   }
 }
 
+/// A tuple of a relationship kind (subclass, implementor, ...) and a set of
+/// items.
 typedef RelationshipMap = Map<RelationshipKind, List<Item>>;
 
 class Item {
@@ -147,7 +149,7 @@ class Item {
 
   TypeAliasElement get asTypeAlias => element as TypeAliasElement;
 
-  void addRelationship(Item item, RelationshipKind kind) {
+  void _addRelationship(Item item, RelationshipKind kind) {
     relationships.putIfAbsent(kind, () => []).add(item);
   }
 
@@ -503,7 +505,7 @@ class LinkedText {
   LinkedText(this.resolver, this.fromFile);
 
   void write(String str) {
-    for (int i = 0; i < str.length; i++) {
+    for (var i = 0; i < str.length; i++) {
       if (str[i].trim().isNotEmpty) {
         _charIndex++;
       }
@@ -520,8 +522,7 @@ class LinkedText {
   String emitHtml(String Function(String) formatHelper, [String suffix = '']) {
     var fmt = formatHelper(_buf.toString());
 
-    List<dynamic> chunks =
-        _chunks(fmt, _elementSpans, _spanStarts(fmt)).toList();
+    var chunks = _chunks(fmt, _elementSpans, _spanStarts(fmt)).toList();
 
     var html = chunks.map((chunk) {
       if (chunk is String) {
@@ -547,7 +548,7 @@ class LinkedText {
     var spans = _elementSpans.iterator;
     if (!spans.moveNext()) return result;
 
-    int index = 0;
+    var index = 0;
     int i;
 
     for (i = 0; i < fmt.length; i++) {
@@ -567,9 +568,9 @@ class LinkedText {
   // A List of Strings and _ElementSpans.
   Iterable<dynamic> _chunks(
       String fmt, List<_ElementSpan> spans, List<int> spanStarts) sync* {
-    int fmtIndex = 0;
+    var fmtIndex = 0;
 
-    for (int i = 0; i < spans.length; i++) {
+    for (var i = 0; i < spans.length; i++) {
       var span = spans[i];
       var spanStart = spanStarts[i];
 

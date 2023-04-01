@@ -1,12 +1,15 @@
+// ignore_for_file: prefer_single_quotes
+
 import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:cli_util/cli_logging.dart';
-import 'package:jot/jot.dart';
+import 'package:jot/api.dart';
 import 'package:jot/src/analysis.dart';
 import 'package:jot/src/generate.dart';
 import 'package:jot/src/html.dart';
 import 'package:jot/src/utils.dart';
+import 'package:jot/workspace.dart';
 import 'package:path/path.dart' as p;
 
 void main(List<String> args) async {
@@ -20,7 +23,7 @@ void main(List<String> args) async {
     exit(64);
   }
 
-  bool help = results['help'];
+  var help = results['help'] as bool;
   if (help) {
     printUsage(parser);
     exit(0);
@@ -35,7 +38,7 @@ void main(List<String> args) async {
 
   validateSdk(sdkDir);
 
-  var outDir = Directory(results['output']);
+  var outDir = Directory(results['output'] as String);
 
   await generate(sdkDir, outDir);
 }
@@ -72,7 +75,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     workspace,
     'Readme',
     'index.html',
-    markdownGenerator(File(p.join(sdkDir.path, 'lib', 'api_readme.md'))),
+    createMarkdownGenerator(File(p.join(sdkDir.path, 'lib', 'api_readme.md'))),
   );
   final api = Api();
   workspace.api = api;
@@ -170,13 +173,14 @@ String _parserSdkVersion(File versionFile) {
   return version;
 }
 
+// ignore: unreachable_from_main
 String? libraryUriFor(String name, Map<String, dynamic> libraries) {
   for (var key in libraries.keys) {
     var value = libraries[key];
     if (value is Map && value.containsKey('libraries')) {
       var info = value['libraries'] as Map<String, dynamic>;
       if (info.containsKey(name)) {
-        return (info[name] as Map<String, dynamic>)['uri'];
+        return (info[name] as Map<String, dynamic>)['uri'] as String?;
       }
     }
   }

@@ -13,10 +13,9 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/type_algebra.dart';
-import 'package:analyzer/src/dart/resolver/variance.dart';
 import 'package:analyzer/src/generated/element_type_provider.dart';
 
-import 'api.dart';
+import '../api.dart';
 
 class LinkedElementDisplayBuilder {
   final LinkedText linkedText;
@@ -249,22 +248,22 @@ class LinkedElementDisplayBuilder {
     _write(' = ');
 
     var aliasedElement = element.aliasedElement;
+
     if (aliasedElement != null) {
-      //aliasedElement.appendTo(this);
-      writeAbstractElement(aliasedElement);
+      appendTypeImplTo(element.aliasedType as TypeImpl);
     } else {
       _writeType(element.aliasedType);
     }
   }
 
   void writeTypeParameter(TypeParameterElement element) {
-    if (element is TypeParameterElementImpl) {
-      var variance = element.variance;
-      if (!element.isLegacyCovariant && variance != Variance.unrelated) {
-        _write(variance.toKeywordString());
-        _write(' ');
-      }
-    }
+    // if (element is TypeParameterElementImpl) {
+    //   var variance = element.variance;
+    //   if (!element.isLegacyCovariant && variance != Variance.unrelated) {
+    //     _write(variance.toKeywordString());
+    //     _write(' ');
+    //   }
+    // }
 
     _write(element.displayName);
 
@@ -447,7 +446,7 @@ class LinkedElementDisplayBuilder {
         _write(', ');
       }
       // (elements[i] as TypeParameterElementImpl).appendTo(this);
-      writeTypeParameter((elements[i] as TypeParameterElementImpl));
+      writeTypeParameter(elements[i] as TypeParameterElementImpl);
     }
     _write('>');
   }
@@ -567,7 +566,7 @@ class LinkedElementDisplayBuilder {
     } else if (type is VoidType) {
       writeVoidType();
     } else {
-      throw 'unhandled type: $type';
+      throw StateError('unhandled type: $type');
     }
   }
 }
