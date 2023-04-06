@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 
@@ -26,13 +27,13 @@ class HtmlTemplate {
         if (!file.parent.existsSync()) {
           file.parent.createSync(recursive: true);
         }
-        var styleData = await _loadResourceData(resource);
-        file.writeAsStringSync(styleData);
+        var data = await loadResourceDataAsBytes(resource);
+        file.writeAsBytesSync(data);
         stats?.genFile(file);
       }
     }
 
-    final htmlData = await _loadResourceData('index.html');
+    final htmlData = await loadResourceDataAsString('index.html');
     return HtmlTemplate._(htmlData);
   }
 
@@ -92,8 +93,14 @@ class HtmlTemplate {
   }
 }
 
-Future<String> _loadResourceData(String name) async {
+Future<String> loadResourceDataAsString(String name) async {
   var packageUri = Uri.parse('package:jot/resources/$name');
   var fileUri = await Isolate.resolvePackageUri(packageUri);
   return File(fileUri!.toFilePath()).readAsStringSync();
+}
+
+Future<Uint8List> loadResourceDataAsBytes(String name) async {
+  var packageUri = Uri.parse('package:jot/resources/$name');
+  var fileUri = await Isolate.resolvePackageUri(packageUri);
+  return File(fileUri!.toFilePath()).readAsBytesSync();
 }

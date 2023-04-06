@@ -1,6 +1,7 @@
 import 'dart:html';
 
 import 'interop.dart';
+import 'search.dart';
 import 'utils.dart';
 
 // todo: remember the scroll position of the page content?
@@ -45,6 +46,7 @@ class Jot {
 
   late final NavManager navManager;
   late final SidebarManager sidebarManager;
+  late final SearchUI search;
 
   Jot({required this.urlBase, required this.initialUrl}) {
     navManager = NavManager(urlBase: urlBase);
@@ -70,19 +72,7 @@ class Jot {
     });
 
     // search
-    document.onKeyPress.listen((event) {
-      if (event.key == '/') {
-        event.preventDefault();
-
-        $id('search').focus();
-      }
-    });
-
-    $id('search').onKeyDown.listen((event) {
-      if (event.key == 'Escape') {
-        $id('search').blur();
-      }
-    });
+    search = SearchUI(urlBase);
 
     // listen for history events
     window.onPopState.listen((PopStateEvent event) {

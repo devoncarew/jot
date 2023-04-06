@@ -4,8 +4,6 @@
 library;
 
 import 'dart:io';
-import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart' as p;
@@ -17,6 +15,7 @@ import 'api.dart';
 import 'src/analysis.dart';
 import 'src/generate.dart';
 import 'src/html.dart';
+import 'src/server.dart';
 import 'src/utils.dart';
 import 'workspace.dart';
 
@@ -38,14 +37,19 @@ class Jot {
     var stats = Stats()..start();
 
     var htmlTemplate = await HtmlTemplate.initDir(outDir, stats: stats);
-    var analysisHelper = AnalysisHelper.package(inDir);
+    var analyzer =
+        Analyzer.packages(includedPaths: [p.normalize(inDir.absolute.path)]);
 
     var progress = log.progress('Resolving public libraries');
-    var workspace = await _buildWorkspace(htmlTemplate, analysisHelper);
+    var workspace = await _buildWorkspace(htmlTemplate, analyzer);
     progress.finish();
 
     // build model
     workspace.api!.finish();
+    // TODO: change this to writeIndex() in the generator
+    var indexFile = File(p.join(outDir.path, 'resources', 'index.json'));
+    indexFile.writeAsStringSync(workspace.api!.index.toJson());
+    stats.genFile(indexFile);
 
     // generate
     log.stdout('');
@@ -68,10 +72,11 @@ class Jot {
     var log = Logger.standard();
 
     var htmlTemplate = await HtmlTemplate.initDir(outDir, writeResouces: false);
-    var analysisHelper = AnalysisHelper.package(inDir);
+    var analyzer =
+        Analyzer.packages(includedPaths: [p.normalize(inDir.absolute.path)]);
 
     var progress = log.progress('Resolving public libraries');
-    var workspace = await _buildWorkspace(htmlTemplate, analysisHelper);
+    var workspace = await _buildWorkspace(htmlTemplate, analyzer);
     progress.finish();
 
     // build model
@@ -88,8 +93,8 @@ class Jot {
       if (!filePath.endsWith('.html')) return notFound(request);
 
       // check for changed dart sources
-      if (await analysisHelper.reanalyzeChanges()) {
-        workspace = await _buildWorkspace(htmlTemplate, analysisHelper);
+      if (await analyzer.reanalyzeChanges()) {
+        workspace = await _buildWorkspace(htmlTemplate, analyzer);
         workspace.api!.finish();
       }
 
@@ -102,15 +107,15 @@ class Jot {
         var pageContents = await file.generatePageContents();
         var fileContents =
             await workspace.generateWorkspacePage(file, pageContents);
-        return Response.ok(fileContents, headers: _headersFor(filePath));
+        return Response.ok(fileContents, headers: headersFor(filePath));
       }
     }
 
     Future<Response> resourcesHandler(Request request) {
       var path = request.url.path;
 
-      return _loadResourceData(path).then((data) {
-        return Response.ok(data, headers: _headersFor(path));
+      return loadResourceDataAsBytes(path).then((data) {
+        return Response.ok(data, headers: headersFor(path));
       }).onError((error, _) {
         return notFound(request);
       });
@@ -121,11 +126,16 @@ class Jot {
       return Response.movedPermanently('index.html');
     });
     app.get('/favicon.ico', (Request request) async {
-      return Response.ok(await _loadResourceData('dart.png'),
-          headers: _headersFor('dart.png'));
+      return Response.ok(await loadResourceDataAsBytes('dart.png'),
+          headers: headersFor('dart.png'));
+    });
+    app.get('/resources/index.json', (Request request) async {
+      return Response.ok(workspace.api!.index.toJson(),
+          headers: headersFor(request.url.path));
     });
     app.mount('/resources', Router(notFoundHandler: resourcesHandler).call);
 
+    // todo: move most of this to a server class
     var server = await shelf_io.serve(app.call, 'localhost', port);
     log.stdout(
         'Serving docs at http://${server.address.host}:${server.port}/.');
@@ -133,7 +143,7 @@ class Jot {
   }
 
   Future<DocWorkspace> _buildWorkspace(
-      HtmlTemplate htmlTemplate, AnalysisHelper analysisHelper) async {
+      HtmlTemplate htmlTemplate, Analyzer analysisHelper) async {
     var workspace = DocWorkspace.fromPackage(htmlTemplate, inDir);
     var packageName = workspace.name.substring('package:'.length);
 
@@ -148,15 +158,15 @@ class Jot {
       var dartLibraryPath = p.relative(libraryPath, from: libDirPath);
       var htmlOutputPath = '${p.withoutExtension(dartLibraryPath)}.html';
 
-      var packageContainer = workspace.addChild(DocContainer(
+      var libraryContainer = workspace.addChild(DocContainer(
         workspace,
         dartLibraryPath,
       ));
 
-      var library =
-          workspace.api!.addLibrary(packageName, resolvedLibrary.element);
+      var library = workspace.api!
+          .addLibrary(resolvedLibrary.element, workspace.name, dartLibraryPath);
 
-      packageContainer.mainFile = DocFile(
+      libraryContainer.mainFile = DocFile(
         workspace,
         dartLibraryPath,
         htmlOutputPath,
@@ -164,47 +174,22 @@ class Jot {
       )..importScript = 'package:$packageName/$dartLibraryPath';
 
       workspace.api!
-          .addResolution(resolvedLibrary.element, packageContainer.mainFile!);
+          .addResolution(resolvedLibrary.element, libraryContainer.mainFile!);
 
       for (var itemContainer in library.allChildrenSorted.whereType<Items>()) {
         var path =
             '${p.withoutExtension(dartLibraryPath)}/${itemContainer.name}.html';
         var docFile = DocFile(
-          packageContainer,
+          libraryContainer,
           itemContainer.name,
           path,
-          // todo: clean up the modeling here
-          itemContainer is ExtensionElementItems
-              ? extensionElementGenerator(itemContainer)
-              : interfaceElementGenerator(
-                  itemContainer as InterfaceElementItems),
+          itemsGenerator(itemContainer),
         );
-        packageContainer.addChild(docFile);
+        libraryContainer.addChild(docFile);
         workspace.api!.addResolution(itemContainer.element, docFile);
       }
     }
 
     return workspace;
   }
-}
-
-Future<Uint8List> _loadResourceData(String name) async {
-  var packageUri = Uri.parse('package:jot/resources/$name');
-  var fileUri = await Isolate.resolvePackageUri(packageUri);
-  return File(fileUri!.toFilePath()).readAsBytesSync();
-}
-
-const _mimeMap = {
-  'css': 'text/css',
-  'html': 'text/html',
-  'js': 'text/javascript',
-  'png': 'image/png',
-  'svg': 'image/svg+xml',
-};
-
-Map<String, Object> _headersFor(String path) {
-  var ext = p.extension(path).toLowerCase();
-  var mime =
-      (ext.startsWith('.') ? _mimeMap[ext.substring(1)] : null) ?? 'text/plain';
-  return {'content-type': mime};
 }

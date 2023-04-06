@@ -64,7 +64,8 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   //     jsonDecode(librariesFile.readAsStringSync()) as Map<String, dynamic>;
 
   // set up the analysis context
-  var analysisHelper = AnalysisHelper.sdk(sdkDir);
+  var analyzer =
+      Analyzer.packages(includedPaths: [p.normalize(sdkDir.absolute.path)]);
 
   // create the workspace
   var stats = Stats()..start();
@@ -92,8 +93,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     log.stdout('  dart:${lib.name} [${lib.maturity}]');
 
     var libFile = File(p.join(libDir.path, lib.uri));
-    var libraryElement =
-        await analysisHelper.getLibraryByUri(libFile.uri.toString());
+    var libraryElement = await analyzer.getLibraryByUri(libFile.uri.toString());
 
     DocContainer parent = workspace;
 
@@ -116,11 +116,13 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
       'dart:${lib.name}',
     ));
 
-    var library = api.addLibrary('sdk', libraryElement.element);
+    var libraryPath = 'dart:${lib.name}';
+    var library =
+        api.addLibrary(libraryElement.element, 'Dart SDK', libraryPath);
 
     var file = DocFile(
       packageContainer,
-      'dart:${lib.name}',
+      libraryPath,
       '${lib.name}.html',
       libraryGenerator(library),
     );
@@ -135,9 +137,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
         packageContainer,
         itemContainer.name,
         path,
-        itemContainer is ExtensionElementItems
-            ? extensionElementGenerator(itemContainer)
-            : interfaceElementGenerator(itemContainer as InterfaceElementItems),
+        itemsGenerator(itemContainer),
       ));
       api.addResolution(itemContainer.element, docFile);
     }
@@ -145,6 +145,9 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
 
   // build model
   api.finish();
+  var indexFile = File(p.join(outDir.path, 'resources', 'index.json'));
+  indexFile.writeAsStringSync(workspace.api!.index.toJson());
+  stats.genFile(indexFile);
 
   // generate
   log.stdout('');

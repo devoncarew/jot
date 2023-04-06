@@ -20,6 +20,8 @@ extension ElementExtension on Element {
   }
 }
 
+String plural(String word, int count) => count == 1 ? word : '${word}s';
+
 class Path {
   String parent(String path) {
     if (path.contains('/')) {
