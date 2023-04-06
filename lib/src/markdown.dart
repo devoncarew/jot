@@ -20,7 +20,6 @@ class MarkdownResults {
 
 typedef MarkdownLinkResolver = String? Function(String reference);
 
-// todo: handle resolving references
 String convertMarkdown(
   String markdown, {
   MarkdownLinkResolver? linkResolver,
@@ -54,7 +53,18 @@ String firstSentence(String markdown) {
       .join('\n');
 }
 
-// todo: handle resolving references
+String markdownToText(String markdown) {
+  final visitor = _TextVisitor();
+  final document = Document(
+    extensionSet: ExtensionSet.gitHubWeb,
+    linkResolver: (name, [text]) => Element.text('span', name),
+  );
+  for (final node in document.parse(markdown)) {
+    node.accept(visitor);
+  }
+  return visitor.toString();
+}
+
 MarkdownResults convertMarkdownWithOutline(String markdown) {
   final document = Document(extensionSet: ExtensionSet.gitHubWeb);
 
@@ -78,11 +88,22 @@ Outline _toOutline(Iterable<Element> elements) {
   return outline;
 }
 
-// Iterable<Element> markdownHeaders(String markdown) {
-//   // todo: where possible, share parsing with convertMarkdown
-//   var document = Document(extensionSet: ExtensionSet.gitHubWeb);
-//   var nodes = document.parse(markdown);
-//   return nodes
-//       .whereType<Element>()
-//       .where((element) => element.tag == 'h1' || element.tag == 'h2');
-// }
+class _TextVisitor implements NodeVisitor {
+  final StringBuffer buf = StringBuffer();
+
+  @override
+  String toString() => buf.toString();
+
+  @override
+  bool visitElementBefore(Element element) {
+    return true;
+  }
+
+  @override
+  void visitText(Text text) {
+    buf.write(text.text);
+  }
+
+  @override
+  void visitElementAfter(Element element) {}
+}

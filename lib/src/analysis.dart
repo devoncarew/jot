@@ -1,33 +1,34 @@
-import 'dart:io';
+// import 'dart:io';
 
 import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
-import 'package:jot/src/utils.dart';
 import 'package:path/path.dart' as p;
 
-class AnalysisHelper {
-  late final Directory _rootDir;
-
+class Analyzer {
   late AnalysisContextCollection _collection;
+  late ResourceProvider resourceProvider;
 
-  int _upToDate = DateTime.now().millisecondsSinceEpoch;
+  int _lastCheckedMillis = DateTime.now().millisecondsSinceEpoch;
 
-  AnalysisHelper.package(Directory packageDir) {
-    _rootDir =
-        Directory(p.join(p.canonicalize(packageDir.absolute.path), 'lib'));
+  /// Create an analysis context using the given paths.
+  ///
+  /// Note that all paths must the absolute. These are assumed to the paths to
+  /// packages; for these packages, only the code in `lib/` will be analyzed.
+  Analyzer.packages({
+    required List<String> includedPaths,
+    ResourceProvider? resourceProvider,
+  }) {
+    this.resourceProvider =
+        resourceProvider ?? PhysicalResourceProvider.INSTANCE;
+
     _collection = AnalysisContextCollection(
-      includedPaths: [_rootDir.path],
-      resourceProvider: PhysicalResourceProvider.INSTANCE,
-    );
-  }
-
-  AnalysisHelper.sdk(Directory sdkDir) {
-    _rootDir = Directory(p.join(p.canonicalize(sdkDir.absolute.path), 'lib'));
-    _collection = AnalysisContextCollection(
-      includedPaths: [_rootDir.path],
-      resourceProvider: PhysicalResourceProvider.INSTANCE,
+      includedPaths: [
+        ...includedPaths.map((path) => p.join(path, 'lib')),
+      ],
+      resourceProvider: this.resourceProvider,
     );
   }
 
@@ -35,8 +36,8 @@ class AnalysisHelper {
 
   Stream<ResolvedLibraryResult> resolvedPublicLibraries() async* {
     for (var file in _publicFiles) {
-      var lib = await context.currentSession
-          .getResolvedLibrary(file.absolute.path) as ResolvedLibraryResult;
+      var lib = await context.currentSession.getResolvedLibrary(file.path)
+          as ResolvedLibraryResult;
 
       // todo: filter out parts
 
@@ -52,20 +53,21 @@ class AnalysisHelper {
 
     var context = _collection.contexts.first;
 
-    for (var path in context.contextRoot.analyzedFiles()) {
-      if (path.endsWith('.dart')) {
-        var modificationStamp = context.contextRoot.resourceProvider
-            .getFile(path)
-            .modificationStamp;
+    final currentMillis = DateTime.now().millisecondsSinceEpoch;
 
-        if (modificationStamp > _upToDate) {
-          hasChanges = true;
-          context.changeFile(path);
-        }
+    for (var path in context.contextRoot
+        .analyzedFiles()
+        .where((path) => path.endsWith('.dart'))) {
+      var modificationStamp =
+          context.contextRoot.resourceProvider.getFile(path).modificationStamp;
+
+      if (modificationStamp > _lastCheckedMillis) {
+        hasChanges = true;
+        context.changeFile(path);
       }
     }
 
-    _upToDate = DateTime.now().millisecondsSinceEpoch;
+    _lastCheckedMillis = currentMillis;
 
     await context.applyPendingFileChanges();
 
@@ -73,22 +75,37 @@ class AnalysisHelper {
   }
 
   Iterable<File> get _publicFiles sync* {
-    final srcPath = p.join(_rootDir.path, 'src');
+    for (var context in _collection.contexts) {
+      var root = context.contextRoot;
+      var src = root.root.getChildAssumingFolder('src');
 
-    for (var file in _rootDir
-        .listSyncSorted(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
-      if (p.isWithin(srcPath, file.path)) {
-        continue;
+      for (var path in context.contextRoot
+          .analyzedFiles()
+          .where((path) => path.endsWith('.dart'))) {
+        if (src.contains(path)) continue;
+
+        // todo: ignore file who's name starts with '_'?
+
+        yield root.resourceProvider.getFile(path);
       }
-
-      if (file.name.startsWith('_')) {
-        continue;
-      }
-
-      yield file;
     }
+
+    // final srcPath = p.join(_rootDir.path, 'src');
+
+    // for (var file in _rootDir
+    //     .listSyncSorted(recursive: true)
+    //     .whereType<File>()
+    //     .where((f) => f.path.endsWith('.dart'))) {
+    //   if (p.isWithin(srcPath, file.path)) {
+    //     continue;
+    //   }
+
+    //   if (file.name.startsWith('_')) {
+    //     continue;
+    //   }
+
+    //   yield file;
+    // }
   }
 
   Future<LibraryElementResult> getLibraryByUri(String uri) async {

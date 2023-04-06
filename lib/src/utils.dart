@@ -53,9 +53,7 @@ int adjustedLexicalCompare(String a, String b) {
   return lowerA.compareTo(lowerB);
 }
 
-String stringToAnchorId(String str) {
-  return Uri.encodeQueryComponent(str);
-}
+String stringToAnchorId(String str) => Uri.encodeQueryComponent(str);
 
 extension DirectoryExtension on Directory {
   List<FileSystemEntity> listSyncSorted({bool recursive = false}) {

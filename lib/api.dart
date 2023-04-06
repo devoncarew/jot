@@ -6,6 +6,7 @@ import 'package:analyzer/dart/element/scope.dart';
 import 'package:analyzer/src/dart/element/scope.dart';
 import 'package:path/path.dart' as p;
 
+import 'src/index.dart';
 import 'src/markdown.dart';
 import 'src/utils.dart';
 import 'workspace.dart';
@@ -15,15 +16,19 @@ class Api {
   final Resolver resolver = Resolver();
   final Map<Element, Item> elementItemMap = {};
 
+  late final Index index;
+
   Api();
 
-  LibraryItemContainer addLibrary(String packageName, LibraryElement element) {
-    if (!packages.any((p) => p.name == packageName)) {
-      packages.add(Package(packageName));
-    }
+  LibraryItemContainer addLibrary(
+      LibraryElement element, String packageName, String libraryPath) {
+    var package = packages.firstWhere((p) => p.name == packageName, orElse: () {
+      var package = Package(packageName);
+      packages.add(package);
+      return package;
+    });
 
-    var package = packages.firstWhere((p) => p.name == packageName);
-    var library = LibraryItemContainer(element);
+    var library = LibraryItemContainer(element, libraryPath);
     package.libraries.add(library);
     return library;
   }
@@ -36,8 +41,71 @@ class Api {
       }
     }
 
-    // todo: perform calculations; super, children, ...
+    // perform calculations; super, children, ...
     elementItemMap.values.forEach(_calculateFor);
+
+    // build the index
+    String? docSummary(Item item) {
+      // get docs
+      var docs = item.docs;
+      if (docs == null) return null;
+
+      // first sentence
+      docs = firstSentence(docs);
+
+      // convert to plaintext; resolve refs to plain text
+      docs = markdownToText(docs);
+
+      // consolidate ws
+      docs = docs.replaceAll('\n', ' ');
+
+      // first 80 chars
+      const limit = 80;
+      return docs.length > limit
+          ? '${docs.substring(0, limit - 1).trimRight()}…'
+          : docs;
+    }
+
+    index = Index();
+    for (var package in packages) {
+      var packageIndex = index.add(package.name, 'package');
+
+      for (var library in package.libraries) {
+        var libraryIndex = packageIndex.add(
+          library.name,
+          'library',
+          ref: resolve(library.element),
+          docs: docSummary(library),
+        );
+
+        for (var child in library.allChildrenSorted) {
+          if (child is Items) {
+            var childIndex = libraryIndex.add(
+              child.name,
+              child.type.displayName,
+              ref: resolve(child.element),
+              docs: docSummary(child),
+            );
+            for (var c in child.allChildrenSorted) {
+              childIndex.add(
+                c.name,
+                c.type.displayName,
+                id: c.anchorId,
+                docs: docSummary(c),
+              );
+            }
+          } else {
+            libraryIndex.add(
+              child.name,
+              child.type.displayName,
+              id: child.anchorId,
+              docs: docSummary(child),
+            );
+          }
+        }
+        // todo:
+      }
+    }
   }
 
   void _process(Item item) {
@@ -111,12 +179,16 @@ class Item {
   late final GroupType type = GroupType.typeFor(element);
   final RelationshipMap relationships = SplayTreeMap();
 
+  String? nameOverride;
+
   Scope? _scope;
 
   Item(this.element);
 
   // todo: make this more robust
   String get name {
+    if (nameOverride != null) return nameOverride!;
+
     var result = element.displayName;
     if (result.isEmpty) {
       // todo: for now, assume this is a ctor
@@ -298,7 +370,9 @@ class ExtensionElementItems extends Items {
 }
 
 class LibraryItemContainer extends Items {
-  LibraryItemContainer(super.element) {
+  LibraryItemContainer(super.element, String name) {
+    nameOverride = name;
+
     var exportNamespace = element.exportNamespace;
     var elements = exportNamespace.definedNames.values
         .where((element) => element.isPublic)
@@ -397,6 +471,8 @@ enum GroupType implements Comparable<GroupType> {
   final bool containerType;
 
   const GroupType(this.title, this.elementKinds, {this.containerType = false});
+
+  String get displayName => name.startsWith(r'$') ? name.substring(1) : name;
 
   @override
   int compareTo(GroupType other) {

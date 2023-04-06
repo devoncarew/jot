@@ -6,6 +6,7 @@ import 'markdown.dart';
 import 'render.dart';
 import 'utils.dart';
 
+// todo:
 class Generator {
   final DocWorkspace workspace;
   final Api api;
@@ -15,7 +16,7 @@ class Generator {
 
 FileContentGenerator libraryGenerator(LibraryItemContainer library) {
   return (DocWorkspace workspace, DocFile thisFile) async {
-    return LibraryGenerator(
+    return _LibraryGenerator(
       library: library,
       workspace: workspace,
       thisFile: thisFile,
@@ -23,12 +24,34 @@ FileContentGenerator libraryGenerator(LibraryItemContainer library) {
   };
 }
 
-class LibraryGenerator {
+FileContentGenerator itemsGenerator(Items items) {
+  if (items is InterfaceElementItems) {
+    return (DocWorkspace workspace, DocFile thisFile) async {
+      return _InterfaceElementGenerator(
+        classItems: items,
+        workspace: workspace,
+        thisFile: thisFile,
+      ).generate();
+    };
+  } else if (items is ExtensionElementItems) {
+    return (DocWorkspace workspace, DocFile thisFile) async {
+      return _ExtentionElementGenerator(
+        extensionItems: items,
+        workspace: workspace,
+        thisFile: thisFile,
+      ).generate();
+    };
+  } else {
+    throw StateError('unhandled type: $items');
+  }
+}
+
+class _LibraryGenerator {
   final LibraryItemContainer library;
   final DocWorkspace workspace;
   final DocFile thisFile;
 
-  LibraryGenerator({
+  _LibraryGenerator({
     required this.library,
     required this.workspace,
     required this.thisFile,
@@ -129,23 +152,12 @@ class LibraryGenerator {
   }
 }
 
-FileContentGenerator interfaceElementGenerator(
-    InterfaceElementItems interfaceElementItems) {
-  return (DocWorkspace workspace, DocFile thisFile) async {
-    return InterfaceElementGenerator(
-      classItems: interfaceElementItems,
-      workspace: workspace,
-      thisFile: thisFile,
-    ).generate();
-  };
-}
-
-class InterfaceElementGenerator {
+class _InterfaceElementGenerator {
   final InterfaceElementItems classItems;
   final DocWorkspace workspace;
   final DocFile thisFile;
 
-  InterfaceElementGenerator({
+  _InterfaceElementGenerator({
     required this.classItems,
     required this.workspace,
     required this.thisFile,
@@ -164,7 +176,7 @@ class InterfaceElementGenerator {
     buf.write(CodeRepresentationRenderer.writeAnnotations(classItems));
     buf.writeln(linkedCodeRenderer.render(classItems.type, classItems));
     writeAncestors(buf);
-    writeChildRelationships(
+    _writeChildRelationships(
         buf, classItems.relationships, thisFile, workspace.api!);
     if (classItems.docs != null) {
       buf.writeln(convertMarkdown(classItems.docs!,
@@ -269,23 +281,12 @@ class InterfaceElementGenerator {
   }
 }
 
-FileContentGenerator extensionElementGenerator(
-    ExtensionElementItems extensionItems) {
-  return (DocWorkspace workspace, DocFile thisFile) async {
-    return ExtentionElementGenerator(
-      extensionItems: extensionItems,
-      workspace: workspace,
-      thisFile: thisFile,
-    ).generate();
-  };
-}
-
-class ExtentionElementGenerator {
+class _ExtentionElementGenerator {
   final ExtensionElementItems extensionItems;
   final DocWorkspace workspace;
   final DocFile thisFile;
 
-  ExtentionElementGenerator({
+  _ExtentionElementGenerator({
     required this.extensionItems,
     required this.workspace,
     required this.thisFile,
@@ -301,7 +302,7 @@ class ExtentionElementGenerator {
     buf.write(CodeRepresentationRenderer.writeAnnotations(extensionItems));
     buf.writeln(linkedCodeRenderer.render(extensionItems.type, extensionItems));
     writeAncestors(buf);
-    writeChildRelationships(
+    _writeChildRelationships(
         buf, extensionItems.relationships, thisFile, workspace.api!);
     if (extensionItems.docs != null) {
       buf.writeln(convertMarkdown(extensionItems.docs!,
@@ -365,7 +366,7 @@ class ExtentionElementGenerator {
   }
 }
 
-void writeChildRelationships(StringBuffer buf, RelationshipMap relationships,
+void _writeChildRelationships(StringBuffer buf, RelationshipMap relationships,
     DocFile thisFile, Api api) {
   if (relationships.isEmpty) return;
 
