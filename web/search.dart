@@ -118,7 +118,7 @@ class SearchResultsUI {
 
     if (total != items.length) {
       footer.text =
-          'showing ${items.length} of ${items.length} ${plural('item', total)}';
+          'showing ${items.length} of $total ${plural('item', total)}';
     } else {
       footer.text = '${items.length} ${plural('item', total)}';
     }
