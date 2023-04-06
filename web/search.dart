@@ -69,6 +69,7 @@ class SearchUI {
       searchResultsUI.show();
 
       index.search(text).then((results) {
+        // Show the search results in the UI.
         searchResultsUI.displayResults(results);
       });
     }
