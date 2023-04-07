@@ -86,7 +86,7 @@ class Outline {
     for (var item in items) {
       buf.writeln(item.asHtml);
     }
-    buf.writeln('</ul>');
+    buf.write('</ul>');
     return buf.toString();
   }
 }
@@ -247,5 +247,31 @@ ${suffix ?? ''}
     }
 
     return source;
+  }
+}
+
+extension StringExtension on String {
+  /// A simple implementation of `package:path`'s `relative` function.
+  ///
+  /// The implementation from `package:path` ends up calling `Directory.current`
+  /// enough that that call along can account for 60% of this tool's run time.
+  String pathRelative({required String fromDir}) {
+    if (fromDir.isEmpty || fromDir == '.') {
+      return this;
+    }
+
+    var paths = split('/');
+    var froms = fromDir.split('/');
+
+    while (paths.isNotEmpty && froms.isNotEmpty && paths.first == froms.first) {
+      paths = paths.sublist(1);
+      froms = froms.sublist(1);
+    }
+
+    for (var _ in froms) {
+      paths.insert(0, '..');
+    }
+
+    return paths.join('/');
   }
 }

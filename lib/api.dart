@@ -59,8 +59,8 @@ class Api {
       // consolidate ws
       docs = docs.replaceAll('\n', ' ');
 
-      // first 80 chars
-      const limit = 80;
+      // first 72 chars
+      const limit = 72;
       return docs.length > limit
           ? '${docs.substring(0, limit - 1).trimRight()}…'
           : docs;
@@ -519,7 +519,9 @@ class Resolver {
     if (target == null) return null;
 
     if (from != null) {
-      return p.relative(target.path, from: p.dirname(from.path));
+      // TODO: replaced for performance reasons
+      return target.path.pathRelative(fromDir: p.dirname(from.path));
+      // return p.relative(target.path, from: p.dirname(from.path));
     } else {
       return target.path;
     }
