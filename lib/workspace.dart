@@ -226,7 +226,11 @@ class DocWorkspace extends DocContainer {
     if (from == null) {
       return target.path;
     } else {
-      return p.relative(target.path, from: p.dirname(from.path));
+      // We use our own custom 'relative' implementation as the package:path one
+      // obsessively call's Directory.current, and would contribute as much as
+      // 60% of our runtime time.
+      return target.path.pathRelative(fromDir: p.dirname(from.path));
+      // return p.relative(target.path, from: p.dirname(from.path));
     }
   }
 
@@ -250,7 +254,7 @@ class DocWorkspace extends DocContainer {
     }).join(' ');
 
     // side nav
-    var sidenavContents = _genSidenav(file, this);
+    var sidenavContents = _genSidenav(file, this).trimRight();
 
     // breadcrumbs
     var breadcrumbs = file.breadcrumbs;
@@ -294,7 +298,7 @@ class DocWorkspace extends DocContainer {
       navbar: navbarContent,
       sideNav: sidenavContents,
       breadcrumbs: breadcrumbsContent,
-      pageContent: page.contents,
+      pageContent: page.contents.trimRight(),
       toc: page.outline?.asHtml ?? '',
       footer: footer ?? '',
     );
@@ -332,10 +336,11 @@ class DocWorkspace extends DocContainer {
       }
 
       buf.writeln('''
-        <div class="menu__list-item-collapsible">
-          <a $href class="menu__link menu__link--sublist $active" data-jot>${entity.name}</a>
-          <button type="button" class="clean-btn menu__caret"></button>
-        </div>''');
+
+<div class="menu__list-item-collapsible">
+  <a $href class="menu__link menu__link--sublist $active" data-jot>${entity.name}</a>
+  <button type="button" class="clean-btn menu__caret"></button>
+</div>''');
 
       if (entity.children.isNotEmpty) {
         buf.writeln('<ul class="menu__list">');

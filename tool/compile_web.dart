@@ -7,6 +7,7 @@ void main(List<String> args) async {
   var params = [
     'compile',
     'js',
+    '-O2',
     '-o',
     'lib/resources/script.js',
     'web/main.dart',

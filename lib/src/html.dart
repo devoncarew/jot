@@ -39,7 +39,9 @@ class HtmlTemplate {
 
   final String htmlTemplateData;
 
-  HtmlTemplate._(this.htmlTemplateData);
+  HtmlTemplate._(this.htmlTemplateData) {
+    _parseTemplate();
+  }
 
   String templateSubtitute({
     required String pageTitle,
@@ -52,45 +54,98 @@ class HtmlTemplate {
     String toc = '',
     String footer = '',
   }) {
-    var results = htmlTemplateData
-        .replaceAll('{{ page-title }}', pageTitle)
-        .replaceAll('{{ prefix }}', pathPrefix)
-        .replaceAll('{{ pageRef }}', pageRef)
-        .replaceFirst('{{ navbar }}', navbar)
-        .replaceFirst('{{ sidenav }}', sideNav)
-        .replaceFirst('{{ breadcrumbs }}', breadcrumbs)
-        .replaceFirst('{{ page-content }}', pageContent)
-        .replaceFirst('{{ toc }}', toc)
-        .replaceFirst('{{ footer }}', footer);
+    final subs = {
+      'page-title': pageTitle,
+      'prefix': pathPrefix,
+      'pageRef': pageRef,
+      'navbar': navbar,
+      'sidenav': sideNav,
+      'breadcrumbs': breadcrumbs,
+      'page-content': pageContent,
+      'toc': toc,
+      'footer': footer,
+    };
 
-    var lastWasBlank = false;
+    var results = _generateString(subs);
 
-    results = results
-        .split('\n')
-        .map((line) {
-          line = line.trimRight();
+    return results;
 
-          if (line.endsWith('-->') && line.trim().startsWith('<!--')) {
-            line = '';
-          }
+    // TODO: ~10% of our generation time is spent in this split() call.
 
-          if (line.isEmpty) {
-            if (lastWasBlank) {
-              return null;
-            } else {
-              lastWasBlank = true;
-              return line;
-            }
-          } else {
-            lastWasBlank = false;
-            return line;
-          }
-        })
-        .whereType<String>()
-        .join('\n');
+    // var lastWasBlank = false;
 
-    return '$results\n';
+    // results = results
+    //     .split('\n')
+    //     .map((line) {
+    //       line = line.trimRight();
+
+    //       if (line.endsWith('-->') && line.trim().startsWith('<!--')) {
+    //         line = '';
+    //       }
+
+    //       if (line.isEmpty) {
+    //         if (lastWasBlank) {
+    //           return null;
+    //         } else {
+    //           lastWasBlank = true;
+    //           return line;
+    //         }
+    //       } else {
+    //         lastWasBlank = false;
+    //         return line;
+    //       }
+    //     })
+    //     .whereType<String>()
+    //     .join('\n');
+
+    // return '$results\n';
   }
+
+  late final List<_Location> _locations;
+
+  void _parseTemplate() {
+    final regex = RegExp(r'{{\s+([\w-]+)\s+}}');
+
+    var results = <_Location>[];
+
+    for (var match in regex.allMatches(htmlTemplateData)) {
+      results.add(_Location(match.start, match.end, match.group(1)!));
+    }
+
+    _locations = results.toList();
+  }
+
+  String _generateString(Map<String, String> subs) {
+    var buf = StringBuffer();
+    var offset = 0;
+
+    for (var loc in _locations) {
+      if (offset < loc.start) {
+        buf.write(htmlTemplateData.substring(offset, loc.start));
+        offset = loc.start;
+      }
+
+      buf.write(subs[loc.id]!);
+      offset = loc.end;
+    }
+
+    if (offset < htmlTemplateData.length) {
+      buf.write(htmlTemplateData.substring(offset));
+    }
+
+    return buf.toString();
+  }
+}
+
+class _Location {
+  final int start;
+  final int end;
+  final String id;
+
+  _Location(this.start, this.end, this.id);
+
+  @override
+  String toString() => '$id $start $end';
 }
 
 Future<String> loadResourceDataAsString(String name) async {

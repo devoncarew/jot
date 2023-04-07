@@ -8,8 +8,6 @@ import 'utils.dart';
 
 // todo: improve animation of the sidenav opening / closing
 
-// todo: search ui
-
 // todo: update the outline view active element as the content area scrolls
 
 // todo: manage content area scroll with history push / pop
@@ -72,7 +70,9 @@ class Jot {
     });
 
     // search
-    search = SearchUI(urlBase);
+    search = SearchUI(urlBase, (url) {
+      _swapFor('$urlBase$url', updateHistory: true);
+    });
 
     // listen for history events
     window.onPopState.listen((PopStateEvent event) {

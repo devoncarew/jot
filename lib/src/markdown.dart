@@ -49,7 +49,7 @@ String convertMarkdown(
 String firstSentence(String markdown) {
   return markdown
       .split('\n')
-      .takeWhile((line) => line.trim().isNotEmpty)
+      .takeWhile((line) => line.trim().isNotEmpty && !line.startsWith('```'))
       .join('\n');
 }
 
@@ -57,6 +57,7 @@ String markdownToText(String markdown) {
   final visitor = _TextVisitor();
   final document = Document(
     extensionSet: ExtensionSet.gitHubWeb,
+    encodeHtml: false,
     linkResolver: (name, [text]) => Element.text('span', name),
   );
   for (final node in document.parse(markdown)) {

@@ -5,20 +5,28 @@ import 'dart:html';
 import 'interop.dart';
 import 'utils.dart';
 
+// todo: show the package name in the search results
+
+typedef UrlHandler = void Function(String url);
+
 class SearchUI {
   final String urlBase;
+  final UrlHandler urlHandler;
 
   late final InputElement searchBox;
   late final SearchResultsUI searchResultsUI;
 
   late final Index index;
 
-  SearchUI(this.urlBase) {
+  SearchUI(this.urlBase, this.urlHandler) {
     index = Index(urlBase);
 
     searchBox = $id('search') as InputElement;
     searchResultsUI = SearchResultsUI(
-        $query('div.search-glass-pane')!, $query('div.search-area')!);
+      urlHandler,
+      $query('div.search-glass-pane')!,
+      $query('div.search-area')!,
+    );
 
     document.onKeyPress.listen((event) {
       if (event.key == '/') {
@@ -34,6 +42,10 @@ class SearchUI {
       } else if (event.key == 'Enter') {
         event.preventDefault();
         _selectCurrent();
+      } else if (event.key == 'ArrowDown') {
+        searchResultsUI.selectDown();
+      } else if (event.key == 'ArrowUp') {
+        searchResultsUI.selectUp();
       }
     });
 
@@ -48,11 +60,15 @@ class SearchUI {
 
   void _activate() {
     searchBox.focus();
-    _handleInputChanged(searchBox.value ?? '');
+
+    var text = (searchBox.value ?? '').trim();
+    if (text.isNotEmpty) {
+      searchResultsUI.show();
+    }
   }
 
   void _selectCurrent() {
-    // todo:
+    searchResultsUI.selectCurrent();
   }
 
   void _deactivate() {
@@ -68,6 +84,7 @@ class SearchUI {
     } else {
       searchResultsUI.show();
 
+      // ignore: unnecessary_lambdas
       index.search(text).then((results) {
         // Show the search results in the UI.
         searchResultsUI.displayResults(results);
@@ -79,10 +96,16 @@ class SearchUI {
 class SearchResultsUI {
   static const Duration _delay = Duration(milliseconds: 200);
 
+  final UrlHandler urlHandler;
+
   final Element glassPane;
   final Element searchArea;
 
-  SearchResultsUI(this.glassPane, this.searchArea) {
+  List<IndexMember> items = [];
+  final Map<IndexMember, LIElement> itemToElement = {};
+  IndexMember? selected;
+
+  SearchResultsUI(this.urlHandler, this.glassPane, this.searchArea) {
     glassPane.onMouseDown.listen((_) {
       hide();
     });
@@ -100,8 +123,44 @@ class SearchResultsUI {
     }
   }
 
+  void selectCurrent() {
+    if (selected != null) {
+      urlHandler(selected!.url);
+    }
+
+    hide();
+  }
+
+  void selectUp() {
+    if (selected == null) return;
+    var index = items.indexOf(selected!);
+    if (index == 0) return;
+
+    var li = itemToElement[selected]!;
+    li.classes.remove('selected');
+    selected = items[index - 1];
+    li = itemToElement[selected]!;
+    li.classes.add('selected');
+
+    li.scrollIntoViewIfNeeded();
+  }
+
+  void selectDown() {
+    if (selected == null) return;
+    var index = items.indexOf(selected!);
+    if (index + 1 >= items.length) return;
+
+    var li = itemToElement[selected]!;
+    li.classes.remove('selected');
+    selected = items[index + 1];
+    li = itemToElement[selected]!;
+    li.classes.add('selected');
+
+    li.scrollIntoViewIfNeeded();
+  }
+
   void displayResults(SearchResults results) {
-    const maxLimit = 200;
+    const maxLimit = 100;
 
     var items = results.items.map((result) => result.item).toList();
     var total = items.length;
@@ -110,9 +169,20 @@ class SearchResultsUI {
       items = items.take(maxLimit).toList();
     }
 
+    this.items = items;
+    itemToElement.clear();
+    selected = null;
+
     var ul = searchArea.querySelector('ul')!;
     ul.children.clear();
-    ul.children.addAll(items.map((c) => _renderItem(results.pattern, c)));
+    ul.children.addAll(items.map((item) {
+      var li = _renderItem(results.pattern, item);
+      itemToElement[item] = li;
+      return li;
+    }));
+    selected = items.isEmpty ? null : items.first;
+    itemToElement[selected]?.classes.add('selected');
+    ul.scrollTop = 0;
 
     var footer = searchArea.querySelector('div.search-footer')!;
 
@@ -124,7 +194,7 @@ class SearchResultsUI {
     }
   }
 
-  static LIElement _renderItem(String pattern, IndexMember item) {
+  LIElement _renderItem(String pattern, IndexMember item) {
     var element = LIElement()..classes.addAll(['margin--sm', 'padding--sm']);
     element.children.add(
       DivElement()
@@ -144,7 +214,7 @@ class SearchResultsUI {
     } else {
       element.children.add(
         DivElement()
-          ..text = item.docs
+          ..text = item.docs!
           ..classes.add('docs'),
       );
     }
@@ -152,10 +222,8 @@ class SearchResultsUI {
     element.onMouseDown.listen((event) {
       event.stopPropagation();
 
-      print('[$item]');
-
-      // todo:
-      window.alert(item.toString());
+      urlHandler(item.url);
+      hide();
     });
 
     return element;
@@ -180,6 +248,9 @@ Iterable<Element> _renderMatchText(
   var matchAt = display.indexOf(pattern, startsAt);
   if (matchAt == -1) {
     matchAt = display.toLowerCase().indexOf(pattern.toLowerCase(), startsAt);
+  }
+  if (matchAt == -1) {
+    matchAt = display.toLowerCase().indexOf(pattern.toLowerCase());
   }
 
   if (matchAt == -1) {
@@ -239,22 +310,16 @@ class Index {
       _gatherPotentialMatches(lower, member, potential);
     }
 
-    // TODO: consider performance optimizations if there are a large number of
-    // items.
-
-    // if (potential.length>5000) {
-    //   potential =
-    // }
-
-    // todo: perform more filtering, ranking
-
     return SearchResults(pattern, potential);
   }
 
   static void _gatherPotentialMatches(
       String pattern, IndexMember member, List<IndexMember> matches) {
-    if (member.name.toLowerCase().contains(pattern) && member.ref != null) {
-      matches.add(member);
+    if (member.ref != null) {
+      if (member.name.toLowerCase().contains(pattern) ||
+          member.display.toLowerCase().contains(pattern)) {
+        matches.add(member);
+      }
     }
 
     if (member.children.isNotEmpty) {
@@ -297,11 +362,11 @@ abstract class IndexMember {
   String get display {
     if (type == 'class') {
       return '$name { … }';
-    } else if (type == 'function') {
+    } else if (type == 'function' || type == 'constructor') {
       return '$name()';
-    } else if (type == 'method' || type == 'constructor') {
+    } else if (type == 'method') {
       return '$_maybeParent$name()';
-    } else if (type == 'field') {
+    } else if (type == 'field' || type == 'accessor') {
       return '$_maybeParent$name';
     } else {
       return name;
@@ -317,8 +382,13 @@ abstract class IndexMember {
     return null;
   }
 
+  String get url => id != null ? '$ref#$id' : ref!;
+
   String get _maybeParent {
-    return parent == null ? '' : '${parent!.name}.';
+    if (parent == null) return '';
+    if (parent!.type == 'library') return '';
+
+    return '${parent!.name}.';
   }
 
   factory IndexMember._parse(_JsonType json) {
@@ -353,10 +423,13 @@ abstract class IndexMember {
   };
 
   static const Set<String> discouragedPackages = {
-    // todo: others
     'dart:cli',
     'dart:html',
+    'dart:indexed_db',
+    'dart:mirrors',
     'dart:svg',
+    'dart:web_audio',
+    'dart:web_gl',
   };
 
   int calcRank(String pattern, String patternLower) {
@@ -370,17 +443,18 @@ abstract class IndexMember {
       rank += 300;
     } else if (name.startsWith(pattern)) {
       // - exact (case is the same)
-      // todo: switch these?
       rank += 200;
     } else if (name.toLowerCase().startsWith(patternLower)) {
       // - same (same case-insensitive)
       rank += 100;
+    } else if (display.toLowerCase().startsWith(patternLower)) {
+      rank += 50;
     }
 
     // sorting:
-    // - Class, extension, interface (a type)
-    if (type == 'class' || type == 'extension') {
-      // todo: other container types
+
+    // - Class, extension, enums
+    if (type == 'class' || type == 'extension' || type == 'enum') {
       rank += 10;
     }
 
@@ -413,10 +487,12 @@ class IndexParent extends IndexMember {
 }
 
 class IndexLeaf extends IndexMember {
-  @override
-  final String? id;
+  final String? _id;
 
-  IndexLeaf(super.name, super.type, super.docs, this.id);
+  IndexLeaf(super.name, super.type, super.docs, this._id);
+
+  @override
+  String? get id => _id ?? (ref != null ? name : null);
 
   @override
   String? get ref => parent?.ref;
@@ -436,11 +512,6 @@ class SearchResults {
       return SearchResult(item.calcRank(pattern, patternLower), item);
     }).toList()
       ..sort();
-
-    // // todo: remove
-    // for (var i in items) {
-    //   print(i);
-    // }
   }
 }
 
@@ -455,8 +526,10 @@ class SearchResult implements Comparable<SearchResult> {
     var diff = other.rank - rank;
     if (diff != 0) return diff;
 
-    // TODO: sort lowercase first?
     diff = item.name.compareTo(other.item.name);
+    if (diff != 0) return diff;
+
+    diff = item.display.length - other.item.display.length;
     if (diff != 0) return diff;
 
     return item.display.compareTo(other.item.display);
