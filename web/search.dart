@@ -84,6 +84,7 @@ class SearchUI {
     } else {
       searchResultsUI.show();
 
+      // ignore: unnecessary_lambdas
       index.search(text).then((results) {
         // Show the search results in the UI.
         searchResultsUI.displayResults(results);
