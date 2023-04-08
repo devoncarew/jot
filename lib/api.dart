@@ -59,8 +59,8 @@ class Api {
       // consolidate ws
       docs = docs.replaceAll('\n', ' ');
 
-      // first 72 chars
-      const limit = 72;
+      // first 80 chars
+      const limit = 80;
       return docs.length > limit
           ? '${docs.substring(0, limit - 1).trimRight()}…'
           : docs;
@@ -205,6 +205,8 @@ class Item {
 
   ClassElement get asClass => element as ClassElement;
 
+  MixinElement get asMixin => element as MixinElement;
+
   ExtensionElement get asExtension => element as ExtensionElement;
 
   EnumElement get asEnum => element as EnumElement;
@@ -285,6 +287,25 @@ class Item {
 
       return result;
     };
+  }
+
+  List<ElementAnnotation> get annotations {
+    return element.metadata.where((annotation) {
+      var meta = annotation.element;
+      if (meta == null) return false;
+
+      // `meta` is a PropertyAccessorElement or a ConstructorElement.
+
+      // Filter pragma annotations - these are directions to tools, not first
+      // class properties of the source code.
+      if (meta is PropertyAccessorElement) {
+        if (meta.name == 'pragma') return false;
+      } else if (meta is ConstructorElement) {
+        if (meta.enclosingElement.name == 'pragma') return false;
+      }
+
+      return true;
+    }).toList();
   }
 
   static Scope? _calcScope(Element element) {
@@ -439,7 +460,9 @@ class Group implements Comparable<Group> {
 }
 
 enum GroupType implements Comparable<GroupType> {
-  // todo: records? mixins?
+  // TODO: records?
+
+  // TODO: why is there not an ElementKind.MIXIN?
 
   // class members
   constructor('Constructors', {ElementKind.CONSTRUCTOR}),
@@ -453,7 +476,10 @@ enum GroupType implements Comparable<GroupType> {
   function('Functions', {ElementKind.FUNCTION}),
   functionTypeAlias('Function Type Aliases', {ElementKind.FUNCTION_TYPE_ALIAS}),
   typeAlias('Type Aliases', {ElementKind.TYPE_ALIAS}),
+
+  // container items
   $enum('Enums', {ElementKind.ENUM}, containerType: true),
+  $mixin('Mixins', {}, containerType: true),
   $class('Classes', {ElementKind.CLASS}, containerType: true),
   $extension('Extensions', {ElementKind.EXTENSION}, containerType: true),
   //$record('Records', {ElementKind.RECORD}, containerType: true),
@@ -485,6 +511,7 @@ enum GroupType implements Comparable<GroupType> {
     if (element is FieldElement && element.isEnumConstant) {
       return GroupType.enumValue;
     }
+    if (element is MixinElement) return GroupType.$mixin;
     for (var val in GroupType.values) {
       if (val.elementKinds.contains(kind)) {
         return val;

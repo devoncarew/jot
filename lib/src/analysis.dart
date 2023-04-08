@@ -1,5 +1,3 @@
-// import 'dart:io';
-
 import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
@@ -39,7 +37,7 @@ class Analyzer {
       var lib = await context.currentSession.getResolvedLibrary(file.path)
           as ResolvedLibraryResult;
 
-      // todo: filter out parts
+      // TODO: Filter out parts?
 
       yield lib;
     }
@@ -79,33 +77,19 @@ class Analyzer {
       var root = context.contextRoot;
       var src = root.root.getChildAssumingFolder('src');
 
-      for (var path in context.contextRoot
+      var dartFiles = context.contextRoot
           .analyzedFiles()
-          .where((path) => path.endsWith('.dart'))) {
-        if (src.contains(path)) continue;
+          .where((path) => path.endsWith('.dart'))
+          .toList()
+        ..sort();
 
-        // todo: ignore file who's name starts with '_'?
+      for (var path in dartFiles) {
+        if (src.contains(path)) continue;
+        // TODO: Ignore file whose name starts with '_'?
 
         yield root.resourceProvider.getFile(path);
       }
     }
-
-    // final srcPath = p.join(_rootDir.path, 'src');
-
-    // for (var file in _rootDir
-    //     .listSyncSorted(recursive: true)
-    //     .whereType<File>()
-    //     .where((f) => f.path.endsWith('.dart'))) {
-    //   if (p.isWithin(srcPath, file.path)) {
-    //     continue;
-    //   }
-
-    //   if (file.name.startsWith('_')) {
-    //     continue;
-    //   }
-
-    //   yield file;
-    // }
   }
 
   Future<LibraryElementResult> getLibraryByUri(String uri) async {

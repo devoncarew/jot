@@ -54,7 +54,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   log.stdout('Version $version');
   log.stdout('');
 
-  log.stdout('Resolving SDK libraries...');
+  var progress = log.progress('Resolving SDK libraries');
 
   // parse the libraries file
   var librariesFile = File(p.join(sdkDir.path, 'lib', 'libraries.json'));
@@ -151,6 +151,8 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
       }
     }
   }
+
+  progress.cancel();
 
   // build model
   api.finish();
