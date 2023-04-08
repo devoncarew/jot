@@ -88,7 +88,7 @@ class Jot {
       return Response.notFound('404 - page not found: ${request.url.path}');
     }
 
-    Future<Response> echoRequest(Request request) async {
+    Future<Response> contentHandler(Request request) async {
       var filePath = request.url.path;
       if (!filePath.endsWith('.html')) return notFound(request);
 
@@ -121,7 +121,7 @@ class Jot {
       });
     }
 
-    var app = Router(notFoundHandler: echoRequest);
+    var app = Router(notFoundHandler: contentHandler);
     app.get('/', (Request request) {
       return Response.movedPermanently('index.html');
     });
@@ -135,7 +135,7 @@ class Jot {
     });
     app.mount('/resources', Router(notFoundHandler: resourcesHandler).call);
 
-    // todo: move most of this to a server class
+    // TODO: move most of this to a server class
     var server = await shelf_io.serve(app.call, 'localhost', port);
     log.stdout(
         'Serving docs at http://${server.address.host}:${server.port}/.');

@@ -222,16 +222,22 @@ class DocWorkspace extends DocContainer {
     }
   }
 
+  final Map<String, Map<String, String>> _pathToCache = {};
+
   String pathTo(DocFile target, {DocFile? from}) {
-    if (from == null) {
-      return target.path;
-    } else {
+    if (from == null) return target.path;
+
+    var to = target.path;
+    var fromDir = p.dirname(from.path);
+
+    var fromCache = _pathToCache.putIfAbsent(fromDir, () => {});
+    return fromCache.putIfAbsent(to, () {
       // We use our own custom 'relative' implementation as the package:path one
       // obsessively call's Directory.current, and would contribute as much as
-      // 60% of our runtime time.
-      return target.path.pathRelative(fromDir: p.dirname(from.path));
+      // 60% of our run time.
+      return to.pathRelative(fromDir: fromDir);
       // return p.relative(target.path, from: p.dirname(from.path));
-    }
+    });
   }
 
   Future<String> generateWorkspacePage(

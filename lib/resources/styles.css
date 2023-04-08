@@ -105,6 +105,7 @@ body {
 .menu__link {
   overflow-x: clip;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .docItemCol {
@@ -184,20 +185,11 @@ p.annotations-container {
   padding: 0 2px;
 }
 
-.markdown a.code {
-  color: var(--ifm-color-primary-lighter);
-}
-
-.markdown code a:hover {
-  color: var(--ifm-link-color);
-}
-
 a.code,
 span.code {
   font-family: var(--ifm-font-family-monospace);
   font-size: var(--ifm-code-font-size);
 }
-
 
 div.search-glass-pane {
   position: fixed;
@@ -216,7 +208,7 @@ div.search-area {
   position: fixed;
   top: var(--ifm-navbar-height);
   right: 0px;
-  width: calc(var(--doc-sidebar-width) * 1.4);
+  width: calc(var(--doc-sidebar-width) * 1.6);
   background: var(--search-model-background);
   z-index: var(--ifm-z-index-fixed);
   min-height: 100px;
@@ -252,7 +244,6 @@ div.search-area {
 }
 
 .search-area li {
-  /* background: var(--ifm-color-emphasis-100); */
   border-radius: 4px;
   box-shadow: var(--ifm-global-shadow-lw) !important;
   cursor: pointer;
@@ -264,9 +255,17 @@ div.search-area {
   white-space: nowrap;
 }
 
+.search-area span.location {
+  opacity: 0.5;
+  font-style: italic;
+  font-size: 0.8em;
+  margin-left: 0.4em;
+}
+
 .search-area span.type {
   opacity: 0.5;
   font-style: italic;
+  margin-right: 0.4em;
 }
 
 .search-area div.docs {
@@ -284,4 +283,31 @@ div.search-area {
 .search-area li.selected,
 .search-area li:hover {
   background-color: var(--ifm-menu-color-background-active);
+}
+
+.badge {
+  border-radius: 1rem;
+}
+
+.badge--secondary {
+  color: var(--ifm-color-secondary-contrast-background);
+}
+
+/* have a denser TOC */
+.menu__list-item:not(:first-child) {
+  margin-top: 0;
+}
+
+.table-of-contents {
+  padding: 0;
+  padding-left: var(--ifm-toc-padding-horizontal);
+}
+
+.table-of-contents li {
+  white-space: nowrap;
+}
+
+.table-of-contents__link {
+  overflow-x: hidden;
+  text-overflow: ellipsis;
 }

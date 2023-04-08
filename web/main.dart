@@ -12,8 +12,6 @@ import 'utils.dart';
 
 // todo: manage content area scroll with history push / pop
 
-// todo: move the data-path from doc-main-container to body
-
 final Path p = Path();
 
 void main() {
@@ -21,17 +19,18 @@ void main() {
   final urlBase = _calcUrlBase();
 
   // Initial url.
-  final rel = _docMainContainer.attributes['data-path']!;
+  final rel = _body.attributes['data-path']!;
 
   final jot = Jot(urlBase: urlBase, initialUrl: '$urlBase$rel');
   jot.setup();
 }
 
-Element get _docMainContainer => $id('doc-main-container');
+final Element _docMainContainer = $id('doc-main-container');
+final Element _body = $query('body')!;
 
 String _calcUrlBase() {
   var loc = window.location.href;
-  var rel = _docMainContainer.attributes['data-path']!;
+  var rel = _body.attributes['data-path']!;
   for (var _ in rel.split('/')) {
     loc = p.parent(loc);
   }
@@ -52,7 +51,7 @@ class Jot {
   }
 
   String get baseRel {
-    final rel = _docMainContainer.attributes['data-path']!;
+    final rel = _body.attributes['data-path']!;
     return p.parent(rel);
   }
 
@@ -60,14 +59,14 @@ class Jot {
     // hook up the color theme toggle
     var colorModeButton = $id('color-mode-button');
     colorModeButton.onClick.listen((event) {
-      var light = document.documentElement!.attributes['data-theme'] == 'light';
-
-      var stylesLink = $id<LinkElement>('theme-stylesheet');
-      stylesLink.href =
-          '${urlBase}resources/styles-${light ? 'dark' : 'light'}.css';
-      document.documentElement!.attributes['data-theme'] =
-          light ? 'dark' : 'light';
+      theme = theme == 'light' ? 'dark' : 'light';
     });
+
+    // update the theme from the last session's value
+    var previousThemeValue = window.localStorage['theme'];
+    if (previousThemeValue != null) {
+      theme = previousThemeValue;
+    }
 
     // search
     search = SearchUI(urlBase, (url) {
@@ -93,6 +92,18 @@ class Jot {
     }
 
     _updateContentLinks();
+  }
+
+  String get theme =>
+      document.documentElement!.attributes['data-theme'] ?? 'dark';
+
+  set theme(String value) {
+    if (theme == value) return;
+
+    var stylesLink = $id<LinkElement>('theme-stylesheet');
+    stylesLink.href = '${urlBase}resources/styles-$value.css';
+    document.documentElement!.attributes['data-theme'] = value;
+    window.localStorage['theme'] = value;
   }
 
   void _swapFor(String url, {required bool updateHistory}) async {

@@ -124,7 +124,7 @@ class _LibraryGenerator {
             '<span class="symbol-type">${item.element.kind.displayName}</span>'
             '</h3>',
           );
-          buf.write(CodeRepresentationRenderer.writeAnnotations(item));
+          buf.write(writeAnnotations(item));
           buf.writeln(linkedCodeRenderer.render(group.type, item));
           if (item.docs != null) {
             buf.writeln(convertMarkdown(item.docs!,
@@ -166,14 +166,11 @@ class _InterfaceElementGenerator {
   GenerationResults generate() {
     var api = workspace.api!;
 
-    // todo: replace some uses of codeRenderer with linkedCodeRenderer
-
-    // var codeRenderer = CodeRepresentationRenderer();
     var linkedCodeRenderer = LinkedCodeRenderer(api.resolver, thisFile);
 
     var buf = StringBuffer();
     buf.writeln('<h1>${classItems.name}</h1>');
-    buf.write(CodeRepresentationRenderer.writeAnnotations(classItems));
+    buf.write(writeAnnotations(classItems));
     buf.writeln(linkedCodeRenderer.render(classItems.type, classItems));
     writeAncestors(buf);
     _writeChildRelationships(
@@ -213,7 +210,7 @@ class _InterfaceElementGenerator {
             '<span class="symbol-type">${item.element.kind.displayName}</span>'
             '</h3>',
           );
-          buf.write(CodeRepresentationRenderer.writeAnnotations(item));
+          buf.write(writeAnnotations(item));
           buf.writeln(linkedCodeRenderer.render(group.type, item));
           if (item.docs != null) {
             buf.writeln(convertMarkdown(item.docs!,
@@ -299,7 +296,7 @@ class _ExtentionElementGenerator {
 
     var buf = StringBuffer();
     buf.writeln('<h1>${extensionItems.name}</h1>');
-    buf.write(CodeRepresentationRenderer.writeAnnotations(extensionItems));
+    buf.write(writeAnnotations(extensionItems));
     buf.writeln(linkedCodeRenderer.render(extensionItems.type, extensionItems));
     writeAncestors(buf);
     _writeChildRelationships(
@@ -320,7 +317,7 @@ class _ExtentionElementGenerator {
           '<span class="symbol-type">${item.element.kind.displayName}</span>'
           '</h3>',
         );
-        buf.write(CodeRepresentationRenderer.writeAnnotations(item));
+        buf.write(writeAnnotations(item));
         buf.writeln(linkedCodeRenderer.render(group.type, item));
         if (item.docs != null) {
           buf.writeln(convertMarkdown(item.docs!,

@@ -5,8 +5,6 @@ import 'dart:html';
 import 'interop.dart';
 import 'utils.dart';
 
-// todo: show the package name in the search results
-
 typedef UrlHandler = void Function(String url);
 
 class SearchUI {
@@ -201,23 +199,23 @@ class SearchResultsUI {
         ..children.addAll([
           ..._renderMatchText(item.display, item.name, pattern),
           SpanElement()
-            ..text = ' ${item.type}'
-            ..classes.add('type'),
+            ..text = item.importReference(true)
+            ..classes.add('location'),
         ]),
     );
-    if (item.docs == null) {
-      element.children.add(
-        DivElement()
-          ..innerHtml = '&nbsp;'
-          ..classes.add('docs'),
-      );
-    } else {
-      element.children.add(
-        DivElement()
-          ..text = item.docs!
-          ..classes.add('docs'),
-      );
-    }
+    element.children.add(
+      DivElement()
+        ..classes.add('docs')
+        ..children.addAll(
+          [
+            SpanElement()
+              ..text = item.type
+              ..classes.add('type'),
+            if (item.docs == null) SpanElement()..innerHtml = '&nbsp;',
+            if (item.docs != null) SpanElement()..text = '"${item.docs!}"',
+          ],
+        ),
+    );
 
     element.onMouseDown.listen((event) {
       event.stopPropagation();
@@ -383,6 +381,20 @@ abstract class IndexMember {
   }
 
   String get url => id != null ? '$ref#$id' : ref!;
+
+  String? importReference(bool includePackageName) {
+    IndexMember? p = this;
+    while (p != null) {
+      if (p.type == 'library') {
+        var libraryName = p.name;
+        if (!includePackageName) return libraryName;
+        var package = p.packageName;
+        return package == null ? libraryName : '$package/$libraryName';
+      }
+      p = p.parent;
+    }
+    return null;
+  }
 
   String get _maybeParent {
     if (parent == null) return '';
