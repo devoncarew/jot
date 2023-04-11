@@ -151,6 +151,9 @@ class Jot {
 
     workspace.api = Api();
 
+    // TODO: build up the api and the workspace separately; we need a better
+    // picture of the API before we start assigning elements to pages
+
     await for (var resolvedLibrary
         in analysisHelper.resolvedPublicLibraries()) {
       var libraryPath = resolvedLibrary.element.source.fullName;
@@ -173,8 +176,7 @@ class Jot {
         libraryGenerator(library),
       )..importScript = 'package:$packageName/$dartLibraryPath';
 
-      workspace.api!
-          .addResolution(resolvedLibrary.element, libraryContainer.mainFile!);
+      workspace.api!.addResolution(library, libraryContainer.mainFile!);
 
       for (var itemContainer in library.allChildrenSorted.whereType<Items>()) {
         var path =
@@ -186,7 +188,7 @@ class Jot {
           itemsGenerator(itemContainer),
         );
         libraryContainer.addChild(docFile);
-        workspace.api!.addResolution(itemContainer.element, docFile);
+        workspace.api!.addResolution(itemContainer, docFile);
       }
     }
 
