@@ -75,24 +75,49 @@ class _LibraryGenerator {
     }
 
     if (library.docs != null) {
-      // todo: also support resolution for class contexts
-      // todo: also support resolution for method contexts
       // todo: also support compound references - Class.field, Class.method
-
-      // todo: see CommentReferenceResolver
-      // todo: and:
-      //   https://github.com/dart-lang/dartdoc/blob/master/lib/src/comment_references/parser.dart
-
-      // // SomeParsedLibraryResult, ParsedLibraryResult
-      // var sdsdf =
-      //     library.element.session.getParsedLibraryByElement(library.element);
-      // parseString(content: 'String');
-
       buf.writeln(convertMarkdown(library.docs!,
           linkResolver: library.markdownLinkResolver(api.resolver)));
     }
 
     var pageItemRenderer = OutlineRenderer();
+
+    if (library.exports.isNotEmpty) {
+      buf.writeln('<h2 id="_Exports">Exports</h2>');
+
+      for (var entry in library.exportsByLibrary.entries) {
+        var library = entry.key;
+        var exports = entry.value;
+
+        buf.writeln('<table>');
+        buf.write('<tr><td colspan=2 class="item-title">');
+        buf.write('Exports from ${library.urlName}');
+        buf.writeln('</td></tr>');
+
+        var itemsByGroup = Items.itemsByGroup(exports);
+
+        for (var entry in itemsByGroup.entries) {
+          var groupType = entry.key;
+          var items = entry.value;
+
+          buf.write('<tr>');
+          buf.write('<td class="item-title">${groupType.title}</td>');
+          buf.write('<td class="item-docs">');
+          buf.writeln(items.map((item) {
+            var ref = api.hrefOrSpan(
+              pageItemRenderer.render(item.type, item),
+              item.element,
+              from: thisFile,
+            );
+            return '<code>$ref</code>';
+          }).join(',\n'));
+          buf.write('</td>');
+          buf.writeln('</tr>');
+        }
+
+        buf.writeln('</table>');
+      }
+    }
 
     for (var group in library.groups.values) {
       buf.writeln('<h2 id="${group.anchorId}">${group.name}</h2>');
@@ -136,6 +161,10 @@ class _LibraryGenerator {
 
     var outline = Outline();
     var outlineRenderer = OutlineRenderer();
+
+    if (library.exports.isNotEmpty) {
+      outline.add(Heading('Exports', id: '_Exports', level: 2));
+    }
 
     for (var group in library.groups.values) {
       outline.add(Heading(group.name, id: group.anchorId, level: 2));
