@@ -116,6 +116,16 @@ class DocFile extends DocEntity {
   String toString() => 'DocFile $name';
 }
 
+class DocSeparator extends DocEntity {
+  DocSeparator(super.parent, super.name);
+
+  @override
+  Future<void> generate(Directory dir,
+      {required Logger logger, Stats? stats, bool quiet = false}) async {
+    // nothing to do
+  }
+}
+
 class DocContainer extends DocEntity {
   final bool isGroup;
   final bool isPackage;
@@ -326,14 +336,19 @@ class DocWorkspace extends DocContainer {
           '<a class="menu__link$active" '
           'href="${pathTo(entity, from: page)}" data-jot>${entity.name}</a>'
           '</li>';
-    } else {
-      entity as DocContainer;
+    } else if (entity is DocSeparator) {
+      return '<li class="menu__list-item group">'
+          '<a class="menu__link ">${entity.name}</a>'
+          '</li>';
+    } else if (entity is DocContainer) {
+      var group = entity.isGroup ? ' group' : '';
 
       // keep menus open if they're in the parent path
-      final collapsed =
-          entity.hasChild(page) ? '' : 'menu__list-item--collapsed';
+      final collapsed = !entity.isGroup && entity.hasChild(page)
+          ? ''
+          : 'menu__list-item--collapsed';
       var buf = StringBuffer('<li class="theme-doc-sidebar-item-category '
-          '$collapsed menu__list-item">');
+          '$collapsed menu__list-item $group">');
 
       var active = entity.mainFile == page ? 'menu__link--active' : '';
       var href = '';
@@ -359,6 +374,8 @@ class DocWorkspace extends DocContainer {
       buf.writeln('</li>');
 
       return buf.toString();
+    } else {
+      throw StateError('entity not handled: $entity');
     }
   }
 

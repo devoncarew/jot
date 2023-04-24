@@ -143,7 +143,7 @@ class Jot {
   }
 
   Future<DocWorkspace> _buildWorkspace(
-      HtmlTemplate htmlTemplate, Analyzer analysisHelper) async {
+      HtmlTemplate htmlTemplate, Analyzer analyzer) async {
     var workspace = DocWorkspace.fromPackage(htmlTemplate, inDir);
     var packageName = workspace.name.substring('package:'.length);
 
@@ -151,8 +151,7 @@ class Jot {
 
     workspace.api = Api();
 
-    await for (var resolvedLibrary
-        in analysisHelper.resolvedPublicLibraries()) {
+    await for (var resolvedLibrary in analyzer.resolvedPublicLibraries()) {
       var libraryPath = resolvedLibrary.element.source.fullName;
 
       var dartLibraryPath = p.relative(libraryPath, from: libDirPath);

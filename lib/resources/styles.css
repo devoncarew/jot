@@ -124,7 +124,7 @@ body {
 }
 
 .markdown h3 {
-  border-bottom: 1px solid #555;
+  border-bottom: 1px solid var(--ifm-toc-border-color);
   padding-bottom: 0.3em;
   margin-bottom: 20px;
 }
@@ -296,6 +296,13 @@ div.search-area {
 /* have a denser TOC */
 .menu__list-item:not(:first-child) {
   margin-top: 0;
+}
+
+li.menu__list-item.group {
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+  margin-top: 20px;
+  font-size: 1.2em;
+  font-weight: bold;
 }
 
 .table-of-contents {

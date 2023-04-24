@@ -112,8 +112,14 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   final api = Api();
   workspace.api = api;
 
+  workspace.addChild(DocSeparator(workspace, 'Dart SDK'));
+
   final libDir = Directory(p.join(sdkDir.path, 'lib'));
-  for (var entry in {'Core': coreLibs, 'VM': vmLibs, 'Web': webLibs}.entries) {
+  for (var entry in {
+    'Core libraries': coreLibs,
+    'VM libraries': vmLibs,
+    'Web libraries': webLibs,
+  }.entries) {
     var categoryName = entry.key;
     var libNames = entry.value;
 
@@ -151,6 +157,22 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
       }
     }
   }
+
+  workspace.addChild(DocSeparator(workspace, 'Core Packages'));
+
+  // Add a few packages - path, args, collection, ...
+  // todo: This is temporary for now; decide whether we do want to document the
+  //       sdk w/ a core set of packages or not.
+
+  // workspace.addPackage(
+  //     analyzer, 'args', getPackageRoot(Directory.current, 'args')!);
+  // workspace.addPackage(
+  //   analyzer,
+  //   'collection',
+  //   getPackageRoot(Directory.current, 'collection')!,
+  // );
+  // workspace.addPackage(
+  //     analyzer, 'path', getPackageRoot(Directory.current, 'path')!);
 
   progress.cancel();
 
@@ -248,5 +270,17 @@ void validateSdk(Directory sdk) {
   if (!librariesFile.existsSync()) {
     stderr.writeln('Invalid SDK (${sdk.path}) - missing libraries file');
     exit(1);
+  }
+}
+
+// ignore: unreachable_from_main
+extension DocWorkspaceExtension on DocWorkspace {
+  void addPackage(
+      Analyzer analyzer, String packageName, String fullPackagePath) {
+    // todo: find the file location
+
+    // todo: get the element info
+
+    // todo: find the public libraries
   }
 }
