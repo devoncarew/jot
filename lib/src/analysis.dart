@@ -32,8 +32,25 @@ class Analyzer {
 
   AnalysisContext get context => _collection.contexts.first;
 
+  AnalysisContext contextFor(String path) {
+    return _collection.contextFor(path);
+  }
+
   Stream<ResolvedLibraryResult> resolvedPublicLibraries() async* {
     for (var file in _publicFiles) {
+      var lib = await context.currentSession.getResolvedLibrary(file.path)
+          as ResolvedLibraryResult;
+
+      // TODO: Filter out parts?
+
+      yield lib;
+    }
+  }
+
+  Stream<ResolvedLibraryResult> resolvedLibrariesFor(String path) async* {
+    var context = contextFor(path);
+
+    for (var file in context.publicFiles) {
       var lib = await context.currentSession.getResolvedLibrary(file.path)
           as ResolvedLibraryResult;
 
@@ -95,5 +112,25 @@ class Analyzer {
   Future<LibraryElementResult> getLibraryByUri(String uri) async {
     var result = await context.currentSession.getLibraryByUri(uri);
     return result as LibraryElementResult;
+  }
+}
+
+extension AnalysisContextExtension on AnalysisContext {
+  Iterable<File> get publicFiles sync* {
+    var root = contextRoot;
+    var src = root.root.getChildAssumingFolder('src');
+
+    var dartFiles = contextRoot
+        .analyzedFiles()
+        .where((path) => path.endsWith('.dart'))
+        .toList()
+      ..sort();
+
+    for (var path in dartFiles) {
+      if (src.contains(path)) continue;
+      // TODO: Ignore file whose name starts with '_' ?
+
+      yield root.resourceProvider.getFile(path);
+    }
   }
 }

@@ -4,6 +4,26 @@ import 'package:args/args.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart' as p;
 
+// todo: generate for flutter and some core packges
+//   characters: 1.3.0
+//   collection: 1.17.1
+//   js: 0.6.7
+//   material_color_utilities: 0.3.0
+//   meta: 1.9.1
+//   vector_math: 2.1.4
+//   sky_engine:
+
+// flutter_test
+
+// todo: add workspace separators (named and unnamed)
+//       (or use a named group?)
+
+// todo: add the flutter sdk (flutter and flutter_test)
+
+// todo: add a placeholder for the dart sdk
+
+// todo: add an area for general packages
+
 void main(List<String> args) async {
   var parser = createArgsParser();
   ArgResults results;

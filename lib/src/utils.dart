@@ -55,6 +55,30 @@ int adjustedLexicalCompare(String a, String b) {
 
 String stringToAnchorId(String str) => Uri.encodeQueryComponent(str);
 
+typedef _JsonType = Map<String, dynamic>;
+
+String? getPackageRoot(Directory fromDir, String packageName) {
+  var packageFile = _findPackageConfig(fromDir);
+  if (packageFile == null) return null;
+
+  var packageInfo =
+      convert.jsonDecode(packageFile.readAsStringSync()) as _JsonType;
+  for (var info in packageInfo['packages'] as List<_JsonType>) {
+    if (info['name'] == packageName) {
+      return File.fromUri(Uri.parse(info['rootUri'] as String)).path;
+    }
+  }
+
+  return null;
+}
+
+File? _findPackageConfig(Directory dir) {
+  var file = File(p.join(dir.path, '.dart_tool', 'package_config.json'));
+  if (file.existsSync()) return file;
+
+  return dir.parent == dir ? null : _findPackageConfig(dir.parent);
+}
+
 extension DirectoryExtension on Directory {
   List<FileSystemEntity> listSyncSorted({bool recursive = false}) {
     var entites = listSync(recursive: recursive);
