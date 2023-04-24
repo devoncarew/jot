@@ -4,6 +4,31 @@
 
 import 'dart:convert';
 
+import '../api.dart';
+import 'markdown.dart';
+
+// build the index
+String? docSummary(Item item) {
+  // get docs
+  var docs = item.docs;
+  if (docs == null) return null;
+
+  // first sentence
+  docs = firstSentence(docs);
+
+  // convert to plaintext; resolve refs to plain text
+  docs = markdownToText(docs);
+
+  // consolidate ws
+  docs = docs.replaceAll('\n', ' ');
+
+  // first 80 chars
+  const limit = 80;
+  return docs.length > limit
+      ? '${docs.substring(0, limit - 1).trimRight()}…'
+      : docs;
+}
+
 // "t":"$class"
 // "t":"$enum"
 // "t":"$extension"

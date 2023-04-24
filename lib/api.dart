@@ -28,7 +28,7 @@ class Api {
       return package;
     });
 
-    var library = LibraryItemContainer(element, libraryPath);
+    var library = LibraryItemContainer(package, element, libraryPath);
     package.libraries.add(library);
     return library;
   }
@@ -37,34 +37,15 @@ class Api {
     // populate the element item map
     for (var package in packages) {
       for (var library in package.libraries) {
-        _process(library);
+        _buildElementItemMap(library);
       }
     }
 
+    // handle situations where elements are exported from multiple libraries
+    _processDuplicates();
+
     // perform calculations; super, children, ...
     elementItemMap.values.forEach(_calculateFor);
-
-    // build the index
-    String? docSummary(Item item) {
-      // get docs
-      var docs = item.docs;
-      if (docs == null) return null;
-
-      // first sentence
-      docs = firstSentence(docs);
-
-      // convert to plaintext; resolve refs to plain text
-      docs = markdownToText(docs);
-
-      // consolidate ws
-      docs = docs.replaceAll('\n', ' ');
-
-      // first 80 chars
-      const limit = 80;
-      return docs.length > limit
-          ? '${docs.substring(0, limit - 1).trimRight()}…'
-          : docs;
-    }
 
     index = Index();
     for (var package in packages) {
@@ -103,16 +84,28 @@ class Api {
             );
           }
         }
-        // todo:
       }
     }
   }
 
-  void _process(Item item) {
-    elementItemMap[item.element] = item;
+  void _buildElementItemMap(Item item) {
+    var element = item.element;
+    var currentMapping = elementItemMap[element];
+    if (currentMapping == null) {
+      elementItemMap[element] = item;
+    }
 
     if (item is Items) {
-      item.allChildren.forEach(_process);
+      item.allChildren.forEach(_buildElementItemMap);
+    }
+  }
+
+  /// Indicate that the given item is the cannonical location from which to
+  /// reference its associated Element.
+  void _makeCanonical(Item item) {
+    elementItemMap[item.element] = item;
+    if (item is Items) {
+      item.allChildren.forEach(_makeCanonical);
     }
   }
 
@@ -145,8 +138,8 @@ class Api {
     return elementItemMap[element];
   }
 
-  void addResolution(Element element, DocFile file) {
-    resolver.addResolution(element, file);
+  void addResolution(Item item, DocFile file) {
+    resolver.addResolution(item, file);
   }
 
   String? resolve(Element? element, {DocFile? from}) {
@@ -156,6 +149,129 @@ class Api {
   String hrefOrSpan(String text, Element element, {DocFile? from}) {
     return resolver.hrefOrSpan(text, element, from: from);
   }
+
+  void _processDuplicates() {
+    // todo: decide whether elements should be de-duped globally or just
+    // de-duped per package
+
+    // todo: instead of having one unique element definition location globally,
+    // have a main one, but allow per-lib scopes to have an override
+
+    // Note that we only care about de-duping for library members.
+
+    // todo: we want to the container members to resolve to the same place as
+    //       their parents
+
+    final topLevelElementsToItems = <Element, List<Item>>{};
+
+    // look for dups
+    for (var package in packages) {
+      for (var library in package.libraries) {
+        for (var item in library.allChildren) {
+          var element = item.element;
+          topLevelElementsToItems.putIfAbsent(element, () => []).add(item);
+        }
+      }
+    }
+
+    // todo: create a relationship between an item and the library's its defined
+    // in
+    // todo: do we have multiple Item's for each unique Element?
+    // todo: where are Item's created, and do we de-dupe wrt Elements?
+    // var libraryElement = item.element.library;
+    // if (item.element is! LibraryElement && libraryElement != null) {
+    //   item._addRelationship(item, RelationshipKind.$definedIn);
+    // }
+
+    for (var entry in topLevelElementsToItems.entries
+        .where((entry) => entry.value.length > 1)) {
+      _updateForDuplicates(entry.key, entry.value);
+    }
+
+    resolver.initElementItemMap(elementItemMap);
+  }
+
+  void _updateForDuplicates(Element element, List<Item> items) {
+    // Use cases:
+
+    // definied in a public lib; exported from a 2nd public lib
+    // dups for [promiseToFuture<T>(...)] defined in dart:js_util:
+    //   promiseToFuture from dart:js_util
+    //   promiseToFuture from dart:html
+
+    // defined in a private lib, exported (independently) from two public libs
+    // dups for [abstract class BytesBuilder] defined in dart:_internal:
+    //   BytesBuilder from dart:io
+    //   BytesBuilder from dart:typed_data
+
+    // defined in a private library
+    // exported from a public library
+    // exported from other public libraries from the first public library
+    // ex., flutter:widgets symbols (defined in private libs), exported as part
+    //   of flutter:material
+
+    // todo: we want to sort these dups via the length of their export chain
+    //   0: defined in a public lib
+    //   1: defined in a private lib, exported from a public one
+    //   2: exported from a public lib
+    //   3: ...
+
+    // then, choose a 'best' Item
+
+    // replace all the worst Items with forward refs to that bext one
+
+    // have all Items equal to the best item add local package overrides to
+    // their local ref
+
+    var exports = items.map((item) {
+      var parentLib = item.libraryParent;
+      var len = parentLib!._calcElementExportLength(element);
+      return _ElementExports(element, item, parentLib, len);
+    }).toList()
+      ..sort();
+
+    print('dups for [$element] defined in '
+        '${element.library?.librarySource.uri}:');
+    for (var export in exports) {
+      print('  ${export.element.name} from '
+          '${export.libraryContainer.name}: ${export.exportLength}');
+    }
+
+    // for non-canonical items:
+    //   - convert to export
+    //   - make sure the element map point to the cannonical versions
+    var canonical = exports.first;
+    _makeCanonical(canonical.item);
+
+    print('[$element] => ${elementItemMap[element]!.debugPath}');
+
+    for (var export in exports) {
+      if (export.exportLength > canonical.exportLength) {
+        export.item._convertToExport(
+          exportedFrom: canonical.libraryContainer,
+          cannonicalItem: canonical.item,
+        );
+      }
+    }
+  }
+}
+
+class _ElementExports implements Comparable<_ElementExports> {
+  final Element element;
+  final Item item;
+  final LibraryItemContainer libraryContainer;
+  final int exportLength;
+
+  _ElementExports(
+      this.element, this.item, this.libraryContainer, this.exportLength);
+
+  @override
+  int compareTo(_ElementExports other) {
+    var diff = exportLength - other.exportLength;
+    if (diff != 0) return diff;
+
+    return libraryContainer.name.compareTo(other.libraryContainer.name);
+  }
 }
 
 class Package implements Comparable<Package> {
@@ -163,6 +279,8 @@ class Package implements Comparable<Package> {
   final List<LibraryItemContainer> libraries = [];
 
   Package(this.name);
+
+  bool get includeInUrls => name.contains(':');
 
   @override
   int compareTo(Package other) {
@@ -175,15 +293,16 @@ class Package implements Comparable<Package> {
 typedef RelationshipMap = Map<RelationshipKind, List<Item>>;
 
 class Item {
+  Items? parent;
   final Element element;
   late final GroupType type = GroupType.typeFor(element);
   final RelationshipMap relationships = SplayTreeMap();
 
   String? nameOverride;
 
-  Scope? _scope;
+  Scope? _scopeCache;
 
-  Item(this.element);
+  Item(this.parent, this.element);
 
   // todo: make this more robust
   String get name {
@@ -197,7 +316,16 @@ class Item {
     return result;
   }
 
-  Scope get scope => _scope ??= _calcScope(element)!;
+  LibraryItemContainer? get libraryParent {
+    Item? item = this;
+    while (item != null) {
+      if (item is LibraryItemContainer) return item;
+      item = item.parent;
+    }
+    return null;
+  }
+
+  Scope get scope => _scopeCache ??= _calcScope(element)!;
 
   String get anchorId => stringToAnchorId(name);
 
@@ -222,6 +350,8 @@ class Item {
   ConstructorElement get asConstructor => element as ConstructorElement;
 
   TypeAliasElement get asTypeAlias => element as TypeAliasElement;
+
+  String get debugPath => parent == null ? name : '${parent!.debugPath}/$name';
 
   void _addRelationship(Item item, RelationshipKind kind) {
     relationships.putIfAbsent(kind, () => []).add(item);
@@ -341,12 +471,41 @@ class Item {
       return null;
     }
   }
+
+  /// Indicate that this Item should not be considered to be defined in the
+  /// current library, but documented as an export.
+  ///
+  /// The item should be a direct child of a library.
+  void _convertToExport({
+    required LibraryItemContainer exportedFrom,
+    required Item cannonicalItem,
+  }) {
+    var library = parent as LibraryItemContainer;
+
+    // todo: there are more dangling references here to clean up
+
+    // remove from children
+    library.groups[type]!.items.remove(this);
+    if (library.groups[type]!.items.isEmpty) {
+      library.groups.remove(type);
+    }
+
+    // add to an exports list
+    library.exports.add(ExportedItem(cannonicalItem, exportedFrom));
+  }
+}
+
+class ExportedItem {
+  final Item item;
+  final LibraryItemContainer exportedFrom;
+
+  ExportedItem(this.item, this.exportedFrom);
 }
 
 abstract class Items extends Item {
   final Map<GroupType, Group> groups = SplayTreeMap();
 
-  Items(super.element);
+  Items(super.parent, super.element);
 
   T addChild<T extends Item>(T item) {
     var groupType = GroupType.typeFor(item.element);
@@ -374,24 +533,45 @@ abstract class Items extends Item {
       entry.value.sort();
     }
   }
+
+  static Map<GroupType, List<Item>> itemsByGroup(List<Item> items) {
+    var result = SplayTreeMap<GroupType, List<Item>>();
+    for (var item in items) {
+      result.putIfAbsent(item.type, () => []).add(item);
+    }
+    for (var entry in result.entries) {
+      entry.value.sort((a, b) => adjustedLexicalCompare(a.name, b.name));
+    }
+    return result;
+  }
 }
 
 class InterfaceElementItems extends Items {
-  InterfaceElementItems(InterfaceElement element) : super(element);
+  InterfaceElementItems(Items? parent, InterfaceElement element)
+      : super(parent, element);
 
   @override
   InterfaceElement get element => super.element as InterfaceElement;
 }
 
 class ExtensionElementItems extends Items {
-  ExtensionElementItems(ExtensionElement element) : super(element);
+  ExtensionElementItems(Items? parent, Element element)
+      : super(parent, element);
 
   @override
   ExtensionElement get element => super.element as ExtensionElement;
 }
 
-class LibraryItemContainer extends Items {
-  LibraryItemContainer(super.element, String name) {
+class LibraryItemContainer extends Items
+    implements Comparable<LibraryItemContainer> {
+  final Package? package;
+
+  /// The list of items that are part of this library's public API, but that
+  /// are considered exports (primarily defined elsewhere).
+  final List<ExportedItem> exports = [];
+
+  LibraryItemContainer(this.package, LibraryElement element, String name)
+      : super(null, element) {
     nameOverride = name;
 
     var exportNamespace = element.exportNamespace;
@@ -405,12 +585,13 @@ class LibraryItemContainer extends Items {
         var interfaceElement = e;
 
         var interfaceElementChildren =
-            addChild(InterfaceElementItems(interfaceElement));
+            addChild(InterfaceElementItems(this, interfaceElement));
 
         for (var child in interfaceElement.children.where((c) => c.isPublic)) {
           if (child.isSynthetic) continue;
 
-          interfaceElementChildren.addChild(Item(child));
+          interfaceElementChildren
+              .addChild(Item(interfaceElementChildren, child));
         }
 
         interfaceElementChildren.sort();
@@ -418,23 +599,60 @@ class LibraryItemContainer extends Items {
         var extensionElement = e;
 
         var extensionElementChildren =
-            addChild(ExtensionElementItems(extensionElement));
+            addChild(ExtensionElementItems(this, extensionElement));
 
         for (var child in extensionElement.children.where((c) => c.isPublic)) {
           if (child.isSynthetic) continue;
 
-          extensionElementChildren.addChild(Item(child));
+          extensionElementChildren
+              .addChild(Item(extensionElementChildren, child));
         }
 
         extensionElementChildren.sort();
       } else {
-        addChild(Item(e));
+        addChild(Item(this, e));
       }
     }
   }
 
+  String get urlName => package != null && package!.includeInUrls
+      ? '${package!.name}/$name'
+      : name;
+
   @override
   LibraryElement get element => super.element as LibraryElement;
+
+  Map<LibraryItemContainer, List<Item>> get exportsByLibrary {
+    var results = SplayTreeMap<LibraryItemContainer, List<Item>>();
+
+    for (var export in exports) {
+      results.putIfAbsent(export.exportedFrom, () => []).add(export.item);
+    }
+
+    return results;
+  }
+
+  /// For a given element defined in this library or exported from it, calculate
+  /// how many library exports exist betwen this library and the library where
+  /// the element is actually defined.
+  ///
+  /// For example, if the element is defined in this library, the export length
+  /// would be 0.
+  ///
+  /// For an element defined in a private library exported from this library,
+  /// the export length would be 1. Higer numbers indicate a longer export path.
+  int _calcElementExportLength(Element e) {
+    // todo: implement this using directive export info
+
+    if (e.library == element) return 0;
+
+    return 1;
+  }
+
+  @override
+  int compareTo(LibraryItemContainer other) {
+    return name.compareTo(other.name);
+  }
 }
 
 class Group implements Comparable<Group> {
@@ -445,7 +663,7 @@ class Group implements Comparable<Group> {
 
   String get name => type.title;
 
-  String get anchorId => stringToAnchorId(name);
+  String get anchorId => stringToAnchorId('_$name');
 
   bool get containerType => type.containerType;
 
@@ -522,31 +740,28 @@ enum GroupType implements Comparable<GroupType> {
   }
 }
 
+// todo: remove files if we remove an Item
 class Resolver {
   // libraries and classes to files
-  // elements to urls
 
-  Map<Element, DocFile> mappings = {};
+  final Map<Item, DocFile> itemToFileMap = {};
+  late final Map<Element, Item> elementToItemMap;
 
-  void addResolution(Element element, DocFile file) {
-    mappings[element] = file;
+  void addResolution(Item item, DocFile file) {
+    itemToFileMap[item] = file;
   }
 
-  DocFile? fileFor(Element element) {
-    var file = mappings[element];
-    if (file != null) return file;
-
-    file = mappings[element.enclosingElement];
-
-    return file;
+  void initElementItemMap(Map<Element, Item> elementItemMap) {
+    elementToItemMap = elementItemMap;
   }
 
   String? resolve(Element? element, {DocFile? from}) {
-    var target = mappings[element];
+    var item = elementToItemMap[element];
+    var target = itemToFileMap[item];
     if (target == null) return null;
 
     if (from != null) {
-      // TODO: replaced for performance reasons
+      // Replaced for performance reasons.
       return target.path.pathRelative(fromDir: p.dirname(from.path));
       // return p.relative(target.path, from: p.dirname(from.path));
     } else {
@@ -576,6 +791,17 @@ class Resolver {
     var scope = context.scope;
     var element = scope.lookup(reference).getter;
     return resolve(element, from: fromFile);
+  }
+
+  DocFile? fileFor(Element element) {
+    var item = elementToItemMap[element];
+    var file = itemToFileMap[item];
+    if (file != null) return file;
+
+    var enclosingItem = elementToItemMap[element.enclosingElement];
+    file = itemToFileMap[enclosingItem];
+
+    return file;
   }
 }
 

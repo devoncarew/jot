@@ -143,7 +143,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
       file.importScript = file.name;
       packageContainer.mainFile = file;
 
-      api.addResolution(libraryElement.element, packageContainer.mainFile!);
+      api.addResolution(library, packageContainer.mainFile!);
 
       for (var itemContainer in library.allChildrenSorted.whereType<Items>()) {
         var path = '$libName/${itemContainer.name}.html';
@@ -153,7 +153,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
           path,
           itemsGenerator(itemContainer),
         ));
-        api.addResolution(itemContainer.element, docFile);
+        api.addResolution(itemContainer, docFile);
       }
     }
   }
