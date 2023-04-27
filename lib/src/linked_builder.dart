@@ -6,6 +6,7 @@
 
 // TODO: This file is copied from package:analyzer; we should figure out a way
 //       to reduce the tech debt here.
+// package:analyzer/src/dart/element/display_string_builder.dart
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
@@ -183,11 +184,8 @@ class LinkedElementDisplayBuilder {
   void writeMixinElement(MixinElementImpl element) {
     if (element.isBase) {
       _write('base ');
-    } else if (element.isInterface) {
-      _write('interface ');
-    } else if (element.isFinal) {
-      _write('final ');
     }
+    _write('mixin ');
     _write('mixin ');
     _write(element.displayName);
     _writeTypeParameters(element.typeParameters);
