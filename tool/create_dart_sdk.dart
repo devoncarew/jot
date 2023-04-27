@@ -112,7 +112,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   final api = Api();
   workspace.api = api;
 
-  workspace.addChild(DocSeparator(workspace, 'Dart SDK'));
+  // workspace.addChild(DocSeparator(workspace, 'Dart SDK'));
 
   final libDir = Directory(p.join(sdkDir.path, 'lib'));
   for (var entry in {
@@ -123,8 +123,10 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     var categoryName = entry.key;
     var libNames = entry.value;
 
-    var categoryContainer =
-        workspace.addChild(DocContainer(workspace, categoryName));
+    workspace.addChild(DocSeparator(workspace, categoryName));
+
+    // var categoryContainer =
+    //     workspace.addChild(DocContainer(workspace, categoryName));
 
     for (var libName in libNames) {
       var libUrl = libraryUriFor(libName, libraries)!;
@@ -133,8 +135,8 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
       var libraryElement =
           await analyzer.getLibraryByUri(libFile.uri.toString());
 
-      var packageContainer = categoryContainer
-          .addChild(DocContainer(categoryContainer, 'dart:$libName'));
+      var packageContainer =
+          workspace.addChild(DocContainer(workspace, 'dart:$libName'));
 
       var library =
           api.addLibrary(libraryElement.element, 'Dart SDK', 'dart:$libName');
@@ -158,7 +160,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     }
   }
 
-  workspace.addChild(DocSeparator(workspace, 'Core Packages'));
+  // workspace.addChild(DocSeparator(workspace, 'Core Packages'));
 
   // Add a few packages - path, args, collection, ...
   // todo: This is temporary for now; decide whether we do want to document the
