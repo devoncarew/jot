@@ -277,6 +277,7 @@ void validateSdk(Directory sdk) {
 
 // ignore: unreachable_from_main
 extension DocWorkspaceExtension on DocWorkspace {
+  // ignore: unreachable_from_main
   void addPackage(
       Analyzer analyzer, String packageName, String fullPackagePath) {
     // todo: find the file location
