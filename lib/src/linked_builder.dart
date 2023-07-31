@@ -413,7 +413,7 @@ class LinkedElementDisplayBuilder {
     }
 
     if (skipAllDynamicArguments) {
-      if (typeArguments.every((t) => t.isDynamic)) {
+      if (typeArguments.every((t) => t is DynamicType)) {
         return;
       }
     }
