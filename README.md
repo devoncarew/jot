@@ -30,5 +30,5 @@ usage: dart bin/jot.dart <options> [<directory>]
 
 ## Infima and Docusaurus
 
-The CSS page layout for this API generator are sourced from the excellent
-[Infima](https://infima.dev/) and [Docusaurus](https://docusaurus.io/) projects.
+The CSS page layout for this API generator are sourced from the
+[Docusaurus](https://docusaurus.io/) project.
