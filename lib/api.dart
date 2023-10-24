@@ -547,16 +547,14 @@ abstract class Items extends Item {
 }
 
 class InterfaceElementItems extends Items {
-  InterfaceElementItems(Items? parent, InterfaceElement element)
-      : super(parent, element);
+  InterfaceElementItems(super.parent, InterfaceElement super.element);
 
   @override
   InterfaceElement get element => super.element as InterfaceElement;
 }
 
 class ExtensionElementItems extends Items {
-  ExtensionElementItems(Items? parent, Element element)
-      : super(parent, element);
+  ExtensionElementItems(super.parent, super.element);
 
   @override
   ExtensionElement get element => super.element as ExtensionElement;

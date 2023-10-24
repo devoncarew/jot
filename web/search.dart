@@ -271,15 +271,13 @@ class Index {
     _init(urlBase).then(
       (result) {
         members = result;
-
         _completer.complete();
       },
-      onError: (error, stackTrace) {
-        members = [];
-        print('error reading index: $error');
-        _completer.complete();
-      },
-    );
+    ).catchError((dynamic error) {
+      members = [];
+      print('error reading index: $error');
+      _completer.complete();
+    });
   }
 
   Future<void> ready() => _completer.future;

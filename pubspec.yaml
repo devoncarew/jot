@@ -4,7 +4,7 @@ version: 0.1.0-dev
 repository: https://github.com/devoncarew/jot
 
 environment:
-  sdk: ^3.0.0-0
+  sdk: ^3.0.0
 
 dependencies:
   # bin/
@@ -13,7 +13,7 @@ dependencies:
   shelf_router: ^1.1.0
 
    # lib/
-  analyzer: ^5.13.0
+  analyzer: ^6.3.0
   args: ^2.4.0
   collection: ^1.17.0
   dart_style: ^2.2.0
@@ -23,5 +23,5 @@ dependencies:
   yaml: ^3.1.0
 
 dev_dependencies:
-  dart_flutter_team_lints: ^1.0.0
+  dart_flutter_team_lints: ^2.0.0
   test: ^1.23.0
