@@ -14,10 +14,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        sdk: [beta, dev] # todo: add back in stable
+        os: [ubuntu-latest]
+        sdk: [stable, beta, dev]
         include:
-          - sdk: beta
+          - sdk: stable
             run-tests: true
     steps:
       - uses: actions/checkout@v4
@@ -32,8 +32,11 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed .
         if: ${{matrix.run-tests}}
 
-      - run: dart compile js -o lib/resources/script.js -O2 web/main.dart
-        if: ${{matrix.run-tests}}
+      # Ensure that the front-end is up to date.
+      - run: dart tool/build_web.dart --verify
+
+      # Ensure that we can build the front-end.
+      - run: dart tool/build_web.dart
 
       - run: dart test
         if: ${{matrix.run-tests}}

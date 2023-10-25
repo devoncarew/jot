@@ -69,36 +69,6 @@ class HtmlTemplate {
     var results = _generateString(subs);
 
     return results;
-
-    // TODO: ~10% of our generation time is spent in this split() call.
-
-    // var lastWasBlank = false;
-
-    // results = results
-    //     .split('\n')
-    //     .map((line) {
-    //       line = line.trimRight();
-
-    //       if (line.endsWith('-->') && line.trim().startsWith('<!--')) {
-    //         line = '';
-    //       }
-
-    //       if (line.isEmpty) {
-    //         if (lastWasBlank) {
-    //           return null;
-    //         } else {
-    //           lastWasBlank = true;
-    //           return line;
-    //         }
-    //       } else {
-    //         lastWasBlank = false;
-    //         return line;
-    //       }
-    //     })
-    //     .whereType<String>()
-    //     .join('\n');
-
-    // return '$results\n';
   }
 
   late final List<_Location> _locations;

@@ -66,9 +66,8 @@ ArgParser createArgsParser() {
     ..addOption(
       'serve',
       valueHelp: 'port',
-      help: 'Serve live docs from the documented package.\n'
-          'This only serves on localhost and is generally used during '
-          'development in an edit/refresh workflow.',
+      help: 'Serve live docs from the documented package. This serves on '
+          'localhost and is useful for previewing docs while working on them.',
     );
 }
 
