@@ -4,13 +4,13 @@ import 'interop.dart';
 import 'search.dart';
 import 'utils.dart';
 
-// todo: remember the scroll position of the page content?
+// TODO: remember the scroll position of the page content?
 
-// todo: improve animation of the sidenav opening / closing
+// TODO: improve animation of the sidenav opening / closing
 
-// todo: update the outline view active element as the content area scrolls
+// TODO: update the outline view active element as the content area scrolls
 
-// todo: manage content area scroll with history push / pop
+// TODO: manage content area scroll with history push / pop
 
 final Path p = Path();
 
