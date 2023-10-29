@@ -4,7 +4,7 @@ version: 0.1.0-dev
 repository: https://github.com/devoncarew/jot
 
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.1.0
 
 dependencies:
   # bin/
@@ -25,4 +25,5 @@ dependencies:
 dev_dependencies:
   crypto: ^3.0.0
   dart_flutter_team_lints: ^2.0.0
+  http: ^1.1.0
   test: ^1.23.0

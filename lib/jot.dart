@@ -25,23 +25,30 @@ class Jot {
   final Directory inDir;
   final Directory outDir;
 
-  Jot({required this.inDir, required this.outDir});
+  final Logger logger;
+
+  late final Analyzer analyzer;
+  late final HtmlTemplate htmlTemplate;
+
+  Jot({
+    required this.inDir,
+    required this.outDir,
+    Logger? logger,
+  }) : logger = logger ?? Logger.standard();
 
   Future<void> generate() async {
-    var log = Logger.standard();
-
     if (!outDir.existsSync()) {
       outDir.createSync(recursive: true);
     }
 
     var stats = Stats()..start();
 
-    var htmlTemplate = await HtmlTemplate.initDir(outDir, stats: stats);
-    var analyzer =
+    htmlTemplate = await HtmlTemplate.initDir(outDir, stats: stats);
+    analyzer =
         Analyzer.packages(includedPaths: [p.normalize(inDir.absolute.path)]);
 
-    var progress = log.progress('Resolving public libraries');
-    var workspace = await _buildWorkspace(htmlTemplate, analyzer);
+    var progress = logger.progress('Resolving public libraries');
+    var workspace = await _buildWorkspace();
     progress.finish();
 
     // build model
@@ -52,98 +59,42 @@ class Jot {
     stats.genFile(indexFile);
 
     // generate
-    log.stdout('');
-    log.stdout('Generating docs...');
+    logger.stdout('');
+    logger.stdout('Generating docs...');
 
     // generate docs
     // todo: switch this to use a Generator instance
-    await workspace.generate(outDir, logger: log, stats: stats);
+    await workspace.generate(outDir, logger: logger, stats: stats);
 
     stats.stop();
 
-    log.stdout('');
+    logger.stdout('');
     // "1,347 symbols, 82% have documentation, 4 libraries, 8MB of html, 0.3s"
-    log.stdout('Wrote docs to ${p.relative(outDir.path)} in '
+    logger.stdout('Wrote docs to ${p.relative(outDir.path)} in '
         '${stats.elapsedSeconds}s (${stats.fileCount} files, '
         '${stats.sizeDesc}).');
   }
 
-  Future<void> serve(int port) async {
-    var log = Logger.standard();
-
-    var htmlTemplate = await HtmlTemplate.initDir(outDir, writeResouces: false);
-    var analyzer =
+  Future<DocServer> serve(int port) async {
+    htmlTemplate = await HtmlTemplate.initDir(outDir, writeResouces: false);
+    analyzer =
         Analyzer.packages(includedPaths: [p.normalize(inDir.absolute.path)]);
 
-    var progress = log.progress('Resolving public libraries');
-    var workspace = await _buildWorkspace(htmlTemplate, analyzer);
+    var progress = logger.progress('Resolving public libraries');
+    var workspace = await _buildWorkspace();
     progress.finish();
 
     // build model
     workspace.api!.finish();
 
-    log.stdout('');
+    logger.stdout('');
 
-    Response notFound(Request request) {
-      return Response.notFound('404 - page not found: ${request.url.path}');
-    }
-
-    Future<Response> contentHandler(Request request) async {
-      var filePath = request.url.path;
-      if (!filePath.endsWith('.html')) return notFound(request);
-
-      // check for changed dart sources
-      if (await analyzer.reanalyzeChanges()) {
-        workspace = await _buildWorkspace(htmlTemplate, analyzer);
-        workspace.api!.finish();
-      }
-
-      var file = workspace.getForPath(filePath);
-      if (file == null) {
-        return notFound(request);
-      } else {
-        log.stdout('${request.requestedUri}');
-
-        var pageContents = await file.generatePageContents();
-        var fileContents =
-            await workspace.generateWorkspacePage(file, pageContents);
-        return Response.ok(fileContents, headers: headersFor(filePath));
-      }
-    }
-
-    Future<Response> resourcesHandler(Request request) {
-      var path = request.url.path;
-
-      return loadResourceDataAsBytes(path).then((data) {
-        return Response.ok(data, headers: headersFor(path));
-      }).onError((error, _) {
-        return notFound(request);
-      });
-    }
-
-    var app = Router(notFoundHandler: contentHandler);
-    app.get('/', (Request request) {
-      return Response.movedPermanently('index.html');
-    });
-    app.get('/favicon.ico', (Request request) async {
-      return Response.ok(await loadResourceDataAsBytes('dart.png'),
-          headers: headersFor('dart.png'));
-    });
-    app.get('/resources/index.json', (Request request) async {
-      return Response.ok(workspace.api!.index.toJson(),
-          headers: headersFor(request.url.path));
-    });
-    app.mount('/resources', Router(notFoundHandler: resourcesHandler).call);
-
-    // TODO: move most of this to a server class
-    var server = await shelf_io.serve(app.call, 'localhost', port);
-    log.stdout(
-        'Serving docs at http://${server.address.host}:${server.port}/.');
-    log.stdout('');
+    var server = DocServer(jot: this, workspace: workspace);
+    await server.start(port);
+    return server;
   }
 
-  Future<DocWorkspace> _buildWorkspace(
-      HtmlTemplate htmlTemplate, Analyzer analyzer) async {
+  Future<DocWorkspace> _buildWorkspace() async {
     var workspace = DocWorkspace.fromPackage(htmlTemplate, inDir);
     var packageName = workspace.name.substring('package:'.length);
 
@@ -193,4 +144,104 @@ class Jot {
 
     return workspace;
   }
+}
+
+class DocServer {
+  final Jot jot;
+  DocWorkspace workspace;
+  late final HttpServer _server;
+
+  DocServer({
+    required this.jot,
+    required this.workspace,
+  });
+
+  int get port => _server.port;
+
+  Logger get logger => jot.logger;
+
+  Response _notFound(Request request) {
+    return Response.notFound('404 - page not found: ${request.url.path}');
+  }
+
+  Future<Response> _contentHandler(Request request) async {
+    var filePath = request.url.path;
+    if (!filePath.endsWith('.html')) return _notFound(request);
+
+    // Check for changed dart sources.
+    if (await jot.analyzer.reanalyzeChanges()) {
+      workspace = await jot._buildWorkspace();
+      workspace.api!.finish();
+    }
+
+    var file = workspace.getForPath(filePath);
+    if (file == null) {
+      return _notFound(request);
+    } else {
+      var pageContents = await file.generatePageContents();
+      var fileContents =
+          await workspace.generateWorkspacePage(file, pageContents);
+      return Response.ok(fileContents, headers: headersFor(filePath));
+    }
+  }
+
+  Future<Response> _resourcesHandler(Request request) {
+    var path = request.url.path;
+
+    return loadResourceDataAsBytes(path).then((data) {
+      return Response.ok(data, headers: headersFor(path));
+    }).onError((error, _) {
+      return _notFound(request);
+    });
+  }
+
+  Handler _loggingHandler(Handler handler) {
+    final ansi = logger.ansi;
+
+    return (Request request) async {
+      final timer = Stopwatch()..start();
+      final response = await handler(request);
+      timer.stop();
+
+      final ms = timer.elapsedMilliseconds;
+      final size = ((response.contentLength ?? 0) + 512) ~/ 1024;
+      final code = response.statusCode;
+      final path = request.url.path;
+
+      logger.stdout(
+        '${ansi.blue}${ms.toString().padLeft(3)}ms '
+        '${size.toString().padLeft(3)}k${ansi.none} '
+        '${ansi.green}${ansi.bullet}${ansi.none} $code $path',
+      );
+
+      return response;
+    };
+  }
+
+  Future<void> start(int port) async {
+    var app = Router(notFoundHandler: _contentHandler);
+    app.get('/', (Request request) {
+      return Response.movedPermanently('index.html');
+    });
+    app.get('/favicon.ico', (Request request) async {
+      return Response.ok(await loadResourceDataAsBytes('dart.png'),
+          headers: headersFor('dart.png'));
+    });
+    app.get('/resources/index.json', (Request request) async {
+      return Response.ok(workspace.api!.index.toJson(),
+          headers: headersFor(request.url.path));
+    });
+    app.mount('/resources', Router(notFoundHandler: _resourcesHandler).call);
+
+    _server = await shelf_io.serve(
+      _loggingHandler(app.call),
+      'localhost',
+      port,
+    );
+    logger.stdout(
+        'Serving docs at http://${_server.address.host}:${_server.port}/.');
+    logger.stdout('');
+  }
+
+  Future<void> dispose() => _server.close();
 }

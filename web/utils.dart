@@ -1,8 +1,6 @@
 import 'dart:html';
 
-T $id<T extends Element>(String id) {
-  return document.getElementById(id) as T;
-}
+T $id<T extends Element>(String id) => document.getElementById(id) as T;
 
 T? $query<T extends Element>(String selector) =>
     document.querySelector(selector) as T?;
