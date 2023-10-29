@@ -1,19 +1,92 @@
+# TODO
 
-## Implementation
-
-- [x] verify that the front-end has been rebuilt
-- [ ] convert the left-nav to runtime generated
-- [ ] switch over to reading the dart sdk libraries declaratively
+- [x] script for doc'ing the dart sdk
+- [x] script for doc'ing flutter
 - [ ] support generating package:flutter
 - [ ] support generating the flutter SDK
-- [ ] markdown api signature file
+- [ ] cleaner API for generation
+- [ ] libraries should have a section for symbols exported from other libs
+- [ ] classes should have a section for symbols inherited from parent classes
+- [ ] use pragmas to control dartdoc specific imports
+- [ ] support front-matter for markdown files?
+- [ ] switch over to reading the dart sdk libraries declaratively
+
+## Model elements
+
+- [x] item (documentable, backed by an element)
+- [x] items
+- [x] group and group ordering
 
 ## Testing
 
-### Server mode
+- [ ] tests for workspace code
+- [ ] tests for api code
 
-- [ ] test --serve; we can ping localhost and get expected pages
+source code => api => generation?
+source code => workspace?
+we don't need to test at the html level; is the api model well-formed? can we
+separetly convert from api to html correctly?
 
 ### Language features
 
-todo:
+- [ ] tests for language features
+
+## Html output
+
+- [x] clean
+- [x] small
+- [ ] smaller css
+- [ ] version the css (from Infima)
+
+## Page layout and nav
+
+- [x] dart script
+- [x] full SPA
+- [ ] manage the scroll during page transitions
+- [ ] ensure items in the left nav scroll into focus on page changes
+- [ ] ensure we don't reload a page when navigating within the same page
+- [ ] convert the left-nav to runtime generated
+
+## Search
+
+- [x] simple, comprehensive
+
+## Server
+
+- [x] have a server mode; allow preview of docs, and refreshing will pick up
+      file changes and re-generate
+- [ ] test --serve; we can ping localhost and get expected pages
+
+## Generation
+
+- [x] no args
+- [x] cli just supports documenting packages
+- [x] more sophisticated use cases (dart sdk, flutter) should use the package as
+      a library
+- [x] fast
+- [ ] configuration via a yaml file
+
+## Fixes
+
+- [x] have a method to convert from an element to a valid in-page ID
+- [ ] fix issues with top-level vars vs. getters vs setters in the model
+
+## Completeness
+
+- [ ] indicate which API members are exports from other libraries
+- [ ] correctly determine where to document elements for Flutter (for things
+      exported from multiple libraries)
+- [ ] determine the export chain length (e.g. symbol A is exported from B, C,
+      definied in D)
+- [ ] support for dartdoc categories
+- [ ] support for resolving qualified (foo.Bar) dartdoc references
+- [ ] support for flutter phantom references
+- [ ] support for dartdoc macros (via the analyzer?)
+      {@template foo-bar}
+      {@macro foo-bar}
+      {@macro foo-bar}
+      ...
+
+## Other
+
+- [ ] generate a markdown file representing the package's public API

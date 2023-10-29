@@ -304,16 +304,16 @@ class Item {
 
   Item(this.parent, this.element);
 
-  // todo: make this more robust
   String get name {
     if (nameOverride != null) return nameOverride!;
 
     var result = element.displayName;
     if (result.isEmpty) {
-      // todo: for now, assume this is a ctor
-      result = element.enclosingElement!.name!;
+      // Assume this is a ctor.
+      return element.enclosingElement!.name!;
+    } else {
+      return result;
     }
-    return result;
   }
 
   LibraryItemContainer? get libraryParent {

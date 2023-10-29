@@ -91,6 +91,11 @@ extension FileSystemEntityExtension on FileSystemEntity {
   String get name => p.basename(path);
 }
 
+extension FileExtension on File {
+  bool get publicMarkdownFile =>
+      !name.startsWith('_') && p.extension(path) == '.md';
+}
+
 class Outline {
   final List<Heading> items = [];
 

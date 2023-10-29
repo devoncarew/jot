@@ -402,7 +402,7 @@ class DocWorkspace extends DocContainer {
     for (var file in dir
         .listSyncSorted()
         .whereType<File>()
-        .where((f) => p.extension(f.path) == '.md' || f.name == 'LICENSE')) {
+        .where((f) => f.publicMarkdownFile || f.name == 'LICENSE')) {
       var name = p.relative(file.path, from: dir.path);
       var title =
           titleCase(p.basenameWithoutExtension(file.path).toLowerCase());
@@ -428,7 +428,7 @@ class DocWorkspace extends DocContainer {
       for (var file in docDir
           .listSyncSorted()
           .whereType<File>()
-          .where((f) => p.extension(f.path) == '.md')) {
+          .where((f) => f.publicMarkdownFile)) {
         var name = file.name;
         var title =
             titleCase(p.basenameWithoutExtension(file.path).toLowerCase());
