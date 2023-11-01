@@ -42,7 +42,8 @@ void main(List<String> args) async {
   }
 
   var rest = results.rest;
-  var sdkDir = rest.isEmpty ? detectSdk : Directory(rest.first);
+  var sdkDir =
+      rest.isEmpty ? calcFlutterSdk(detectDartSdk) : Directory(rest.first);
   if (!sdkDir.existsSync()) {
     stderr.writeln("error: '${sdkDir.path}' does not exist.");
     exit(1);
@@ -55,10 +56,15 @@ void main(List<String> args) async {
   await generate(sdkDir, outDir);
 }
 
-Directory get detectSdk {
+Directory get detectDartSdk {
   final vm = Platform.resolvedExecutable;
   // <dart-sdk>/bin/dart
   return Directory(p.dirname(p.dirname(vm)));
+}
+
+Directory calcFlutterSdk(Directory dartSdk) {
+  // flutter/bin/cache/dart-sdk
+  return dartSdk.parent.parent.parent;
 }
 
 void printUsage(ArgParser parser, [Object? error]) {
@@ -104,14 +110,14 @@ void validateFlutterSdk(Directory sdk) {
     exit(1);
   }
 
-  var packagesDir = File(p.join(sdk.path, 'packages'));
+  var packagesDir = Directory(p.join(sdk.path, 'packages'));
   if (!packagesDir.existsSync()) {
     stderr.writeln('Invalid SDK (${sdk.path}) - missing packages/ directory');
     exit(1);
   }
 
   var flutterPubspec =
-      File(p.join(sdk.path, 'packages', 'flutter', 'pubspec.yaml]'));
+      File(p.join(sdk.path, 'packages', 'flutter', 'pubspec.yaml'));
   if (!flutterPubspec.existsSync()) {
     stderr.writeln(
         'Invalid SDK (${sdk.path}) - missing packages/flutter/pubspec.yaml file');
@@ -124,5 +130,5 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
 
   if (!outDir.existsSync()) outDir.createSync(recursive: true);
 
-  log.write('todo: generate docs for the flutter SDK');
+  log.stdout('todo: generate docs for the flutter SDK');
 }

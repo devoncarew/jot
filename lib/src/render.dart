@@ -5,6 +5,7 @@ import 'package:analyzer/src/dart/element/element.dart';
 
 import '../api.dart';
 import '../workspace.dart';
+import 'formatting.dart';
 import 'linked_builder.dart';
 import 'utils.dart';
 
