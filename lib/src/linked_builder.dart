@@ -186,7 +186,6 @@ class LinkedElementDisplayBuilder {
       _write('base ');
     }
     _write('mixin ');
-    _write('mixin ');
     _write(element.displayName);
     _writeTypeParameters(element.typeParameters);
     _writeTypesIfNotEmpty(' on ', element.superclassConstraints);

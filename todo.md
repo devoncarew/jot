@@ -21,6 +21,7 @@
 
 - [ ] tests for workspace code
 - [ ] tests for api code
+- [ ] tests for the DartFormat class
 
 source code => api => generation?
 source code => workspace?
