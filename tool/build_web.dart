@@ -7,6 +7,17 @@ import 'package:crypto/crypto.dart';
 void main(List<String> args) async {
   var argsParser = ArgParser()
     ..addFlag(
+      'help',
+      abbr: 'h',
+      negatable: false,
+      help: 'Show this command help.',
+    )
+    ..addFlag(
+      'optimize',
+      defaultsTo: true,
+      help: 'Build with dart2js optimization flags enabled.',
+    )
+    ..addFlag(
       'verify',
       negatable: false,
       help:
@@ -15,20 +26,30 @@ void main(List<String> args) async {
 
   var argsResult = argsParser.parse(args);
 
+  final help = argsResult['help'] as bool;
+
+  if (help) {
+    print('usage: dart tool/build_web.dart [options]');
+    print('');
+    print(argsParser.usage);
+    exit(0);
+  }
+
+  final optimize = argsResult['optimize'] as bool;
   final shouldVerify = argsResult['verify'] as bool;
   if (shouldVerify) {
     await verify();
   } else {
-    await build();
+    await build(optimize);
   }
 }
 
-Future<void> build() async {
+Future<void> build(bool optimize) async {
   // dart compile js -o lib/resources/script.js
   var params = [
     'compile',
     'js',
-    '-O2',
+    if (optimize) '-O2',
     '-o',
     'lib/resources/script.js',
     'web/main.dart',

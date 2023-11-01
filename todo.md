@@ -42,10 +42,11 @@ separetly convert from api to html correctly?
 
 - [x] dart script
 - [x] full SPA
+- [x] convert the left-nav to runtime generated
+- [ ] simplify wrappers around DOM
 - [ ] manage the scroll during page transitions
 - [ ] ensure items in the left nav scroll into focus on page changes
 - [ ] ensure we don't reload a page when navigating within the same page
-- [ ] convert the left-nav to runtime generated
 
 ## Search
 
@@ -55,7 +56,7 @@ separetly convert from api to html correctly?
 
 - [x] have a server mode; allow preview of docs, and refreshing will pick up
       file changes and re-generate
-- [ ] test --serve; we can ping localhost and get expected pages
+- [x] test --serve; we can ping localhost and get expected pages
 
 ## Generation
 
@@ -70,6 +71,7 @@ separetly convert from api to html correctly?
 
 - [x] have a method to convert from an element to a valid in-page ID
 - [ ] fix issues with top-level vars vs. getters vs setters in the model
+- [ ] rename the resources directory to prevent namespace conflicts
 
 ## Completeness
 
@@ -82,10 +84,8 @@ separetly convert from api to html correctly?
 - [ ] support for resolving qualified (foo.Bar) dartdoc references
 - [ ] support for flutter phantom references
 - [ ] support for dartdoc macros (via the analyzer?)
-      {@template foo-bar}
-      {@macro foo-bar}
-      {@macro foo-bar}
-      ...
+  - `{@template foo-bar}`
+  - `{@macro foo-bar}`
 
 ## Other
 

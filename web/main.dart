@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:html';
 
 import 'interop.dart';
@@ -25,6 +26,7 @@ void main() {
   jot.setup();
 }
 
+final Element _sideNav = $id('sidebar-nav');
 final Element _docMainContainer = $id('doc-main-container');
 final Element _body = $query('body')!;
 
@@ -41,21 +43,18 @@ class Jot {
   final String urlBase;
   final String initialUrl;
 
-  late final NavManager navManager;
+  late final NavbarManager navbarManager;
   late final SidebarManager sidebarManager;
   late final SearchUI search;
 
-  Jot({required this.urlBase, required this.initialUrl}) {
-    navManager = NavManager(urlBase: urlBase);
-    sidebarManager = SidebarManager(this, urlBase: urlBase);
-  }
+  Jot({required this.urlBase, required this.initialUrl});
 
   String get baseRel {
     final rel = _body.attributes['data-path']!;
     return p.parent(rel);
   }
 
-  void setup() {
+  Future<void> setup() async {
     // hook up the color theme toggle
     var colorModeButton = $id('color-mode-button');
     colorModeButton.onClick.listen((event) {
@@ -92,6 +91,11 @@ class Jot {
     }
 
     _updateContentLinks();
+
+    navbarManager = NavbarManager(urlBase: urlBase);
+
+    sidebarManager = SidebarManager(this);
+    await sidebarManager.setup();
   }
 
   String get theme =>
@@ -139,8 +143,8 @@ class Jot {
       history.pushState(url, document.title, url);
     }
 
-    navManager.updateActive(uri);
-    sidebarManager.updateActive(uri);
+    navbarManager.updateActive(uri.removeFragment());
+    sidebarManager.updateActive(uri.removeFragment());
   }
 
   void _updateContentLinks() {
@@ -169,13 +173,50 @@ class Jot {
   }
 }
 
+/// Manages the items in the navbar at the top of the page.
+class NavbarManager {
+  final String urlBase;
+
+  NavbarManager({required this.urlBase});
+
+  void updateActive(final Uri uri) {
+    var rel = uri.toString().substring(urlBase.length);
+    if (rel.startsWith('/')) {
+      rel = rel.substring(1);
+    }
+
+    final nav = $query('nav')!;
+    var found = false;
+
+    for (var anchor in nav.querySelectorAll<AnchorElement>('a[data-jot]')) {
+      var href = anchor.attributes['href'];
+      found |= href == rel;
+      anchor.classes.toggle('navbar__link--active', href == rel);
+    }
+
+    if (!found) {
+      for (var anchor in nav.querySelectorAll<AnchorElement>('a[data-jot]')) {
+        var href = anchor.attributes['href'];
+        if (href == 'index.html') {
+          anchor.classes.toggle('navbar__link--active', true);
+        }
+      }
+    }
+  }
+}
+
+/// Manages the items in the left-hand side nav.
 class SidebarManager {
   final Jot jot;
-  final String urlBase;
   late Element _nav;
 
-  SidebarManager(this.jot, {required this.urlBase}) {
-    _nav = querySelector('aside.docSidebarContainer')!;
+  SidebarManager(this.jot) {
+    _nav = $query('aside.docSidebarContainer')!;
+  }
+
+  Future<void> setup() async {
+    // build the left nav
+    await _populateNav();
 
     // hook up sidenav menu collapse buttons
     for (var element in $queryAll('button.menu__caret')) {
@@ -187,14 +228,11 @@ class SidebarManager {
     }
   }
 
-  void updateActive(Uri uri) {
-    uri = uri.removeFragment();
-
-    var rel = uri.toString().substring(urlBase.length);
+  void updateActive(final Uri uri) {
+    var rel = uri.toString().substring(jot.urlBase.length);
     if (rel.startsWith('/')) {
       rel = rel.substring(1);
     }
-    rel = p.normalize(p.relative(rel, from: jot.baseRel));
 
     AnchorElement? itemAnchor;
 
@@ -227,38 +265,121 @@ class SidebarManager {
       }
     }
   }
+
+  Future<void> _populateNav() async {
+    // todo: write a utility for fetch()
+    var response = (await window.fetch('${jot.urlBase}resources/nav.json'))
+        as FetchResponse;
+    var code = response.status;
+    if (code == 404) {
+      print('error response: $response');
+      // todo: ??
+      return;
+    }
+
+    var text = await promiseToFuture<String>(response.text());
+    var navInfo = (jsonDecode(text) as List)
+        .cast<JsonType>()
+        .map(SidebarItem._parse)
+        .toList();
+
+    // write the item info into the dom
+    final outer = Element.ul()..className = 'theme-doc-sidebar-menu menu__list';
+    for (var nav in navInfo) {
+      outer.append(nav.createElement(jot));
+    }
+    _sideNav.append(outer);
+
+    updateActive(Uri.parse(window.location.href).removeFragment());
+  }
 }
 
-class NavManager {
-  final String urlBase;
+class SidebarItem {
+  final String name;
+  final String? href;
+  final String? type;
+  final List<SidebarItem>? children;
 
-  NavManager({required this.urlBase});
+  SidebarItem({
+    required this.name,
+    this.href,
+    this.type,
+    this.children,
+  });
 
-  void updateActive(Uri uri) {
-    uri = uri.removeFragment();
+  factory SidebarItem._parse(JsonType json) {
+    List<SidebarItem>? children;
 
-    var rel = uri.toString().substring(urlBase.length);
-    // todo:
-    if (rel.startsWith('/')) {
-      rel = rel.substring(1);
+    if (json.containsKey('c')) {
+      var temp = (json['c'] as List).cast<JsonType>();
+      children = temp.map(SidebarItem._parse).toList();
     }
 
-    final nav = querySelector('nav')!;
-    var found = false;
+    return SidebarItem(
+      name: json['n'] as String,
+      href: json['h'] as String,
+      type: json['t'] as String?,
+      children: children,
+    );
+  }
 
-    for (var anchor in nav.querySelectorAll<AnchorElement>('a[data-jot]')) {
-      var href = anchor.attributes['href'];
-      found |= href == rel;
-      anchor.classes.toggle('navbar__link--active', href == rel);
-    }
+  bool get separator => type == 'separator';
 
-    if (!found) {
-      for (var anchor in nav.querySelectorAll<AnchorElement>('a[data-jot]')) {
-        var href = anchor.attributes['href'];
-        if (href == 'index.html') {
-          anchor.classes.toggle('navbar__link--active', true);
-        }
+  Element createElement(Jot jot) {
+    if (separator) {
+      final li = Element.li()..classes = ['menu__list-item', 'group'];
+      li.append(AnchorElement()
+        ..className = 'menu__link'
+        ..text = name);
+      return li;
+    } else if (children == null) {
+      final li = Element.li()..className = 'menu__list-item';
+      final a = AnchorElement(href: href)
+        ..className = 'menu__link'
+        ..setAttribute('data-jot', '')
+        ..text = name
+        ..onClick.listen((event) {
+          event.preventDefault();
+
+          final url = p.normalize(p.join(jot.urlBase, href!));
+          jot._swapFor(url, updateHistory: true);
+        });
+      li.append(a);
+      return li;
+    } else {
+      final li = Element.li()
+        ..classes = [
+          'theme-doc-sidebar-item-category',
+          'menu__list-item',
+          'menu__list-item--collapsed',
+        ];
+
+      final div = Element.div()..className = 'menu__list-item-collapsible';
+      final a = AnchorElement(href: href)
+        ..classes = ['menu__link', 'menu__link--sublist']
+        ..setAttribute('data-jot', '')
+        ..text = name
+        ..onClick.listen((event) {
+          event.preventDefault();
+          final url = p.normalize(p.join(jot.urlBase, href!));
+          jot._swapFor(url, updateHistory: true);
+        });
+      div.append(a);
+      div.append(ButtonElement()
+        ..type = 'button'
+        ..classes = ['clean-btn', 'menu__caret']);
+      li.append(div);
+
+      final ul = Element.ul()..className = 'menu__list';
+      for (var nav in children!) {
+        ul.append(nav.createElement(jot));
       }
+      li.append(ul);
+
+      return li;
     }
   }
+
+  @override
+  String toString() => '$name [$href]';
 }

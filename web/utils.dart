@@ -18,6 +18,8 @@ extension ElementExtension on Element {
   }
 }
 
+typedef JsonType = Map<String, dynamic>;
+
 String plural(String word, int count) => count == 1 ? word : '${word}s';
 
 class Path {
@@ -38,7 +40,9 @@ class Path {
   }
 
   String join(String a, String b) {
-    if (a.isNotEmpty) {
+    if (a.endsWith('/')) {
+      return '$a$b';
+    } else if (a.isNotEmpty) {
       return '$a/$b';
     } else {
       return b;

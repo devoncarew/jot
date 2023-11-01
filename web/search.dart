@@ -292,7 +292,7 @@ class Index {
     }
 
     var text = await promiseToFuture<String>(response.text());
-    var jsonIndex = (jsonDecode(text) as List).cast<_JsonType>();
+    var jsonIndex = (jsonDecode(text) as List).cast<JsonType>();
     return jsonIndex.map(IndexMember._parse).toList();
   }
 
@@ -325,8 +325,6 @@ class Index {
     }
   }
 }
-
-typedef _JsonType = Map<String, dynamic>;
 
 // [
 //   {"t":"package","n":"package:jot","c":[
@@ -401,7 +399,7 @@ abstract class IndexMember {
     return '${parent!.name}.';
   }
 
-  factory IndexMember._parse(_JsonType json) {
+  factory IndexMember._parse(JsonType json) {
     var name = json['n'] as String;
     var type = json['t'] as String;
     var docs = json['d'] as String?;
@@ -417,7 +415,7 @@ abstract class IndexMember {
         ref,
         children == null
             ? const []
-            : children.map((c) => IndexMember._parse(c as _JsonType)).toList(),
+            : children.map((c) => IndexMember._parse(c as JsonType)).toList(),
       );
       for (var child in item.children) {
         child.parent = item;
