@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
@@ -47,6 +48,8 @@ abstract class DocEntity {
 
   DocEntity(this.parent, this.name);
 
+  DocFile? get mainFile;
+
   DocWorkspace get workspace => parent!.workspace;
 
   DocContainer? get parentPackage => parent?.parentPackage;
@@ -89,6 +92,9 @@ class DocFile extends DocEntity {
 
   DocFile(super.parent, super.name, this.path, this.contentGenerator);
 
+  @override
+  DocFile? get mainFile => this;
+
   Future<GenerationResults> generatePageContents() {
     return contentGenerator(workspace, this);
   }
@@ -120,6 +126,9 @@ class DocSeparator extends DocEntity {
   DocSeparator(super.parent, super.name);
 
   @override
+  DocFile? get mainFile => null;
+
+  @override
   Future<void> generate(Directory dir,
       {required Logger logger, Stats? stats, bool quiet = false}) async {
     // nothing to do
@@ -132,6 +141,7 @@ class DocContainer extends DocEntity {
 
   final List<DocEntity> children = [];
 
+  @override
   DocFile? mainFile;
 
   DocContainer(
@@ -269,9 +279,6 @@ class DocWorkspace extends DocContainer {
       return '<a $href class="navbar__item navbar__link$active" data-jot>$name</a>';
     }).join(' ');
 
-    // side nav
-    var sidenavContents = _genSidenav(file, this).trimRight();
-
     // breadcrumbs
     var breadcrumbs = file.breadcrumbs;
     if (breadcrumbs.length == 1) {
@@ -312,7 +319,6 @@ class DocWorkspace extends DocContainer {
       pathPrefix: pathPrefix,
       pageRef: file.path,
       navbar: navbarContent,
-      sideNav: sidenavContents,
       breadcrumbs: breadcrumbsContent,
       pageContent: page.contents.trimRight(),
       toc: page.outline?.asHtml ?? '',
@@ -320,62 +326,37 @@ class DocWorkspace extends DocContainer {
     );
   }
 
-  String _genSidenav(DocFile page, DocEntity entity) {
-    if (entity is DocWorkspace) {
-      var buf = StringBuffer('<ul class="theme-doc-sidebar-menu menu__list">');
-      buf.writeln(_genSidenav(page, entity.mainFile!));
-      for (var child in entity.children) {
-        buf.writeln(_genSidenav(page, child));
-      }
-      buf.writeln('</ul>');
-      return buf.toString();
-    } else if (entity is DocFile) {
-      var active = entity == page ? ' menu__link--active' : '';
+  String generateNavData() {
+    const encoder = JsonEncoder.withIndent('');
 
-      return '<li class="menu__list-item">'
-          '<a class="menu__link$active" '
-          'href="${pathTo(entity, from: page)}" data-jot>${entity.name}</a>'
-          '</li>';
-    } else if (entity is DocSeparator) {
-      return '<li class="menu__list-item group">'
-          '<a class="menu__link ">${entity.name}</a>'
-          '</li>';
-    } else if (entity is DocContainer) {
-      var group = entity.isGroup ? ' group' : '';
+    var navItems = [
+      mainFile!,
+      ...children,
+    ].map(_generateNavData).toList();
+    return encoder.convert(navItems);
+  }
 
-      // keep menus open if they're in the parent path
-      final collapsed = !entity.isGroup && entity.hasChild(page)
-          ? ''
-          : 'menu__list-item--collapsed';
-      var buf = StringBuffer('<li class="theme-doc-sidebar-item-category '
-          '$collapsed menu__list-item $group">');
+  Map<String, dynamic> _generateNavData(DocEntity page) {
+    if (page is DocFile) {
+      return {
+        'n': page.name,
+        'h': page.path,
+      };
+    } else if (page is DocSeparator) {
+      return {
+        'n': page.name,
+        't': 'separator',
+      };
+    } else if (page is DocContainer) {
+      final mainFile = page.mainFile!;
 
-      var active = entity.mainFile == page ? 'menu__link--active' : '';
-      var href = '';
-      if (entity.mainFile != null) {
-        href = 'href="${pathTo(entity.mainFile!, from: page)}"';
-      }
-
-      buf.writeln('''
-
-<div class="menu__list-item-collapsible">
-  <a $href class="menu__link menu__link--sublist $active" data-jot>${entity.name}</a>
-  <button type="button" class="clean-btn menu__caret"></button>
-</div>''');
-
-      if (entity.children.isNotEmpty) {
-        buf.writeln('<ul class="menu__list">');
-        for (var child in entity.children) {
-          buf.writeln(_genSidenav(page, child));
-        }
-        buf.writeln('</ul>');
-      }
-
-      buf.writeln('</li>');
-
-      return buf.toString();
+      return {
+        'n': mainFile.name,
+        'h': mainFile.path,
+        'c': page.children.map(_generateNavData).toList(),
+      };
     } else {
-      throw StateError('entity not handled: $entity');
+      throw StateError('unexpected subclass');
     }
   }
 

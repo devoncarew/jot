@@ -57,6 +57,9 @@ class Jot {
     var indexFile = File(p.join(outDir.path, 'resources', 'index.json'));
     indexFile.writeAsStringSync(workspace.api!.index.toJson());
     stats.genFile(indexFile);
+    var navFile = File(p.join(outDir.path, 'resources', 'nav.json'));
+    navFile.writeAsStringSync(workspace.generateNavData());
+    stats.genFile(navFile);
 
     // generate
     logger.stdout('');
@@ -229,6 +232,10 @@ class DocServer {
     });
     app.get('/resources/index.json', (Request request) async {
       return Response.ok(workspace.api!.index.toJson(),
+          headers: headersFor(request.url.path));
+    });
+    app.get('/resources/nav.json', (Request request) async {
+      return Response.ok(workspace.generateNavData(),
           headers: headersFor(request.url.path));
     });
     app.mount('/resources', Router(notFoundHandler: _resourcesHandler).call);
