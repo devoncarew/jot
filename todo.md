@@ -2,7 +2,7 @@
 
 - [x] script for doc'ing the dart sdk
 - [x] script for doc'ing flutter
-- [ ] support generating package:flutter
+- [x] support generating package:flutter
 - [ ] support generating the flutter SDK
 - [ ] cleaner API for generation
 - [ ] libraries should have a section for symbols exported from other libs
@@ -44,8 +44,8 @@ separetly convert from api to html correctly?
 - [x] dart script
 - [x] full SPA
 - [x] convert the left-nav to runtime generated
-- [ ] simplify wrappers around DOM
-- [ ] manage the scroll during page transitions
+- [x] manage the scroll during page transitions
+- [x] simplify wrappers around DOM
 - [ ] ensure items in the left nav scroll into focus on page changes
 - [ ] ensure we don't reload a page when navigating within the same page
 
@@ -80,13 +80,11 @@ separetly convert from api to html correctly?
 - [ ] correctly determine where to document elements for Flutter (for things
       exported from multiple libraries)
 - [ ] determine the export chain length (e.g. symbol A is exported from B, C,
-      definied in D)
+      defined in D)
 - [ ] support for dartdoc categories
 - [ ] support for resolving qualified (foo.Bar) dartdoc references
 - [ ] support for flutter phantom references
-- [ ] support for dartdoc macros (via the analyzer?)
-  - `{@template foo-bar}`
-  - `{@macro foo-bar}`
+- [ ] support for dartdoc macros (`{@template foo-bar}` / `{@macro foo-bar}`)
 
 ## Other
 

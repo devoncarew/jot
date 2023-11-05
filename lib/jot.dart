@@ -247,7 +247,6 @@ class DocServer {
     );
     logger.stdout(
         'Serving docs at http://${_server.address.host}:${_server.port}/.');
-    logger.stdout('');
   }
 
   Future<void> dispose() => _server.close();
