@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:html';
 
+import 'dom.dart';
 import 'interop.dart';
 import 'utils.dart';
 
@@ -193,38 +194,29 @@ class SearchResultsUI {
   }
 
   LIElement _renderItem(String pattern, IndexMember item) {
-    var element = LIElement()..classes.addAll(['margin--sm', 'padding--sm']);
-    element.children.add(
-      DivElement()
-        ..children.addAll([
-          ..._renderMatchText(item.display, item.name, pattern),
-          SpanElement()
-            ..text = item.importReference(true)
-            ..classes.add('location'),
-        ]),
-    );
-    element.children.add(
-      DivElement()
-        ..classes.add('docs')
-        ..children.addAll(
-          [
-            SpanElement()
-              ..text = item.type
-              ..classes.add('type'),
-            if (item.docs == null) SpanElement()..innerHtml = '&nbsp;',
-            if (item.docs != null) SpanElement()..text = '"${item.docs!}"',
+    return li(
+      classes: ['margin--sm', 'padding--sm'],
+      children: [
+        div(
+          children: [
+            ..._renderMatchText(item.display, item.name, pattern),
+            span(text: item.importReference(true), classes: ['location']),
+            span(text: item.type, classes: ['type', 'badge']),
           ],
         ),
-    );
-
-    element.onMouseDown.listen((event) {
-      event.stopPropagation();
-
-      urlHandler(item.url);
-      hide();
-    });
-
-    return element;
+        div(
+          classes: ['docs'],
+          children: [
+            if (item.docs == null) span(innerHtml: '&nbsp;'),
+            if (item.docs != null) span(text: item.docs),
+          ],
+        ),
+      ],
+    )..onMouseDown.listen((event) {
+        event.stopPropagation();
+        urlHandler(item.url);
+        hide();
+      });
   }
 
   void hide() {
@@ -235,8 +227,7 @@ class SearchResultsUI {
   }
 }
 
-Iterable<Element> _renderMatchText(
-    String display, String name, String pattern) sync* {
+List<Element> _renderMatchText(String display, String name, String pattern) {
   var startsAt = 0;
   var nameIndex = display.indexOf('.$name');
   if (nameIndex != -1) {
@@ -252,13 +243,18 @@ Iterable<Element> _renderMatchText(
   }
 
   if (matchAt == -1) {
-    yield SpanElement()..text = display;
+    return [
+      span(text: display),
+    ];
   } else {
-    yield SpanElement()..text = display.substring(0, matchAt);
-    yield SpanElement()
-      ..text = display.substring(matchAt, matchAt + pattern.length)
-      ..classes.add('match');
-    yield SpanElement()..text = display.substring(matchAt + pattern.length);
+    return [
+      span(text: display.substring(0, matchAt)),
+      span(
+        text: display.substring(matchAt, matchAt + pattern.length),
+        classes: ['match'],
+      ),
+      span(text: display.substring(matchAt + pattern.length)),
+    ];
   }
 }
 

@@ -1,17 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:html';
 
+import 'dom.dart';
 import 'interop.dart';
 import 'search.dart';
 import 'utils.dart';
 
-// TODO: remember the scroll position of the page content?
-
 // TODO: improve animation of the sidenav opening / closing
 
 // TODO: update the outline view active element as the content area scrolls
-
-// TODO: manage content area scroll with history push / pop
 
 final Path p = Path();
 
@@ -43,6 +41,8 @@ class Jot {
   final String urlBase;
   final String initialUrl;
 
+  final PageHistoryManager pageHistory = PageHistoryManager();
+
   late final NavbarManager navbarManager;
   late final SidebarManager sidebarManager;
   late final SearchUI search;
@@ -69,13 +69,19 @@ class Jot {
 
     // search
     search = SearchUI(urlBase, (url) {
-      _swapFor('$urlBase$url', updateHistory: true);
+      jumpToPage('$urlBase$url');
     });
 
     // listen for history events
     window.onPopState.listen((PopStateEvent event) {
-      final url = (event.state as String?) ?? initialUrl;
-      _swapFor(url, updateHistory: false);
+      final url = window.location.href;
+      final scrollPos = event.state as int?;
+
+      jumpToPage(
+        url,
+        updateHistory: false,
+        scrollPos: scrollPos,
+      );
     });
 
     // replace all the a hrefs with listeners
@@ -86,7 +92,8 @@ class Jot {
         final relParent = p.parent(initialUrl);
         final relPath = anchor.attributes['href']!;
         final url = p.normalize(p.join(relParent, relPath));
-        _swapFor(url, updateHistory: true);
+
+        jumpToPage(url);
       });
     }
 
@@ -110,8 +117,20 @@ class Jot {
     window.localStorage['theme'] = value;
   }
 
-  void _swapFor(String url, {required bool updateHistory}) async {
-    // todo: make sure we're only loading from the same domain
+  void jumpToPage(
+    String url, {
+    bool updateHistory = true,
+    int? scrollPos,
+  }) async {
+    if (updateHistory) {
+      pageHistory.rememberScrollPosition();
+    }
+
+    if (updateHistory) {
+      pageHistory.navigateTo(url);
+    }
+
+    // TODO: make sure we're only loading from the same domain
     var response = (await window.fetch(url)) as FetchResponse;
     var code = response.status;
     if (code == 404) {
@@ -128,20 +147,22 @@ class Jot {
       treeSanitizer: NodeTreeSanitizer.trusted,
     );
 
-    // update the a[hrefs] here
-    _updateContentLinks();
-
-    // todo: restore scroll pos on back navs
     var uri = Uri.parse(url);
-    if (uri.hasFragment) {
-      var target = _docMainContainer.querySelector('#${uri.fragment}');
-      target?.scrollIntoViewIfNeeded();
+
+    // Manage scrolled position.
+    if (scrollPos != null) {
+      pageHistory.restoreScrollPos(scrollPos);
+    } else {
+      if (uri.hasFragment) {
+        var target = _docMainContainer.querySelector('#${uri.fragment}');
+        target?.scrollIntoViewIfNeeded();
+      } else {
+        pageHistory.restoreScrollPos(0);
+      }
     }
 
-    if (updateHistory) {
-      var history = window.history;
-      history.pushState(url, document.title, url);
-    }
+    // update a[hrefs]
+    _updateContentLinks();
 
     navbarManager.updateActive(uri.removeFragment());
     sidebarManager.updateActive(uri.removeFragment());
@@ -167,7 +188,7 @@ class Jot {
         var url = relPath.startsWith('#')
             ? '$urlBase$filePath$relPath'
             : '$urlBase${p.join(parentPath, relPath)}';
-        _swapFor(p.normalize(url), updateHistory: true);
+        jumpToPage(p.normalize(url));
       });
     }
   }
@@ -317,7 +338,7 @@ class SidebarItem {
 
     return SidebarItem(
       name: json['n'] as String,
-      href: json['h'] as String,
+      href: json['h'] as String?,
       type: json['t'] as String?,
       children: children,
     );
@@ -327,59 +348,80 @@ class SidebarItem {
 
   Element createElement(Jot jot) {
     if (separator) {
-      final li = Element.li()..classes = ['menu__list-item', 'group'];
-      li.append(AnchorElement()
-        ..className = 'menu__link'
-        ..text = name);
-      return li;
+      return li(
+        classes: ['menu__list-item', 'group'],
+        children: [
+          a(text: name, classes: ['menu__link']),
+        ],
+      );
     } else if (children == null) {
-      final li = Element.li()..className = 'menu__list-item';
-      final a = AnchorElement(href: href)
-        ..className = 'menu__link'
-        ..setAttribute('data-jot', '')
-        ..text = name
-        ..onClick.listen((event) {
-          event.preventDefault();
-
-          final url = p.normalize(p.join(jot.urlBase, href!));
-          jot._swapFor(url, updateHistory: true);
-        });
-      li.append(a);
-      return li;
+      return li(
+        classes: ['menu__list-item'],
+        children: [
+          a(
+            text: name,
+            href: href,
+            classes: ['menu__link'],
+            attributes: {'data-jot': ''},
+            onClick: (event) {
+              event.preventDefault();
+              jot.jumpToPage(p.normalize(p.join(jot.urlBase, href!)));
+            },
+          )
+        ],
+      );
     } else {
-      final li = Element.li()
-        ..classes = [
+      return li(
+        classes: [
           'theme-doc-sidebar-item-category',
           'menu__list-item',
           'menu__list-item--collapsed',
-        ];
-
-      final div = Element.div()..className = 'menu__list-item-collapsible';
-      final a = AnchorElement(href: href)
-        ..classes = ['menu__link', 'menu__link--sublist']
-        ..setAttribute('data-jot', '')
-        ..text = name
-        ..onClick.listen((event) {
-          event.preventDefault();
-          final url = p.normalize(p.join(jot.urlBase, href!));
-          jot._swapFor(url, updateHistory: true);
-        });
-      div.append(a);
-      div.append(ButtonElement()
-        ..type = 'button'
-        ..classes = ['clean-btn', 'menu__caret']);
-      li.append(div);
-
-      final ul = Element.ul()..className = 'menu__list';
-      for (var nav in children!) {
-        ul.append(nav.createElement(jot));
-      }
-      li.append(ul);
-
-      return li;
+        ],
+        children: [
+          div(
+            classes: ['menu__list-item-collapsible'],
+            children: [
+              a(
+                text: name,
+                href: href,
+                classes: ['menu__link', 'menu__link--sublist'],
+                attributes: {'data-jot': ''},
+                onClick: (event) {
+                  event.preventDefault();
+                  jot.jumpToPage(p.normalize(p.join(jot.urlBase, href!)));
+                },
+              ),
+              if (children!.isNotEmpty)
+                button(type: 'button', classes: ['clean-btn', 'menu__caret']),
+            ],
+          ),
+          ul(
+            classes: ['menu__list'],
+            children: [
+              ...children!.map((child) => child.createElement(jot)),
+            ],
+          ),
+        ],
+      );
     }
   }
 
   @override
   String toString() => '$name [$href]';
+}
+
+class PageHistoryManager {
+  int get _scrollPos => window.document.documentElement!.scrollTop;
+
+  void navigateTo(String url) {
+    window.history.pushState(null, '', url);
+  }
+
+  void rememberScrollPosition() {
+    window.history.replaceState(_scrollPos, '', null);
+  }
+
+  void restoreScrollPos(int value) {
+    window.document.documentElement!.scrollTop = value;
+  }
 }

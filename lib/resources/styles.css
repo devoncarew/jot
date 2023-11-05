@@ -264,9 +264,8 @@ div.search-area {
 }
 
 .search-area span.type {
-  opacity: 0.5;
-  font-style: italic;
-  margin-right: 0.4em;
+  float: right;
+  background-color: var(--ifm-menu-color-background-active);
 }
 
 .search-area div.docs {
