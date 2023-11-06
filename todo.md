@@ -19,14 +19,15 @@
 
 ## Testing
 
+- [x] tests for LinkedCodeRenderer
 - [ ] tests for workspace code
 - [ ] tests for api code
-- [ ] tests for the DartFormat class
+- [ ] tests for DartFormat
 
 source code => api => generation?
 source code => workspace?
 we don't need to test at the html level; is the api model well-formed? can we
-separetly convert from api to html correctly?
+separately convert from api to html correctly?
 
 ### Language features
 
@@ -48,6 +49,7 @@ separetly convert from api to html correctly?
 - [x] simplify wrappers around DOM
 - [ ] ensure items in the left nav scroll into focus on page changes
 - [ ] ensure we don't reload a page when navigating within the same page
+- [ ] update outline view selection on page scroll
 
 ## Search
 

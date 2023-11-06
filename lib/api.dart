@@ -924,7 +924,7 @@ class LinkedText {
 class _ElementSpan {
   final Element element;
   final int start;
-  String text;
+  final String text;
 
   _ElementSpan(this.element, this.start, this.text);
 
