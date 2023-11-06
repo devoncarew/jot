@@ -305,7 +305,7 @@ class SidebarManager {
         .toList();
 
     // write the item info into the dom
-    final outer = Element.ul()..className = 'theme-doc-sidebar-menu menu__list';
+    final outer = ul(classes: ['theme-doc-sidebar-menu', 'menu__list']);
     for (var nav in navInfo) {
       outer.append(nav.createElement(jot));
     }

@@ -1,7 +1,7 @@
 import 'package:dart_style/dart_style.dart';
 
 class DartFormat {
-  // todo: if there are any formatting failures, return the input string
+  // TODO: if there are any formatting failures, return the input string
   static String asFunction(String str) {
     return _dartFormat(str, '{}');
   }
@@ -82,6 +82,8 @@ ${suffix ?? ''}
           .map((line) => line.startsWith('  ') ? line.substring(2) : line)
           .join('\n');
     }
+
+    source = source.trimRight();
 
     return source;
   }

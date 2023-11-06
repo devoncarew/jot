@@ -6,7 +6,7 @@
 
 // TODO: This file is copied from package:analyzer; we should figure out a way
 //       to reduce the tech debt here.
-// package:analyzer/src/dart/element/display_string_builder.dart
+// pkg/analyzer/lib/src/dart/element/display_string_builder.dart
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
@@ -18,19 +18,24 @@ import 'package:analyzer/src/generated/element_type_provider.dart';
 
 import '../api.dart';
 
-class LinkedElementDisplayBuilder {
+class ElementDisplayStringBuilder {
   final LinkedText linkedText;
 
   final bool skipAllDynamicArguments;
   final bool withNullability;
   final bool multiline;
 
-  LinkedElementDisplayBuilder(
+  ElementDisplayStringBuilder(
     this.linkedText, {
-    this.skipAllDynamicArguments = false,
-    this.withNullability = true,
+    required this.skipAllDynamicArguments,
+    required this.withNullability,
     this.multiline = false,
   });
+
+  ElementDisplayStringBuilder.defaults(this.linkedText)
+      : skipAllDynamicArguments = false,
+        withNullability = true,
+        multiline = false;
 
   @override
   String toString() => linkedText.toString();
@@ -40,12 +45,16 @@ class LinkedElementDisplayBuilder {
   }
 
   void writeClassElement(ClassElementImpl element) {
+    if (element.isAugmentation) {
+      _write('augment ');
+    }
+
     if (element.isSealed) {
       _write('sealed ');
     } else if (element.isAbstract) {
       _write('abstract ');
     }
-    if (element.isBase) {
+    if (element.isBase && element.isMixinClass) {
       _write('base ');
     } else if (element.isInterface) {
       _write('interface ');
@@ -72,6 +81,8 @@ class LinkedElementDisplayBuilder {
   }
 
   void writeConstructorElement(ConstructorElement element) {
+    // Note: this is commented out as otherwise the code won't parse.
+
     // _writeType(element.returnType);
     // _write(' ');
 
@@ -97,6 +108,10 @@ class LinkedElementDisplayBuilder {
   }
 
   void writeExecutableElement(ExecutableElement element, String name) {
+    if (element.isAugmentation) {
+      _write('augment ');
+    }
+
     if (element.kind != ElementKind.SETTER) {
       _writeType(element.returnType);
       _write(' ');
@@ -176,12 +191,26 @@ class LinkedElementDisplayBuilder {
   }
 
   void writeInterfaceType(InterfaceType type) {
+    // Note: make sure we write types through the linked writer.
     _writeElement(type.element.name, type.element);
+
     _writeTypeArguments(type.typeArguments);
     _writeNullability(type.nullabilitySuffix);
   }
 
+  void writeInvalidType() {
+    _write('InvalidType');
+  }
+
+  void writeLibraryElement(LibraryElementImpl element) {
+    _write('library ');
+    _write('${element.source.uri}');
+  }
+
   void writeMixinElement(MixinElementImpl element) {
+    if (element.isAugmentation) {
+      _write('augment ');
+    }
     if (element.isBase) {
       _write('base ');
     }
@@ -234,6 +263,11 @@ class LinkedElementDisplayBuilder {
       _write('}');
     }
 
+    // Add trailing comma for record types with only one position field.
+    if (positionalFields.length == 1 && namedFields.isEmpty) {
+      _write(',');
+    }
+
     _write(')');
     _writeNullability(type.nullabilitySuffix);
   }
@@ -254,6 +288,9 @@ class LinkedElementDisplayBuilder {
   }
 
   void writeTypeParameter(TypeParameterElement element) {
+    // Note: This is commented out as using 'in' and 'out' when declaring type
+    // parameters won't parse correctly.
+
     // if (element is TypeParameterElementImpl) {
     //   var variance = element.variance;
     //   if (!element.isLegacyCovariant && variance != Variance.unrelated) {
@@ -295,6 +332,12 @@ class LinkedElementDisplayBuilder {
   }
 
   void writeVariableElement(VariableElement element) {
+    switch (element) {
+      case FieldElement(isAugmentation: true):
+      case TopLevelVariableElement(isAugmentation: true):
+        _write('augment ');
+    }
+
     _writeType(element.type);
     _write(' ');
     _write(element.displayName);
