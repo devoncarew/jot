@@ -1,6 +1,4 @@
-/// To create a new [DocWorkspace], see [DocWorkspace.fromPackage].
-///
-/// To generate docs, see [DocWorkspace.generate].
+/// To create a new [Workspace], see [Workspace.fromPackage].
 library;
 
 import 'dart:io';
@@ -43,7 +41,7 @@ class Jot {
 
     var stats = Stats()..start();
 
-    htmlTemplate = await HtmlTemplate.initDir(outDir, stats: stats);
+    htmlTemplate = await HtmlTemplate.createDefault();
     analyzer =
         Analyzer.packages(includedPaths: [p.normalize(inDir.absolute.path)]);
 
@@ -52,10 +50,14 @@ class Jot {
     progress.finish();
 
     // build model
-    workspace.api!.finish();
+    workspace.api.finish();
+
+    // write out the static resources
+    await htmlTemplate.generateStaticResources(outDir, stats: stats);
+
     // TODO: change this to writeIndex() in the generator
     var indexFile = File(p.join(outDir.path, 'resources', 'index.json'));
-    indexFile.writeAsStringSync(workspace.api!.index.toJson());
+    indexFile.writeAsStringSync(workspace.api.index.toJson());
     stats.genFile(indexFile);
     var navFile = File(p.join(outDir.path, 'resources', 'nav.json'));
     navFile.writeAsStringSync(workspace.generateNavData());
@@ -66,8 +68,13 @@ class Jot {
     logger.stdout('Generating docs...');
 
     // generate docs
-    // todo: switch this to use a Generator instance
-    await workspace.generate(outDir, logger: logger, stats: stats);
+    final generator = Generator(
+      workspace: workspace,
+      outDir: outDir,
+      logger: logger,
+      stats: stats,
+    );
+    await generator.generate();
 
     stats.stop();
 
@@ -79,7 +86,7 @@ class Jot {
   }
 
   Future<DocServer> serve(int port) async {
-    htmlTemplate = await HtmlTemplate.initDir(outDir, writeResouces: false);
+    htmlTemplate = await HtmlTemplate.createDefault();
     analyzer =
         Analyzer.packages(includedPaths: [p.normalize(inDir.absolute.path)]);
 
@@ -88,7 +95,7 @@ class Jot {
     progress.finish();
 
     // build model
-    workspace.api!.finish();
+    workspace.api.finish();
 
     logger.stdout('');
 
@@ -97,13 +104,11 @@ class Jot {
     return server;
   }
 
-  Future<DocWorkspace> _buildWorkspace() async {
-    var workspace = DocWorkspace.fromPackage(htmlTemplate, inDir);
+  Future<Workspace> _buildWorkspace() async {
+    var workspace = Workspace.fromPackage(htmlTemplate, inDir);
     var packageName = workspace.name.substring('package:'.length);
 
     final libDirPath = p.join(inDir.path, 'lib');
-
-    workspace.api = Api();
 
     // TODO: build up the api and the workspace separately; we need a better
     // picture of the API before we start assigning elements to pages
@@ -114,34 +119,34 @@ class Jot {
       var dartLibraryPath = p.relative(libraryPath, from: libDirPath);
       var htmlOutputPath = '${p.withoutExtension(dartLibraryPath)}.html';
 
-      var libraryContainer = workspace.addChild(DocContainer(
+      var libraryContainer = workspace.addChild(WorkspaceDirectory(
         workspace,
         dartLibraryPath,
       ));
 
-      var library = workspace.api!
+      var library = workspace.api
           .addLibrary(resolvedLibrary.element, workspace.name, dartLibraryPath);
 
-      libraryContainer.mainFile = DocFile(
+      libraryContainer.mainFile = WorkspaceFile(
         workspace,
         dartLibraryPath,
         htmlOutputPath,
         libraryGenerator(library),
       )..importScript = 'package:$packageName/$dartLibraryPath';
 
-      workspace.api!.addResolution(library, libraryContainer.mainFile!);
+      workspace.api.addResolution(library, libraryContainer.mainFile!);
 
       for (var itemContainer in library.allChildrenSorted.whereType<Items>()) {
         var path =
             '${p.withoutExtension(dartLibraryPath)}/${itemContainer.name}.html';
-        var docFile = DocFile(
+        var docFile = WorkspaceFile(
           libraryContainer,
           itemContainer.name,
           path,
           itemsGenerator(itemContainer),
         );
         libraryContainer.addChild(docFile);
-        workspace.api!.addResolution(itemContainer, docFile);
+        workspace.api.addResolution(itemContainer, docFile);
       }
     }
 
@@ -151,7 +156,7 @@ class Jot {
 
 class DocServer {
   final Jot jot;
-  DocWorkspace workspace;
+  Workspace workspace;
   late final HttpServer _server;
 
   DocServer({
@@ -174,7 +179,7 @@ class DocServer {
     // Check for changed dart sources.
     if (await jot.analyzer.reanalyzeChanges()) {
       workspace = await jot._buildWorkspace();
-      workspace.api!.finish();
+      workspace.api.finish();
     }
 
     var file = workspace.getForPath(filePath);
@@ -231,7 +236,7 @@ class DocServer {
           headers: headersFor('dart.png'));
     });
     app.get('/resources/index.json', (Request request) async {
-      return Response.ok(workspace.api!.index.toJson(),
+      return Response.ok(workspace.api.index.toJson(),
           headers: headersFor(request.url.path));
     });
     app.get('/resources/nav.json', (Request request) async {

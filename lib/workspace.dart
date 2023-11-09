@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart' as yaml;
@@ -12,7 +11,7 @@ import 'src/markdown.dart';
 import 'src/utils.dart';
 
 typedef FileContentGenerator = Future<GenerationResults> Function(
-    DocWorkspace workspace, DocFile thisFile);
+    Workspace workspace, WorkspaceFile thisFile);
 
 class GenerationResults {
   final String contents;
@@ -22,53 +21,38 @@ class GenerationResults {
 }
 
 Future<GenerationResults> emptyContentGenerator(
-    DocWorkspace workspace, DocFile thisFile) {
+    Workspace workspace, WorkspaceFile thisFile) {
   return Future.value(GenerationResults(''));
 }
 
 FileContentGenerator createMarkdownGenerator(File markdownFile) {
-  return (DocWorkspace workspace, DocFile thisFile) async {
+  return (Workspace workspace, WorkspaceFile thisFile) async {
     var content = markdownFile.readAsStringSync();
     var results = convertMarkdownWithOutline(content);
     return GenerationResults(results.html, results.outline);
   };
 }
 
-FileContentGenerator createPlaintextGenerator(File markdownFile) {
-  return (DocWorkspace workspace, DocFile thisFile) async {
-    var content = markdownFile.readAsStringSync();
-    var pageContent = htmlEscape(content);
-    return GenerationResults('<pre>$pageContent</pre>');
-  };
-}
-
-abstract class DocEntity {
-  final DocEntity? parent;
+abstract class WorkspaceEntity {
+  final WorkspaceEntity? parent;
   final String name;
 
-  DocEntity(this.parent, this.name);
+  WorkspaceEntity(this.parent, this.name);
 
-  DocFile? get mainFile;
+  WorkspaceFile? get mainFile;
 
-  DocWorkspace get workspace => parent!.workspace;
+  Workspace get workspace => parent!.workspace;
 
-  DocContainer? get parentPackage => parent?.parentPackage;
+  WorkspaceDirectory? get parentPackage => parent?.parentPackage;
 
-  Future<void> generate(
-    Directory dir, {
-    required Logger logger,
-    Stats? stats,
-    bool quiet = false,
-  });
-
-  Iterable<DocEntity> get breadcrumbs {
-    var result = <DocEntity>[];
-    DocEntity? item = this;
+  Iterable<WorkspaceEntity> get breadcrumbs {
+    var result = <WorkspaceEntity>[];
+    WorkspaceEntity? item = this;
 
     while (item != null) {
-      if (item is DocFile) {
+      if (item is WorkspaceFile) {
         result.add(item);
-      } else if (item is DocContainer) {
+      } else if (item is WorkspaceDirectory) {
         if (item.mainFile != null && !result.contains(item.mainFile)) {
           result.add(item.mainFile!);
         }
@@ -83,68 +67,58 @@ abstract class DocEntity {
   String toString() => name;
 }
 
-class DocFile extends DocEntity {
+class WorkspaceFile extends WorkspaceEntity {
   final String path;
   final FileContentGenerator contentGenerator;
+  final FileType fileType;
 
   /// If set, the script to specify in an import.
   String? importScript;
 
-  DocFile(super.parent, super.name, this.path, this.contentGenerator);
+  WorkspaceFile(
+    super.parent,
+    super.name,
+    this.path,
+    this.contentGenerator, [
+    this.fileType = FileType.dart,
+  ]);
+
+  bool get isMarkdown => fileType == FileType.markdown;
 
   @override
-  DocFile? get mainFile => this;
+  WorkspaceFile? get mainFile => this;
 
   Future<GenerationResults> generatePageContents() {
     return contentGenerator(workspace, this);
   }
 
   @override
-  Future<void> generate(
-    Directory dir, {
-    required Logger logger,
-    Stats? stats,
-    bool quiet = false,
-  }) async {
-    var pageContents = await generatePageContents();
-    var fileContents =
-        await workspace.generateWorkspacePage(this, pageContents);
-    var file = File(p.join(dir.path, path));
-    file.parent.createSync(recursive: true);
-    file.writeAsStringSync(fileContents);
-
-    stats?.genFile(file);
-
-    if (!quiet) logger.stdout('  $path');
-  }
-
-  @override
   String toString() => 'DocFile $name';
 }
 
-class DocSeparator extends DocEntity {
-  DocSeparator(super.parent, super.name);
-
-  @override
-  DocFile? get mainFile => null;
-
-  @override
-  Future<void> generate(Directory dir,
-      {required Logger logger, Stats? stats, bool quiet = false}) async {
-    // nothing to do
-  }
+enum FileType {
+  markdown,
+  dart;
 }
 
-class DocContainer extends DocEntity {
+class WorkspaceSeparator extends WorkspaceEntity {
+  WorkspaceSeparator(super.parent, super.name);
+
+  @override
+  WorkspaceFile? get mainFile => null;
+}
+
+class WorkspaceDirectory extends WorkspaceEntity {
+  // todo: is isGroup used? an important distinction?
   final bool isGroup;
   final bool isPackage;
 
-  final List<DocEntity> children = [];
+  final List<WorkspaceEntity> children = [];
 
   @override
-  DocFile? mainFile;
+  WorkspaceFile? mainFile;
 
-  DocContainer(
+  WorkspaceDirectory(
     super.parent,
     super.name, {
     this.isGroup = false,
@@ -156,7 +130,7 @@ class DocContainer extends DocEntity {
   int get itemCount {
     var count = mainFile == null ? 0 : 1;
     for (var child in children) {
-      if (child is DocContainer) {
+      if (child is WorkspaceDirectory) {
         count += child.itemCount;
       } else {
         count++;
@@ -166,85 +140,48 @@ class DocContainer extends DocEntity {
   }
 
   @override
-  DocContainer? get parentPackage => isPackage ? this : parent?.parentPackage;
+  WorkspaceDirectory? get parentPackage =>
+      isPackage ? this : parent?.parentPackage;
 
-  T addChild<T extends DocEntity>(T entity) {
+  T addChild<T extends WorkspaceEntity>(T entity) {
     children.add(entity);
     return entity;
   }
 
-  DocEntity? getChild(String name) {
+  WorkspaceEntity? getChild(String name) {
     return children.firstWhereOrNull((c) => c.name == name);
-  }
-
-  @override
-  Future<void> generate(
-    Directory dir, {
-    required Logger logger,
-    Stats? stats,
-    bool quiet = false,
-  }) async {
-    // mainFile
-    // todo: always generate an index file
-    await mainFile?.generate(dir, logger: logger, stats: stats);
-
-    // children
-    for (var child in children) {
-      await child.generate(dir, logger: logger, stats: stats, quiet: true);
-    }
   }
 
   @override
   String toString() => 'DocContainer $name';
 
-  bool hasChild(DocFile page) {
+  bool hasChild(WorkspaceFile page) {
     if (mainFile == page) return true;
     if (children.contains(page)) return true;
     return false;
   }
 }
 
-class DocWorkspace extends DocContainer {
+class Workspace extends WorkspaceDirectory {
+  final Api api = Api();
   final HtmlTemplate htmlTemplate;
-  final List<DocFile> navFiles = [];
+  final List<WorkspaceFile> navFiles = [];
+
   String? footer;
 
-  // todo: temp; move this field to a Generator instance
-  Api? api;
-
-  DocWorkspace(String name, {super.isPackage, required this.htmlTemplate})
+  Workspace(String name, {super.isPackage, required this.htmlTemplate})
       : super(null, name) {
     // Placeholder for the main file.
-    mainFile = DocFile(this, 'index.html', 'index.html', emptyContentGenerator);
+    mainFile = WorkspaceFile(this, 'index.html', 'index.html',
+        emptyContentGenerator, FileType.markdown);
   }
 
   @override
-  DocWorkspace get workspace => this;
-
-  @override
-  Future<void> generate(
-    Directory dir, {
-    required Logger logger,
-    Stats? stats,
-    bool quiet = false,
-  }) async {
-    // mainFile
-    await mainFile?.generate(dir, logger: logger, stats: stats);
-
-    // navFiles
-    for (var navElement in navFiles) {
-      await navElement.generate(dir, logger: logger, stats: stats, quiet: true);
-    }
-
-    // children
-    for (var child in children) {
-      await child.generate(dir, logger: logger, stats: stats);
-    }
-  }
+  Workspace get workspace => this;
 
   final Map<String, Map<String, String>> _pathToCache = {};
 
-  String pathTo(DocFile target, {DocFile? from}) {
+  String pathTo(WorkspaceFile target, {WorkspaceFile? from}) {
     if (from == null) return target.path;
 
     var to = target.path;
@@ -261,7 +198,7 @@ class DocWorkspace extends DocContainer {
   }
 
   Future<String> generateWorkspacePage(
-      DocFile file, GenerationResults page) async {
+      WorkspaceFile file, GenerationResults page) async {
     // navbar
     var navbarContent = [
       mainFile!,
@@ -285,8 +222,9 @@ class DocWorkspace extends DocContainer {
       breadcrumbs = [];
     }
     var breadcrumbsContent = breadcrumbs.map((entity) {
-      var target =
-          entity is DocFile ? entity : (entity as DocContainer).mainFile!;
+      var target = entity is WorkspaceFile
+          ? entity
+          : (entity as WorkspaceDirectory).mainFile!;
       var href = 'href="${pathTo(target, from: file)}"';
 
       if (workspace.mainFile == target) {
@@ -336,18 +274,18 @@ class DocWorkspace extends DocContainer {
     return encoder.convert(navItems);
   }
 
-  Map<String, dynamic> _generateNavData(DocEntity page) {
-    if (page is DocFile) {
+  Map<String, dynamic> _generateNavData(WorkspaceEntity page) {
+    if (page is WorkspaceFile) {
       return {
         'n': page.name,
         'h': page.path,
       };
-    } else if (page is DocSeparator) {
+    } else if (page is WorkspaceSeparator) {
       return {
         'n': page.name,
         't': 'separator',
       };
-    } else if (page is DocContainer) {
+    } else if (page is WorkspaceDirectory) {
       final mainFile = page.mainFile!;
 
       return {
@@ -363,7 +301,7 @@ class DocWorkspace extends DocContainer {
   @override
   String toString() => 'DocWorkspace $name';
 
-  static DocWorkspace fromPackage(HtmlTemplate htmlTemplate, Directory dir) {
+  static Workspace fromPackage(HtmlTemplate htmlTemplate, Directory dir) {
     var pubspec =
         yaml.loadYaml(File(p.join(dir.path, 'pubspec.yaml')).readAsStringSync())
             as yaml.YamlMap;
@@ -371,7 +309,7 @@ class DocWorkspace extends DocContainer {
     final packageName = pubspec['name'] as String?;
     final packageVersion = pubspec['version'] as String?;
 
-    var workspace = DocWorkspace(
+    var workspace = Workspace(
       'package:$packageName',
       htmlTemplate: htmlTemplate,
       isPackage: true,
@@ -383,24 +321,21 @@ class DocWorkspace extends DocContainer {
     for (var file in dir
         .listSyncSorted()
         .whereType<File>()
-        .where((f) => f.publicMarkdownFile || f.name == 'LICENSE')) {
+        .where((f) => f.publicMarkdownFile)) {
       var name = p.relative(file.path, from: dir.path);
       var title =
           titleCase(p.basenameWithoutExtension(file.path).toLowerCase());
 
       var path = '${p.withoutExtension(name)}.html';
       if (name == 'README.md') {
-        workspace.mainFile = DocFile(
-            workspace, title, 'index.html', createMarkdownGenerator(file));
+        workspace.mainFile = WorkspaceFile(workspace, title, 'index.html',
+            createMarkdownGenerator(file), FileType.markdown);
       } else if (name == 'CHANGELOG.md' || name == 'LICENSE.md') {
-        workspace.navFiles.add(
-            DocFile(workspace, title, path, createMarkdownGenerator(file)));
-      } else if (name == 'LICENSE') {
-        workspace.navFiles.add(
-            DocFile(workspace, title, path, createPlaintextGenerator(file)));
+        workspace.navFiles.add(WorkspaceFile(workspace, title, path,
+            createMarkdownGenerator(file), FileType.markdown));
       } else {
-        workspace.addChild(
-            DocFile(workspace, title, path, createMarkdownGenerator(file)));
+        workspace.addChild(WorkspaceFile(workspace, title, path,
+            createMarkdownGenerator(file), FileType.markdown));
       }
     }
 
@@ -414,27 +349,27 @@ class DocWorkspace extends DocContainer {
         var title =
             titleCase(p.basenameWithoutExtension(file.path).toLowerCase());
         var path = '${p.withoutExtension(name)}.html';
-        workspace.addChild(
-            DocFile(workspace, title, path, createMarkdownGenerator(file)));
+        workspace.addChild(WorkspaceFile(workspace, title, path,
+            createMarkdownGenerator(file), FileType.markdown));
       }
     }
 
     return workspace;
   }
 
-  DocFile? getForPath(String path) {
+  WorkspaceFile? getForPath(String path) {
     for (var file in navFiles) {
       if (file.path == path) return file;
     }
 
-    DocFile? check(DocContainer container, String path) {
+    WorkspaceFile? check(WorkspaceDirectory container, String path) {
       if (container.mainFile?.path == path) return container.mainFile;
 
       for (var child in container.children) {
-        if (child is DocFile) {
+        if (child is WorkspaceFile) {
           if (child.path == path) return child;
         } else {
-          var result = check(child as DocContainer, path);
+          var result = check(child as WorkspaceDirectory, path);
           if (result != null) return result;
         }
       }

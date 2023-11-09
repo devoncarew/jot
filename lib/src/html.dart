@@ -7,10 +7,20 @@ import 'package:path/path.dart' as p;
 import 'utils.dart';
 
 class HtmlTemplate {
-  static Future<HtmlTemplate> initDir(
-    Directory dir, {
+  static Future<HtmlTemplate> createDefault() async {
+    final htmlData = await loadResourceDataAsString('index.html');
+    return HtmlTemplate._(htmlData);
+  }
+
+  final String htmlTemplateData;
+
+  HtmlTemplate._(this.htmlTemplateData) {
+    _parseTemplate();
+  }
+
+  Future<void> generateStaticResources(
+    Directory outDir, {
     Stats? stats,
-    bool writeResouces = true,
   }) async {
     const resources = [
       'script.js',
@@ -21,26 +31,15 @@ class HtmlTemplate {
       'toggle-light.svg',
     ];
 
-    if (writeResouces) {
-      for (var resource in resources) {
-        final file = File(p.join(dir.path, 'resources', resource));
-        if (!file.parent.existsSync()) {
-          file.parent.createSync(recursive: true);
-        }
-        var data = await loadResourceDataAsBytes(resource);
-        file.writeAsBytesSync(data);
-        stats?.genFile(file);
+    for (var resource in resources) {
+      final file = File(p.join(outDir.path, 'resources', resource));
+      if (!file.parent.existsSync()) {
+        file.parent.createSync(recursive: true);
       }
+      var data = await loadResourceDataAsBytes(resource);
+      file.writeAsBytesSync(data);
+      stats?.genFile(file);
     }
-
-    final htmlData = await loadResourceDataAsString('index.html');
-    return HtmlTemplate._(htmlData);
-  }
-
-  final String htmlTemplateData;
-
-  HtmlTemplate._(this.htmlTemplateData) {
-    _parseTemplate();
   }
 
   String templateSubtitute({

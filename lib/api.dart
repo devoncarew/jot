@@ -138,15 +138,15 @@ class Api {
     return elementItemMap[element];
   }
 
-  void addResolution(Item item, DocFile file) {
+  void addResolution(Item item, WorkspaceFile file) {
     resolver.addResolution(item, file);
   }
 
-  String? resolve(Element? element, {DocFile? from}) {
+  String? resolve(Element? element, {WorkspaceFile? from}) {
     return resolver.resolve(element, from: from);
   }
 
-  String hrefOrSpan(String text, Element element, {DocFile? from}) {
+  String hrefOrSpan(String text, Element element, {WorkspaceFile? from}) {
     return resolver.hrefOrSpan(text, element, from: from);
   }
 
@@ -742,10 +742,10 @@ enum GroupType implements Comparable<GroupType> {
 class Resolver {
   // libraries and classes to files
 
-  final Map<Item, DocFile> itemToFileMap = {};
+  final Map<Item, WorkspaceFile> itemToFileMap = {};
   late final Map<Element, Item> elementToItemMap;
 
-  void addResolution(Item item, DocFile file) {
+  void addResolution(Item item, WorkspaceFile file) {
     itemToFileMap[item] = file;
   }
 
@@ -753,7 +753,7 @@ class Resolver {
     elementToItemMap = elementItemMap;
   }
 
-  String? resolve(Element? element, {DocFile? from}) {
+  String? resolve(Element? element, {WorkspaceFile? from}) {
     var item = elementToItemMap[element];
     var target = itemToFileMap[item];
     if (target == null) return null;
@@ -768,7 +768,7 @@ class Resolver {
   }
 
   // todo: html encode 'text'
-  String hrefOrSpan(String text, Element element, {DocFile? from}) {
+  String hrefOrSpan(String text, Element element, {WorkspaceFile? from}) {
     var ref = resolve(element, from: from);
 
     if (ref != null) {
@@ -782,7 +782,7 @@ class Resolver {
   String? resolveDocReference(
     String reference, {
     required Item context,
-    DocFile? fromFile,
+    WorkspaceFile? fromFile,
   }) {
     // TODO: handle dotted references (Foo.bar, ...)
 
@@ -791,7 +791,7 @@ class Resolver {
     return resolve(element, from: fromFile);
   }
 
-  DocFile? fileFor(Element element) {
+  WorkspaceFile? fileFor(Element element) {
     var item = elementToItemMap[element];
     var file = itemToFileMap[item];
     if (file != null) return file;
@@ -824,7 +824,7 @@ enum RelationshipKind implements Comparable<RelationshipKind> {
 /// references converted to html links.
 class LinkedText {
   final Resolver resolver;
-  final DocFile fromFile;
+  final WorkspaceFile fromFile;
 
   final List<_ElementSpan> _elementSpans = [];
 
