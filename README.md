@@ -24,8 +24,7 @@ usage: dart bin/jot.dart <options> [<directory>]
 -o, --output          Configure the output directory.
                       (defaults to "doc/api")
     --serve=<port>    Serve live docs from the documented package.
-                      This only serves on localhost and is generally used during
-                      development in an edit/refresh workflow.
+                      This serves on localhost and is useful for previewing docs while working on them.
 ```
 
 ## Infima and Docusaurus

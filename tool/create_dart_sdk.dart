@@ -100,17 +100,18 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
 
   // create the workspace
   var stats = Stats()..start();
-  var htmlTemplate = await HtmlTemplate.initDir(outDir, stats: stats);
-  var workspace = DocWorkspace('Dart SDK', htmlTemplate: htmlTemplate);
+  var htmlTemplate = await HtmlTemplate.createDefault();
+  var workspace = Workspace('Dart SDK', htmlTemplate: htmlTemplate);
   workspace.footer = 'Dart SDK $version';
-  workspace.mainFile = DocFile(
+  workspace.mainFile = WorkspaceFile(
     workspace,
     'Readme',
     'index.html',
     createMarkdownGenerator(File(p.join(sdkDir.path, 'lib', 'api_readme.md'))),
+    FileType.markdown,
   );
-  final api = Api();
-  workspace.api = api;
+
+  final api = workspace.api;
 
   // workspace.addChild(DocSeparator(workspace, 'Dart SDK'));
 
@@ -123,7 +124,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     var categoryName = entry.key;
     var libNames = entry.value;
 
-    workspace.addChild(DocSeparator(workspace, categoryName));
+    workspace.addChild(WorkspaceSeparator(workspace, categoryName));
 
     // var categoryContainer =
     //     workspace.addChild(DocContainer(workspace, categoryName));
@@ -136,12 +137,12 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
           await analyzer.getLibraryByUri(libFile.uri.toString());
 
       var packageContainer =
-          workspace.addChild(DocContainer(workspace, 'dart:$libName'));
+          workspace.addChild(WorkspaceDirectory(workspace, 'dart:$libName'));
 
       var library =
           api.addLibrary(libraryElement.element, 'Dart SDK', 'dart:$libName');
-      var file = DocFile(packageContainer, 'dart:$libName', '$libName.html',
-          libraryGenerator(library));
+      var file = WorkspaceFile(packageContainer, 'dart:$libName',
+          '$libName.html', libraryGenerator(library));
       file.importScript = file.name;
       packageContainer.mainFile = file;
 
@@ -149,7 +150,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
 
       for (var itemContainer in library.allChildrenSorted.whereType<Items>()) {
         var path = '$libName/${itemContainer.name}.html';
-        var docFile = packageContainer.addChild(DocFile(
+        var docFile = packageContainer.addChild(WorkspaceFile(
           packageContainer,
           itemContainer.name,
           path,
@@ -180,8 +181,12 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
 
   // build model
   api.finish();
+
+  // write out the static resources
+  await htmlTemplate.generateStaticResources(outDir, stats: stats);
+
   var indexFile = File(p.join(outDir.path, 'resources', 'index.json'));
-  indexFile.writeAsStringSync(workspace.api!.index.toJson());
+  indexFile.writeAsStringSync(workspace.api.index.toJson());
   stats.genFile(indexFile);
   var navFile = File(p.join(outDir.path, 'resources', 'nav.json'));
   navFile.writeAsStringSync(workspace.generateNavData());
@@ -191,7 +196,14 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   log.stdout('');
   log.stdout('Generating docs...');
 
-  await workspace.generate(outDir, logger: log, stats: stats);
+  // generate docs
+  final generator = Generator(
+    workspace: workspace,
+    outDir: outDir,
+    logger: log,
+    stats: stats,
+  );
+  await generator.generate();
 
   stats.stop();
 
@@ -279,7 +291,7 @@ void validateSdk(Directory sdk) {
 }
 
 // ignore: unreachable_from_main
-extension DocWorkspaceExtension on DocWorkspace {
+extension WorkspaceExtension on Workspace {
   // ignore: unreachable_from_main
   void addPackage(
       Analyzer analyzer, String packageName, String fullPackagePath) {

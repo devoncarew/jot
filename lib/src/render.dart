@@ -116,7 +116,7 @@ String writeAnnotations(Item item) {
 
 class LinkedCodeRenderer extends Renderer {
   final Resolver resolver;
-  final DocFile fromFile;
+  final WorkspaceFile fromFile;
 
   LinkedCodeRenderer(this.resolver, this.fromFile);
 

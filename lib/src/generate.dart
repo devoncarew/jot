@@ -1,21 +1,94 @@
 // ignore_for_file: lines_longer_than_80_chars
 
+import 'dart:io';
+
+import 'package:cli_util/cli_logging.dart';
+import 'package:path/path.dart' as p;
+
 import '../api.dart';
 import '../workspace.dart';
 import 'markdown.dart';
 import 'render.dart';
 import 'utils.dart';
 
-// todo:
 class Generator {
-  final DocWorkspace workspace;
-  final Api api;
+  final Workspace workspace;
+  final Directory outDir;
+  final Logger logger;
+  final Stats? stats;
 
-  Generator({required this.workspace, required this.api});
+  Generator({
+    required this.workspace,
+    required this.outDir,
+    required this.logger,
+    this.stats,
+  });
+
+  Future<void> generate() async {
+    // mainFile
+    if (workspace.mainFile != null) {
+      await _generateFile(workspace.mainFile!);
+    }
+
+    // navFiles
+    for (var navElement in workspace.navFiles) {
+      await _generateFile(navElement, printProgress: false);
+    }
+
+    // children
+    for (var child in workspace.children) {
+      if (child is WorkspaceSeparator) {
+        // nothing to generate
+      } else if (child is WorkspaceFile) {
+        await _generateFile(child, printProgress: !child.isMarkdown);
+      } else if (child is WorkspaceDirectory) {
+        await _generateContainer(child);
+      } else {
+        throw StateError('unexpected type: $child');
+      }
+    }
+  }
+
+  Future<void> _generateContainer(WorkspaceDirectory container) async {
+    // mainFile
+    // todo: always generate an index file
+    if (container.mainFile != null) {
+      await _generateFile(container.mainFile!);
+    }
+
+    // children
+    for (var child in container.children) {
+      if (child is WorkspaceSeparator) {
+        // nothing to generate
+      } else if (child is WorkspaceFile) {
+        await _generateFile(child, printProgress: false);
+      } else if (child is WorkspaceDirectory) {
+        await _generateContainer(child);
+      } else {
+        throw StateError('unexpected type: $child');
+      }
+    }
+  }
+
+  Future<void> _generateFile(
+    WorkspaceFile file, {
+    bool printProgress = true,
+  }) async {
+    var pageContents = await file.generatePageContents();
+    var fileContents =
+        await workspace.generateWorkspacePage(file, pageContents);
+    var outFile = File(p.join(outDir.path, file.path));
+    outFile.parent.createSync(recursive: true);
+    outFile.writeAsStringSync(fileContents);
+
+    stats?.genFile(outFile);
+
+    if (printProgress) logger.stdout('  ${file.path}');
+  }
 }
 
 FileContentGenerator libraryGenerator(LibraryItemContainer library) {
-  return (DocWorkspace workspace, DocFile thisFile) async {
+  return (Workspace workspace, WorkspaceFile thisFile) async {
     return _LibraryGenerator(
       library: library,
       workspace: workspace,
@@ -26,7 +99,7 @@ FileContentGenerator libraryGenerator(LibraryItemContainer library) {
 
 FileContentGenerator itemsGenerator(Items items) {
   if (items is InterfaceElementItems) {
-    return (DocWorkspace workspace, DocFile thisFile) async {
+    return (Workspace workspace, WorkspaceFile thisFile) async {
       return _InterfaceElementGenerator(
         classItems: items,
         workspace: workspace,
@@ -34,7 +107,7 @@ FileContentGenerator itemsGenerator(Items items) {
       ).generate();
     };
   } else if (items is ExtensionElementItems) {
-    return (DocWorkspace workspace, DocFile thisFile) async {
+    return (Workspace workspace, WorkspaceFile thisFile) async {
       return _ExtentionElementGenerator(
         extensionItems: items,
         workspace: workspace,
@@ -48,8 +121,8 @@ FileContentGenerator itemsGenerator(Items items) {
 
 class _LibraryGenerator {
   final LibraryItemContainer library;
-  final DocWorkspace workspace;
-  final DocFile thisFile;
+  final Workspace workspace;
+  final WorkspaceFile thisFile;
 
   _LibraryGenerator({
     required this.library,
@@ -58,7 +131,7 @@ class _LibraryGenerator {
   });
 
   GenerationResults generate() {
-    var api = workspace.api!;
+    var api = workspace.api;
     var linkedCodeRenderer = LinkedCodeRenderer(api.resolver, thisFile);
 
     var buf = StringBuffer();
@@ -183,8 +256,8 @@ class _LibraryGenerator {
 
 class _InterfaceElementGenerator {
   final InterfaceElementItems classItems;
-  final DocWorkspace workspace;
-  final DocFile thisFile;
+  final Workspace workspace;
+  final WorkspaceFile thisFile;
 
   _InterfaceElementGenerator({
     required this.classItems,
@@ -193,7 +266,7 @@ class _InterfaceElementGenerator {
   });
 
   GenerationResults generate() {
-    var api = workspace.api!;
+    var api = workspace.api;
 
     var linkedCodeRenderer = LinkedCodeRenderer(api.resolver, thisFile);
 
@@ -203,7 +276,7 @@ class _InterfaceElementGenerator {
     buf.writeln(linkedCodeRenderer.render(classItems.type, classItems));
     writeAncestors(buf);
     _writeChildRelationships(
-        buf, classItems.relationships, thisFile, workspace.api!);
+        buf, classItems.relationships, thisFile, workspace.api);
     if (classItems.docs != null) {
       buf.writeln(convertMarkdown(classItems.docs!,
           linkResolver: classItems.markdownLinkResolver(api.resolver)));
@@ -268,7 +341,7 @@ class _InterfaceElementGenerator {
 
   void writeAncestors(StringBuffer out) {
     var buf = StringBuffer();
-    final api = workspace.api!;
+    final api = workspace.api;
 
     var element = classItems.element;
     var superElement = element.supertype?.element;
@@ -309,8 +382,8 @@ class _InterfaceElementGenerator {
 
 class _ExtentionElementGenerator {
   final ExtensionElementItems extensionItems;
-  final DocWorkspace workspace;
-  final DocFile thisFile;
+  final Workspace workspace;
+  final WorkspaceFile thisFile;
 
   _ExtentionElementGenerator({
     required this.extensionItems,
@@ -319,7 +392,7 @@ class _ExtentionElementGenerator {
   });
 
   GenerationResults generate() {
-    var api = workspace.api!;
+    var api = workspace.api;
 
     var linkedCodeRenderer = LinkedCodeRenderer(api.resolver, thisFile);
 
@@ -329,7 +402,7 @@ class _ExtentionElementGenerator {
     buf.writeln(linkedCodeRenderer.render(extensionItems.type, extensionItems));
     writeAncestors(buf);
     _writeChildRelationships(
-        buf, extensionItems.relationships, thisFile, workspace.api!);
+        buf, extensionItems.relationships, thisFile, workspace.api);
     if (extensionItems.docs != null) {
       buf.writeln(convertMarkdown(extensionItems.docs!,
           linkResolver: extensionItems.markdownLinkResolver(api.resolver)));
@@ -372,7 +445,7 @@ class _ExtentionElementGenerator {
 
   void writeAncestors(StringBuffer out) {
     var buf = StringBuffer();
-    final api = workspace.api!;
+    final api = workspace.api;
 
     var element = extensionItems.asExtension;
     var extendedElement = element.extendedType.element;
@@ -393,7 +466,7 @@ class _ExtentionElementGenerator {
 }
 
 void _writeChildRelationships(StringBuffer buf, RelationshipMap relationships,
-    DocFile thisFile, Api api) {
+    WorkspaceFile thisFile, Api api) {
   if (relationships.isEmpty) return;
 
   buf.writeln('<table>');

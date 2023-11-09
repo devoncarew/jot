@@ -84,7 +84,7 @@ class TestProject {
   final Directory dir;
   final Map<String, String> sources;
 
-  late final DocWorkspace workspace;
+  late final Workspace workspace;
   late final Analyzer analyzer;
 
   TestProject(this.sources) : dir = Directory.systemTemp.createTempSync();
@@ -93,10 +93,10 @@ class TestProject {
 
   Directory get outDir => Directory(p.join(dir.path, 'doc', 'api'));
 
-  Resolver get resolver => workspace.api!.resolver;
+  Resolver get resolver => workspace.api.resolver;
 
   List<LibraryItemContainer> get libraries =>
-      workspace.api!.packages.first.libraries;
+      workspace.api.packages.first.libraries;
 
   LibraryItemContainer get firstLibrary => libraries.first;
 
@@ -118,12 +118,9 @@ class TestProject {
   Future<void> init() async {
     _create();
 
-    // TODO: simplify the work for setting up a package
-
-    final htmlTemplate = await HtmlTemplate.initDir(outDir);
-    workspace = DocWorkspace.fromPackage(htmlTemplate, dir);
+    final htmlTemplate = await HtmlTemplate.createDefault();
+    workspace = Workspace.fromPackage(htmlTemplate, dir);
     var packageName = workspace.name.substring('package:'.length);
-    workspace.api = Api();
 
     analyzer =
         Analyzer.packages(includedPaths: [p.normalize(dir.absolute.path)]);
@@ -134,37 +131,37 @@ class TestProject {
       var dartLibraryPath = p.relative(libraryPath, from: libDirPath);
       var htmlOutputPath = '${p.withoutExtension(dartLibraryPath)}.html';
 
-      var libraryContainer = workspace.addChild(DocContainer(
+      var libraryContainer = workspace.addChild(WorkspaceDirectory(
         workspace,
         dartLibraryPath,
       ));
 
-      var library = workspace.api!
+      var library = workspace.api
           .addLibrary(resolvedLibrary.element, workspace.name, dartLibraryPath);
 
-      libraryContainer.mainFile = DocFile(
+      libraryContainer.mainFile = WorkspaceFile(
         workspace,
         dartLibraryPath,
         htmlOutputPath,
         emptyContentGenerator,
       )..importScript = 'package:$packageName/$dartLibraryPath';
 
-      workspace.api!.addResolution(library, libraryContainer.mainFile!);
+      workspace.api.addResolution(library, libraryContainer.mainFile!);
 
       for (var itemContainer in library.allChildrenSorted.whereType<Items>()) {
         var path =
             '${p.withoutExtension(dartLibraryPath)}/${itemContainer.name}.html';
-        var docFile = DocFile(
+        var docFile = WorkspaceFile(
           libraryContainer,
           itemContainer.name,
           path,
           emptyContentGenerator,
         );
         libraryContainer.addChild(docFile);
-        workspace.api!.addResolution(itemContainer, docFile);
+        workspace.api.addResolution(itemContainer, docFile);
       }
 
-      workspace.api!.finish();
+      workspace.api.finish();
     }
   }
 
