@@ -18,24 +18,22 @@ import 'package:analyzer/src/generated/element_type_provider.dart';
 
 import '../api.dart';
 
+/// A class that builds a "display string" for [Element]s and [DartType]s.
 class ElementDisplayStringBuilder {
   final LinkedText linkedText;
 
-  final bool skipAllDynamicArguments;
-  final bool withNullability;
-  final bool multiline;
+  /// Whether to include the nullability ('?' characters) in a display string.
+  final bool _withNullability;
+
+  /// Whether to allow a display string to be written in multiple lines.
+  final bool _multiline;
 
   ElementDisplayStringBuilder(
     this.linkedText, {
-    required this.skipAllDynamicArguments,
-    required this.withNullability,
-    this.multiline = false,
-  });
-
-  ElementDisplayStringBuilder.defaults(this.linkedText)
-      : skipAllDynamicArguments = false,
-        withNullability = true,
-        multiline = false;
+    required bool withNullability,
+    bool multiline = false,
+  })  : _withNullability = withNullability,
+        _multiline = multiline;
 
   @override
   String toString() => linkedText.toString();
@@ -375,7 +373,7 @@ class ElementDisplayStringBuilder {
     // Assume the display string looks better wrapped when there are at least
     // three parameters. This avoids having to pre-compute the single-line
     // version and know the length of the function name/return type.
-    var multiline = allowMultiline && this.multiline && parameters.length >= 3;
+    var multiline = allowMultiline && _multiline && parameters.length >= 3;
 
     // The prefix for open groups is included in separator for single-line but
     // not for multline so must be added explicitly.
@@ -431,7 +429,7 @@ class ElementDisplayStringBuilder {
   }
 
   void _writeNullability(NullabilitySuffix nullabilitySuffix) {
-    if (withNullability) {
+    if (_withNullability) {
       switch (nullabilitySuffix) {
         case NullabilitySuffix.question:
           _write('?');
@@ -452,12 +450,6 @@ class ElementDisplayStringBuilder {
   void _writeTypeArguments(List<DartType> typeArguments) {
     if (typeArguments.isEmpty) {
       return;
-    }
-
-    if (skipAllDynamicArguments) {
-      if (typeArguments.every((t) => t is DynamicType)) {
-        return;
-      }
     }
 
     _write('<');
