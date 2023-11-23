@@ -182,16 +182,6 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   // build model
   api.finish();
 
-  // write out the static resources
-  await htmlTemplate.generateStaticResources(outDir, stats: stats);
-
-  var indexFile = File(p.join(outDir.path, 'resources', 'index.json'));
-  indexFile.writeAsStringSync(workspace.api.index.toJson());
-  stats.genFile(indexFile);
-  var navFile = File(p.join(outDir.path, 'resources', 'nav.json'));
-  navFile.writeAsStringSync(workspace.generateNavData());
-  stats.genFile(navFile);
-
   // generate
   log.stdout('');
   log.stdout('Generating docs...');

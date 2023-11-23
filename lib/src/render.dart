@@ -47,6 +47,8 @@ abstract class Renderer {
     }
   }
 
+  String renderItem(Item item) => render(item.type, item);
+
   String handleConstructor(Item item) => handleDefault(item);
   String handleEnumValue(Item item) => handleDefault(item);
   String handleField(Item item) => handleDefault(item);

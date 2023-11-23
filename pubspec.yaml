@@ -19,6 +19,7 @@ dependencies:
   dart_style: ^2.2.0
   js: ^0.6.0
   markdown: ^7.0.0
+  meta: ^1.11.0
   path: ^1.8.0
   yaml: ^3.1.0
 

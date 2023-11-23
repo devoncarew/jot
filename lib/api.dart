@@ -48,6 +48,7 @@ class Api {
     elementItemMap.values.forEach(_calculateFor);
 
     index = Index();
+
     for (var package in packages) {
       var packageIndex = index.add(package.name, 'package');
 
@@ -341,6 +342,9 @@ class Item {
 
   FieldElement get asField => element as FieldElement;
 
+  TopLevelVariableElement get asTopLevelVariableElement =>
+      element as TopLevelVariableElement;
+
   PropertyAccessorElement get asAccessor => element as PropertyAccessorElement;
 
   MethodElement get asMethod => element as MethodElement;
@@ -350,6 +354,15 @@ class Item {
   ConstructorElement get asConstructor => element as ConstructorElement;
 
   TypeAliasElement get asTypeAlias => element as TypeAliasElement;
+
+  bool get isStatic {
+    if (element is ClassMemberElement) {
+      return (element as ClassMemberElement).isStatic;
+    } else if (element is ExecutableElement) {
+      return (element as ExecutableElement).isStatic;
+    }
+    throw StateError('element not a class member: $element');
+  }
 
   String get debugPath => parent == null ? name : '${parent!.debugPath}/$name';
 
@@ -676,45 +689,51 @@ class Group implements Comparable<Group> {
 }
 
 enum GroupType implements Comparable<GroupType> {
-  // TODO: records?
-
   // TODO: why is there not an ElementKind.MIXIN?
 
   // class members
-  constructor('Constructors', {ElementKind.CONSTRUCTOR}),
-  enumValue('Values', {}),
-  field('Fields', {ElementKind.FIELD}),
-  accessor('Accessors', {ElementKind.GETTER, ElementKind.SETTER}),
-  method('Methods', {ElementKind.METHOD}),
+  constructor('Constructors', 'constructor', {ElementKind.CONSTRUCTOR}),
+  enumValue('Values', 'enum value', {}),
+  field('Fields', 'field', {ElementKind.FIELD}),
+  accessor('Accessors', 'accessor', {ElementKind.GETTER, ElementKind.SETTER}),
+  method('Methods', 'method', {ElementKind.METHOD}),
 
   // library members
-  topLevelVariable('Top Level Variables', {ElementKind.TOP_LEVEL_VARIABLE}),
-  function('Functions', {ElementKind.FUNCTION}),
-  functionTypeAlias('Function Type Aliases', {ElementKind.FUNCTION_TYPE_ALIAS}),
-  typeAlias('Type Aliases', {ElementKind.TYPE_ALIAS}),
+  topLevelVariable('Top Level Variables', 'top level variable',
+      {ElementKind.TOP_LEVEL_VARIABLE}),
+  function('Functions', 'function', {ElementKind.FUNCTION}),
+  functionTypeAlias('Function Type Aliases', 'function type alias',
+      {ElementKind.FUNCTION_TYPE_ALIAS}),
+  typeAlias('Type Aliases', 'type alias', {ElementKind.TYPE_ALIAS}),
 
   // container items
-  $enum('Enums', {ElementKind.ENUM}, containerType: true),
-  $mixin('Mixins', {}, containerType: true),
-  $class('Classes', {ElementKind.CLASS}, containerType: true),
-  $extension('Extensions', {ElementKind.EXTENSION}, containerType: true),
-  //$record('Records', {ElementKind.RECORD}, containerType: true),
+  $enum('Enums', 'enum', {ElementKind.ENUM}, containerType: true),
+  $mixin('Mixins', 'mixin', {}, containerType: true),
+  $class('Classes', 'class', {ElementKind.CLASS}, containerType: true),
+  $extension('Extensions', 'extension', {ElementKind.EXTENSION},
+      containerType: true),
+  // todo: implement
+  // $record('Records', 'record', {ElementKind.RECORD}, containerType: true),
 
   // catch-all
-  skip('Skip', {
+  skip('Skip', 'skip', {
     ElementKind.DYNAMIC,
     ElementKind.NEVER,
     ElementKind.TYPE_PARAMETER,
   }),
-  other('Other', {});
+  other('Other', 'other', {});
 
   final String title;
   final Set<Object> elementKinds;
   final bool containerType;
+  final String displayName;
 
-  const GroupType(this.title, this.elementKinds, {this.containerType = false});
-
-  String get displayName => name.startsWith(r'$') ? name.substring(1) : name;
+  const GroupType(
+    this.title,
+    this.displayName,
+    this.elementKinds, {
+    this.containerType = false,
+  });
 
   @override
   int compareTo(GroupType other) {

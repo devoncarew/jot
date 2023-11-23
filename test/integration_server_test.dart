@@ -1,10 +1,11 @@
 import 'dart:io';
 
-import 'package:cli_util/cli_logging.dart';
 import 'package:http/http.dart' as http;
 import 'package:jot/jot.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+
+import 'support.dart';
 
 void main() {
   group('server', () {
@@ -12,7 +13,7 @@ void main() {
     late final Directory tempDir;
 
     setUpAll(() async {
-      final sourceDir = Directory(p.join('test', 'demo'));
+      final sourceDir = Directory(p.join('test', 'fixtures', 'server'));
       tempDir = Directory.systemTemp.createTempSync('jot');
 
       final jot = Jot(inDir: sourceDir, outDir: tempDir, logger: NullLogger());
@@ -27,7 +28,7 @@ void main() {
     test('index.html', () async {
       final response =
           await http.read(Uri.http('localhost:${server.port}', 'index.html'));
-      expect(response, contains('<title>package:demo</title>'));
+      expect(response, contains('<title>package:server_demo</title>'));
     });
 
     test('a.html', () async {
@@ -52,55 +53,4 @@ void main() {
       expect(response, isNot(contains('Classes')));
     });
   });
-}
-
-class NullLogger implements Logger {
-  final Ansi _ansi = Ansi(false);
-
-  @override
-  Ansi get ansi => _ansi;
-
-  @override
-  void flush() {}
-
-  @override
-  bool get isVerbose => false;
-
-  @override
-  Progress progress(String message) => NullProgress(message);
-
-  @override
-  void stderr(String message) {}
-
-  @override
-  void stdout(String message) {}
-
-  @override
-  void trace(String message) {}
-
-  @override
-  void write(String message) {}
-
-  @override
-  void writeCharCode(int charCode) {}
-}
-
-class NullProgress implements Progress {
-  @override
-  final String message;
-
-  final Stopwatch _timer = Stopwatch()..start();
-
-  NullProgress(this.message);
-
-  @override
-  void cancel() {}
-
-  @override
-  Duration get elapsed => _timer.elapsed;
-
-  @override
-  void finish({String? message, bool showTiming = false}) {
-    _timer.stop();
-  }
 }

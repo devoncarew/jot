@@ -1,5 +1,4 @@
 
-
 - general utilities and algoritioms tests
 - tests of packages -> workspace code?
 - tests of Item -> generated output?
@@ -9,7 +8,6 @@
 - item model
 - single file tests?
 - multiple file+package tests?
-
 
 - review the arch
 - document some arch
