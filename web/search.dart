@@ -279,8 +279,8 @@ class Index {
   Future<void> ready() => _completer.future;
 
   Future<List<IndexMember>> _init(String urlBase) async {
-    var response =
-        (await window.fetch('${urlBase}resources/index.json')) as FetchResponse;
+    var response = (await window.fetch('${urlBase}_resources/index.json'))
+        as FetchResponse;
     var code = response.status;
     if (code == 404) {
       print('error response: $response');

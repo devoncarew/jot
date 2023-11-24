@@ -67,10 +67,27 @@ class MarkdownSignature {
   }
 
   Set<File> _generatePackage(Package package, Directory dir) {
+    final out = StringBuffer();
+    out.writeln('# package ${package.name}');
+    out.writeln();
+
+    if (package.version != null) {
+      out.writeln('version: ${package.version}');
+    }
+    if (package.description != null) {
+      out.writeln('description: ${package.description}');
+    }
+
+    out.writeln();
+    out.writeln('## Public API');
+    out.writeln();
+
     final wroteFiles = <File>{};
 
     for (var library in package.libraries) {
-      final filePath = '${p.withoutExtension(library.name)}.md';
+      final filePath =
+          '${p.withoutExtension(library.name).replaceAll(':', '_')}.md';
+      out.writeln('- $filePath');
       final file = File(p.join(dir.path, filePath));
 
       file.parent.createSync(recursive: true);
@@ -82,6 +99,9 @@ class MarkdownSignature {
       logger.stdout('  ${p.relative(file.path)}');
     }
 
+    final packageFile = File(p.join(dir.path, '_index.md'));
+    packageFile.writeAsStringSync(out.toString());
+
     return wroteFiles;
   }
 
@@ -91,7 +111,7 @@ class MarkdownSignature {
     out.writeln('# library ${library.name}');
     out.writeln();
 
-    // todo: imports (in order to indicate where types are sourced from)
+    // TODO: imports (in order to indicate where types are sourced from)
 
     out.writeln('## Members');
     out.writeln();

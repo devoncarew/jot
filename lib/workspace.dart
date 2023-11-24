@@ -115,6 +115,9 @@ class WorkspaceDirectory extends WorkspaceEntity {
 
   final List<WorkspaceEntity> children = [];
 
+  String? version;
+  String? description;
+
   @override
   WorkspaceFile? mainFile;
 
@@ -314,9 +317,11 @@ class Workspace extends WorkspaceDirectory {
       htmlTemplate: htmlTemplate,
       isPackage: true,
     );
+    workspace.version = packageVersion;
     if (packageVersion != null) {
       workspace.footer = 'package:$packageName v$packageVersion';
     }
+    workspace.description = pubspec['description'] as String?;
 
     for (var file in dir
         .listSyncSorted()

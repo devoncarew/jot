@@ -56,9 +56,11 @@ class WorkspaceDirectory extends WorkspaceEntity { … }
 
 - constructor `WorkspaceDirectory(WorkspaceEntity? parent, String name, {bool isGroup, bool isPackage})`
 - field `List<WorkspaceEntity> children`
+- field `String? description`
 - field `bool isGroup`
 - field `bool isPackage`
 - field `WorkspaceFile? mainFile`
+- field `String? version`
 - accessor `int get itemCount`
 - accessor `WorkspaceDirectory? get parentPackage`
 - method `T addChild<T extends WorkspaceEntity>(T entity)`

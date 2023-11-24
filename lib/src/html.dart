@@ -32,7 +32,7 @@ class HtmlTemplate {
     ];
 
     for (var resource in resources) {
-      final file = File(p.join(outDir.path, 'resources', resource));
+      final file = File(p.join(outDir.path, '_resources', resource));
       if (!file.parent.existsSync()) {
         file.parent.createSync(recursive: true);
       }

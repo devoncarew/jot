@@ -52,12 +52,12 @@ class Generator {
     }
 
     // left nav data file
-    var navFile = File(p.join(outDir.path, 'resources', 'nav.json'));
+    var navFile = File(p.join(outDir.path, '_resources', 'nav.json'));
     navFile.writeAsStringSync(workspace.generateNavData());
     stats?.genFile(navFile);
 
     // search index file
-    var indexFile = File(p.join(outDir.path, 'resources', 'index.json'));
+    var indexFile = File(p.join(outDir.path, '_resources', 'index.json'));
     indexFile.writeAsStringSync(workspace.api.index.toJson());
     stats?.genFile(indexFile);
   }

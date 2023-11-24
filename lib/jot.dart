@@ -69,15 +69,9 @@ class Jot {
     await generator.generate();
 
     if (signature) {
-      final sigOut = Directory(p.join(outDir.parent.path, 'sig'));
-      sigOut.createSync();
-
+      final sigOut = Directory(p.join(outDir.parent.path, 'sig'))..createSync();
       final sig = MarkdownSignature(
-        workspace: workspace,
-        outDir: sigOut,
-        logger: logger,
-        stats: stats,
-      );
+          workspace: workspace, outDir: sigOut, logger: logger, stats: stats);
       sig.generate();
     }
 
@@ -154,6 +148,9 @@ class Jot {
         workspace.api.addResolution(itemContainer, docFile);
       }
     }
+
+    workspace.api.packages.first.version = workspace.version;
+    workspace.api.packages.first.description = workspace.description;
 
     return workspace;
   }
@@ -240,15 +237,15 @@ class DocServer {
       return Response.ok(await loadResourceDataAsBytes('dart.png'),
           headers: headersFor('dart.png'));
     });
-    app.get('/resources/index.json', (Request request) async {
+    app.get('/_resources/index.json', (Request request) async {
       return Response.ok(workspace.api.index.toJson(),
           headers: headersFor(request.url.path));
     });
-    app.get('/resources/nav.json', (Request request) async {
+    app.get('/_resources/nav.json', (Request request) async {
       return Response.ok(workspace.generateNavData(),
           headers: headersFor(request.url.path));
     });
-    app.mount('/resources', Router(notFoundHandler: _resourcesHandler).call);
+    app.mount('/_resources', Router(notFoundHandler: _resourcesHandler).call);
 
     _server = await shelf_io.serve(
       _loggingHandler(app.call),
