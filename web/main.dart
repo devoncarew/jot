@@ -112,7 +112,7 @@ class Jot {
     if (theme == value) return;
 
     var stylesLink = $id<LinkElement>('theme-stylesheet');
-    stylesLink.href = '${urlBase}resources/styles-$value.css';
+    stylesLink.href = '${urlBase}_resources/styles-$value.css';
     document.documentElement!.attributes['data-theme'] = value;
     window.localStorage['theme'] = value;
   }
@@ -289,7 +289,7 @@ class SidebarManager {
 
   Future<void> _populateNav() async {
     // todo: write a utility for fetch()
-    var response = (await window.fetch('${jot.urlBase}resources/nav.json'))
+    var response = (await window.fetch('${jot.urlBase}_resources/nav.json'))
         as FetchResponse;
     var code = response.status;
     if (code == 404) {

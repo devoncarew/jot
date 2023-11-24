@@ -7,6 +7,7 @@ import 'package:jot/api.dart';
 import 'package:jot/src/analysis.dart';
 import 'package:jot/src/generate.dart';
 import 'package:jot/src/html.dart';
+import 'package:jot/src/signature.dart';
 import 'package:jot/src/utils.dart';
 import 'package:jot/workspace.dart';
 import 'package:path/path.dart' as p;
@@ -81,6 +82,8 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     'html',
     'indexed_db',
     'js',
+    'js_interop_unsafe',
+    'js_interop',
     'js_util',
     'svg',
     'web_audio',
@@ -102,6 +105,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   var stats = Stats()..start();
   var htmlTemplate = await HtmlTemplate.createDefault();
   var workspace = Workspace('Dart SDK', htmlTemplate: htmlTemplate);
+  workspace.version = version;
   workspace.footer = 'Dart SDK $version';
   workspace.mainFile = WorkspaceFile(
     workspace,
@@ -159,6 +163,9 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
         api.addResolution(itemContainer, docFile);
       }
     }
+
+    workspace.api.packages.first.version = workspace.version;
+    workspace.api.packages.first.description = workspace.description;
   }
 
   // workspace.addChild(DocSeparator(workspace, 'Core Packages'));
@@ -194,6 +201,12 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     stats: stats,
   );
   await generator.generate();
+
+  // generate the api signature files
+  final sigOut = Directory(p.join(outDir.path, '_sig'))..createSync();
+  final sig = MarkdownSignature(
+      workspace: workspace, outDir: sigOut, logger: log, stats: stats);
+  sig.generate();
 
   stats.stop();
 

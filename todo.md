@@ -3,8 +3,8 @@
 - [x] script for doc'ing the dart sdk
 - [x] script for doc'ing flutter
 - [x] support generating package:flutter
+- [x] cleaner API for generation
 - [ ] support generating the flutter SDK
-- [ ] cleaner API for generation
 - [ ] libraries should have a section for symbols exported from other libs
 - [ ] classes should have a section for symbols inherited from parent classes
 - [ ] use pragmas to control dartdoc specific imports
@@ -73,8 +73,8 @@ separately convert from api to html correctly?
 ## Fixes
 
 - [x] have a method to convert from an element to a valid in-page ID
+- [x] rename the resources directory to prevent namespace conflicts
 - [ ] fix issues with top-level vars vs. getters vs setters in the model
-- [ ] rename the resources directory to prevent namespace conflicts
 
 ## Completeness
 
@@ -90,4 +90,4 @@ separately convert from api to html correctly?
 
 ## Other
 
-- [ ] generate a markdown file representing the package's public API
+- [x] generate a markdown file representing the package's public API

@@ -196,8 +196,10 @@ class Package implements Comparable<Package> { … }
 ```
 
 - constructor `Package(String name)`
+- field `String? description`
 - field `List<LibraryItemContainer> libraries`
 - field `String name`
+- field `String? version`
 - accessor `bool get includeInUrls`
 - method `int compareTo(Package other)`
 

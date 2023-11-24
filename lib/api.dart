@@ -279,6 +279,9 @@ class Package implements Comparable<Package> {
   final String name;
   final List<LibraryItemContainer> libraries = [];
 
+  String? version;
+  String? description;
+
   Package(this.name);
 
   bool get includeInUrls => name.contains(':');
