@@ -25,6 +25,9 @@ class Generator {
   });
 
   Future<void> generate() async {
+    // write out the static resources
+    await workspace.htmlTemplate.generateStaticResources(outDir, stats: stats);
+
     // mainFile
     if (workspace.mainFile != null) {
       await _generateFile(workspace.mainFile!);
@@ -47,6 +50,16 @@ class Generator {
         throw StateError('unexpected type: $child');
       }
     }
+
+    // left nav data file
+    var navFile = File(p.join(outDir.path, 'resources', 'nav.json'));
+    navFile.writeAsStringSync(workspace.generateNavData());
+    stats?.genFile(navFile);
+
+    // search index file
+    var indexFile = File(p.join(outDir.path, 'resources', 'index.json'));
+    indexFile.writeAsStringSync(workspace.api.index.toJson());
+    stats?.genFile(indexFile);
   }
 
   Future<void> _generateContainer(WorkspaceDirectory container) async {
@@ -83,7 +96,7 @@ class Generator {
 
     stats?.genFile(outFile);
 
-    if (printProgress) logger.stdout('  ${file.path}');
+    if (printProgress) logger.stdout('  ${p.relative(outFile.path)}');
   }
 }
 

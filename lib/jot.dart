@@ -14,6 +14,7 @@ import 'src/analysis.dart';
 import 'src/generate.dart';
 import 'src/html.dart';
 import 'src/server.dart';
+import 'src/signature.dart';
 import 'src/utils.dart';
 import 'workspace.dart';
 
@@ -22,6 +23,7 @@ import 'workspace.dart';
 class Jot {
   final Directory inDir;
   final Directory outDir;
+  final bool signature;
 
   final Logger logger;
 
@@ -31,6 +33,7 @@ class Jot {
   Jot({
     required this.inDir,
     required this.outDir,
+    this.signature = false,
     Logger? logger,
   }) : logger = logger ?? Logger.standard();
 
@@ -52,17 +55,6 @@ class Jot {
     // build model
     workspace.api.finish();
 
-    // write out the static resources
-    await htmlTemplate.generateStaticResources(outDir, stats: stats);
-
-    // TODO: change this to writeIndex() in the generator
-    var indexFile = File(p.join(outDir.path, 'resources', 'index.json'));
-    indexFile.writeAsStringSync(workspace.api.index.toJson());
-    stats.genFile(indexFile);
-    var navFile = File(p.join(outDir.path, 'resources', 'nav.json'));
-    navFile.writeAsStringSync(workspace.generateNavData());
-    stats.genFile(navFile);
-
     // generate
     logger.stdout('');
     logger.stdout('Generating docs...');
@@ -75,6 +67,19 @@ class Jot {
       stats: stats,
     );
     await generator.generate();
+
+    if (signature) {
+      final sigOut = Directory(p.join(outDir.parent.path, 'sig'));
+      sigOut.createSync();
+
+      final sig = MarkdownSignature(
+        workspace: workspace,
+        outDir: sigOut,
+        logger: logger,
+        stats: stats,
+      );
+      sig.generate();
+    }
 
     stats.stop();
 

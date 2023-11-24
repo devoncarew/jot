@@ -40,7 +40,9 @@ void main(List<String> args) async {
     servePort = int.tryParse(results['serve'] as String);
   }
 
-  var jot = Jot(inDir: inDir, outDir: outDir);
+  final signature = results['signature'] as bool;
+
+  var jot = Jot(inDir: inDir, outDir: outDir, signature: signature);
 
   if (servePort == null) {
     await jot.generate();
@@ -62,6 +64,12 @@ ArgParser createArgsParser() {
       abbr: 'o',
       defaultsTo: 'doc/api',
       help: 'Configure the output directory.',
+    )
+    ..addFlag(
+      'signature',
+      aliases: ['sig'],
+      negatable: false,
+      help: 'Write the package API in markdown format to doc/sig.',
     )
     ..addOption(
       'serve',

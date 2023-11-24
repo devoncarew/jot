@@ -1,14 +1,16 @@
 # https://dart.dev/guides/libraries/private-files
+
 .dart_tool/
 pubspec.lock
 
-doc/
+doc/api/
 
 lib/resources/script.js.deps
 lib/resources/script.js.map
 
-.firebase/
+test/fixtures/demo/doc/
 
+.firebase/
 site/analyzer/
 site/args/
 site/code_builder/
