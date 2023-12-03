@@ -11,12 +11,6 @@ import '../workspace.dart';
 import 'render.dart';
 import 'utils.dart';
 
-// TODO: handle FunctionTypes? GenericFunctionTypes?
-
-// TODO: handle records
-
-// TODO: recurse while writing types
-
 class MarkdownSignature {
   final Workspace workspace;
   final Directory outDir;
@@ -361,9 +355,6 @@ class SignatureRenderer extends Renderer {
   }
 
   void _writeType(DartType type) {
-    // appendTypeImplTo
-
-    // todo: this needs to recurse back into this class as necesary
     _write(type.getDisplayString(withNullability: true));
   }
 
