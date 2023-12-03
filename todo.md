@@ -20,6 +20,7 @@
 ## Testing
 
 - [x] tests for LinkedCodeRenderer
+- [x] tests for markdown signature feature
 - [ ] tests for workspace code
 - [ ] tests for api code
 - [ ] tests for DartFormat
@@ -75,6 +76,7 @@ separately convert from api to html correctly?
 - [x] have a method to convert from an element to a valid in-page ID
 - [x] rename the resources directory to prevent namespace conflicts
 - [ ] fix issues with top-level vars vs. getters vs setters in the model
+- [ ] make sure a field is documented as a field and not as a getter and setter
 
 ## Completeness
 
