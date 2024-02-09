@@ -14,7 +14,6 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/type_algebra.dart';
-import 'package:analyzer/src/generated/element_type_provider.dart';
 
 import '../api.dart';
 
@@ -22,27 +21,22 @@ import '../api.dart';
 class ElementDisplayStringBuilder {
   final LinkedText linkedText;
 
-  /// Whether to include the nullability ('?' characters) in a display string.
-  final bool _withNullability;
-
   /// Whether to allow a display string to be written in multiple lines.
   final bool _multiline;
 
   ElementDisplayStringBuilder(
     this.linkedText, {
-    required bool withNullability,
     bool multiline = false,
-  })  : _withNullability = withNullability,
-        _multiline = multiline;
+  }) : _multiline = multiline;
 
   @override
   String toString() => linkedText.toString();
 
-  void writeAbstractElement(ElementImpl element) {
+  void writeAbstractElement(Element element) {
     _write(element.name ?? '<unnamed $runtimeType>');
   }
 
-  void writeClassElement(ClassElementImpl element) {
+  void writeClassElement(ClassElement element) {
     if (element.isAugmentation) {
       _write('augment ');
     }
@@ -73,7 +67,7 @@ class ElementDisplayStringBuilder {
     _writeTypesIfNotEmpty(' implements ', element.interfaces);
   }
 
-  void writeCompilationUnitElement(CompilationUnitElementImpl element) {
+  void writeCompilationUnitElement(CompilationUnitElement element) {
     var path = element.source.fullName;
     _write(path);
   }
@@ -139,7 +133,7 @@ class ElementDisplayStringBuilder {
     }
   }
 
-  void writeExportElement(LibraryExportElementImpl element) {
+  void writeExportElement(LibraryExportElement element) {
     _write('export ');
     _writeDirectiveUri(element.uri);
   }
@@ -176,14 +170,14 @@ class ElementDisplayStringBuilder {
     _writeNullability(type.nullabilitySuffix);
   }
 
-  void writeGenericFunctionTypeElement(GenericFunctionTypeElementImpl element) {
+  void writeGenericFunctionTypeElement(GenericFunctionTypeElement element) {
     _writeType(element.returnType);
     _write(' Function');
     _writeTypeParameters(element.typeParameters);
     _writeFormalParameters(element.parameters, forElement: true);
   }
 
-  void writeImportElement(LibraryImportElementImpl element) {
+  void writeImportElement(LibraryImportElement element) {
     _write('import ');
     _writeDirectiveUri(element.uri);
   }
@@ -200,12 +194,12 @@ class ElementDisplayStringBuilder {
     _write('InvalidType');
   }
 
-  void writeLibraryElement(LibraryElementImpl element) {
+  void writeLibraryElement(LibraryElement element) {
     _write('library ');
     _write('${element.source.uri}');
   }
 
-  void writeMixinElement(MixinElementImpl element) {
+  void writeMixinElement(MixinElement element) {
     if (element.isAugmentation) {
       _write('augment ');
     }
@@ -224,12 +218,12 @@ class ElementDisplayStringBuilder {
     _writeNullability(type.nullabilitySuffix);
   }
 
-  void writePartElement(PartElementImpl element) {
+  void writePartElement(PartElement element) {
     _write('part ');
     _writeDirectiveUri(element.uri);
   }
 
-  void writePrefixElement(PrefixElementImpl element) {
+  void writePrefixElement(PrefixElement element) {
     _write('as ');
     _write(element.displayName);
   }
@@ -270,7 +264,7 @@ class ElementDisplayStringBuilder {
     _writeNullability(type.nullabilitySuffix);
   }
 
-  void writeTypeAliasElement(TypeAliasElementImpl element) {
+  void writeTypeAliasElement(TypeAliasElement element) {
     _write('typedef ');
     _write(element.displayName);
     _writeTypeParameters(element.typeParameters);
@@ -306,22 +300,8 @@ class ElementDisplayStringBuilder {
     }
   }
 
-  void writeTypeParameterType(TypeParameterTypeImpl type) {
-    final promotedBound = type.promotedBound;
-    if (promotedBound != null) {
-      final hasSuffix = type.nullabilitySuffix != NullabilitySuffix.none;
-      if (hasSuffix) {
-        _write('(');
-      }
-      _write(type.element.displayName);
-      _write(' & ');
-      _writeType(promotedBound);
-      if (hasSuffix) {
-        _write(')');
-      }
-    } else {
-      _write(type.element.displayName);
-    }
+  void writeTypeParameterType(TypeParameterType type) {
+    _write(type.element.displayName);
     _writeNullability(type.nullabilitySuffix);
   }
 
@@ -354,9 +334,9 @@ class ElementDisplayStringBuilder {
   }
 
   void _writeDirectiveUri(DirectiveUri uri) {
-    if (uri is DirectiveUriWithUnitImpl) {
+    if (uri is DirectiveUriWithUnit) {
       _write('unit ${uri.unit.source.uri}');
-    } else if (uri is DirectiveUriWithSourceImpl) {
+    } else if (uri is DirectiveUriWithSource) {
       _write('source ${uri.source}');
     } else {
       _write('<unknown>');
@@ -429,17 +409,15 @@ class ElementDisplayStringBuilder {
   }
 
   void _writeNullability(NullabilitySuffix nullabilitySuffix) {
-    if (_withNullability) {
-      switch (nullabilitySuffix) {
-        case NullabilitySuffix.question:
-          _write('?');
-          break;
-        case NullabilitySuffix.star:
-          _write('*');
-          break;
-        case NullabilitySuffix.none:
-          break;
-      }
+    switch (nullabilitySuffix) {
+      case NullabilitySuffix.question:
+        _write('?');
+        break;
+      case NullabilitySuffix.star:
+        _write('*');
+        break;
+      case NullabilitySuffix.none:
+        break;
     }
   }
 
@@ -478,7 +456,7 @@ class ElementDisplayStringBuilder {
         _write(', ');
       }
       // (elements[i] as TypeParameterElementImpl).appendTo(this);
-      writeTypeParameter(elements[i] as TypeParameterElementImpl);
+      writeTypeParameter(elements[i]);
     }
     _write('>');
   }
@@ -573,28 +551,25 @@ class ElementDisplayStringBuilder {
       var newTypeParameter = TypeParameterElementImpl(name, -1);
       newTypeParameter.bound = typeParameter.bound;
       newTypeParameters.add(newTypeParameter);
-      ElementTypeProvider.current
-          .freshTypeParameterCreated(newTypeParameter, typeParameter);
     }
 
     return replaceTypeParameters(type as FunctionTypeImpl, newTypeParameters);
   }
 
-  void appendTypeImplTo(TypeImpl type) {
+  void appendTypeImplTo(DartType type) {
     // handle all the types
-
     if (type is DynamicType) {
       writeDynamicType();
     } else if (type is FunctionType) {
-      writeFunctionType(type as FunctionType);
+      writeFunctionType(type);
     } else if (type is InterfaceType) {
-      writeInterfaceType(type as InterfaceType);
+      writeInterfaceType(type);
     } else if (type is NeverType) {
-      writeNeverType(type as NeverType);
+      writeNeverType(type);
     } else if (type is RecordType) {
-      writeRecordType(type as RecordType);
+      writeRecordType(type);
     } else if (type is TypeParameterType) {
-      writeTypeParameterType(type as TypeParameterTypeImpl);
+      writeTypeParameterType(type);
     } else if (type is VoidType) {
       writeVoidType();
     } else {

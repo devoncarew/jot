@@ -127,7 +127,7 @@ class LinkedCodeRenderer extends Renderer {
     var element = item.asConstructor;
 
     var text = LinkedText(resolver, fromFile);
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
     builder.writeConstructorElement(element);
     return text.emitHtml((text) => DartFormat.asConstructor(text,
         className: element.enclosingElement.name,
@@ -139,7 +139,7 @@ class LinkedCodeRenderer extends Renderer {
     var element = item.asField;
 
     var text = LinkedText(resolver, fromFile);
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
     builder.writeVariableElement(element);
     return text.emitHtml(DartFormat.asField);
   }
@@ -149,7 +149,7 @@ class LinkedCodeRenderer extends Renderer {
     var element = item.asAccessor;
 
     var text = LinkedText(resolver, fromFile);
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
     builder.writeExecutableElement(element, element.displayName);
     return text.emitHtml(DartFormat.asMethod);
   }
@@ -159,7 +159,7 @@ class LinkedCodeRenderer extends Renderer {
     var element = item.asMethod;
 
     var text = LinkedText(resolver, fromFile);
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
     builder.writeExecutableElement(
         element, element.isOperator ? element.displayName : element.name);
     return text.emitHtml(DartFormat.asMethod);
@@ -170,7 +170,7 @@ class LinkedCodeRenderer extends Renderer {
     var element = item.asFunction;
 
     var text = LinkedText(resolver, fromFile);
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
     builder.writeExecutableElement(element, element.name);
     return text.emitHtml(DartFormat.asFunction);
   }
@@ -180,7 +180,7 @@ class LinkedCodeRenderer extends Renderer {
     var element = item.asTypeAlias;
 
     var text = LinkedText(resolver, fromFile);
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
     builder.writeTypeAliasElement(element as TypeAliasElementImpl);
     return text.emitHtml(DartFormat.asTypeAlias);
   }
@@ -190,7 +190,7 @@ class LinkedCodeRenderer extends Renderer {
     var element = item.asTypeAlias;
 
     var text = LinkedText(resolver, fromFile);
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
     builder.writeTypeAliasElement(element as TypeAliasElementImpl);
     return text.emitHtml(DartFormat.asTypeAlias);
   }
@@ -201,7 +201,7 @@ class LinkedCodeRenderer extends Renderer {
 
     var text = LinkedText(resolver, fromFile);
 
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
 
     builder.writeClassElement(element as ClassElementImpl);
 
@@ -225,7 +225,7 @@ class LinkedCodeRenderer extends Renderer {
     var element = item.asMixin;
 
     var text = LinkedText(resolver, fromFile);
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
     builder.writeMixinElement(element as MixinElementImpl);
     return text.emitHtml(DartFormat.asClass, ' { … }');
   }
@@ -235,7 +235,7 @@ class LinkedCodeRenderer extends Renderer {
     var element = item.asEnum;
 
     var text = LinkedText(resolver, fromFile);
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
     builder.writeEnumElement(element);
     return text.emitHtml(DartFormat.asEnum, ' { … }');
   }
@@ -245,7 +245,7 @@ class LinkedCodeRenderer extends Renderer {
     var element = item.asExtension;
 
     var text = LinkedText(resolver, fromFile);
-    var builder = ElementDisplayStringBuilder(text, withNullability: true);
+    var builder = ElementDisplayStringBuilder(text);
     builder.writeExtensionElement(element);
     return text.emitHtml(DartFormat.asClass, ' { … }');
   }

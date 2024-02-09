@@ -13,7 +13,7 @@ dependencies:
   shelf_router: ^1.1.0
 
    # lib/
-  analyzer: ^6.3.0
+  analyzer: ^6.4.0
   args: ^2.4.0
   collection: ^1.17.0
   dart_style: ^2.2.0
