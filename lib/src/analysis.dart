@@ -102,7 +102,7 @@ class Analyzer {
 
       for (var path in dartFiles) {
         if (src.contains(path)) continue;
-        // TODO: Ignore file whose name starts with '_'?
+        // TODO: Ignore files whose names starts with '_'?
 
         yield root.resourceProvider.getFile(path);
       }
@@ -128,7 +128,7 @@ extension AnalysisContextExtension on AnalysisContext {
 
     for (var path in dartFiles) {
       if (src.contains(path)) continue;
-      // TODO: Ignore file whose name starts with '_' ?
+      // TODO: Ignore files whose names starts with '_' ?
 
       yield root.resourceProvider.getFile(path);
     }

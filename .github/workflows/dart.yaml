@@ -40,3 +40,6 @@ jobs:
 
       - run: dart test
         if: ${{matrix.run-tests}}
+
+      # Ensure that we can build the Dart SDK docs.
+      - run: dart tool/create_dart_sdk.dart

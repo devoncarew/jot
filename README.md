@@ -23,6 +23,7 @@ usage: dart bin/jot.dart <options> [<directory>]
 -h, --help            Print this command help.
 -o, --output          Configure the output directory.
                       (defaults to "doc/api")
+    --signature       Write the package API in markdown format to doc/sig.
     --serve=<port>    Serve live docs from the documented package.
                       This serves on localhost and is useful for previewing docs while working on them.
 ```

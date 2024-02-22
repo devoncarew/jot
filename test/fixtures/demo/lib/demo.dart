@@ -320,7 +320,6 @@ String getVehicleSound(VehicleSealed vehicle) {
   return switch (vehicle) {
     CarSealed() => 'vroom',
     TruckSealed() => 'VROOOOMM',
-    // TODO: Handle this case.
     BicycleSealed() => throw UnimplementedError(),
   };
 }
