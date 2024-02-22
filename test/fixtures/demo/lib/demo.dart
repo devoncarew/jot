@@ -324,3 +324,49 @@ String getVehicleSound(VehicleSealed vehicle) {
     BicycleSealed() => throw UnimplementedError(),
   };
 }
+
+// extension types (https://dart.dev/language/extension-types)
+
+abstract class JSObjectRepType {}
+
+typedef JSAnyRepType = Object;
+
+extension type JSAny._(JSAnyRepType _jsAny) implements Object {}
+
+extension type JSObject._(JSObjectRepType _jsObject) implements JSAny {
+  JSObject.fromInteropObject(Object interopObject)
+      : _jsObject = interopObject as JSObjectRepType;
+
+  // /// Creates a new JavaScript object.
+  // JSObject() : _jsObject = _createObjectLiteral();
+}
+
+extension type EventInit._(JSObject _) implements JSObject {
+  external factory EventInit({
+    bool bubbles,
+    bool cancelable,
+    bool composed,
+  });
+
+  external set bubbles(bool value);
+  external bool get bubbles;
+  external set cancelable(bool value);
+  external bool get cancelable;
+  external set composed(bool value);
+  external bool get composed;
+}
+
+extension type ProgressEventInit._(JSObject _) implements EventInit, JSObject {
+  external factory ProgressEventInit({
+    bool lengthComputable,
+    int loaded,
+    int total,
+  });
+
+  external set lengthComputable(bool value);
+  external bool get lengthComputable;
+  external set loaded(int value);
+  external int get loaded;
+  external set total(int value);
+  external int get total;
+}
