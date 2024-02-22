@@ -16,6 +16,7 @@ enum GroupType implements Comparable<GroupType> { … }
 - enum value `$class`
 - enum value `$enum`
 - enum value `$extension`
+- enum value `$extensionType`
 - enum value `$mixin`
 - enum value `accessor`
 - enum value `constructor`
@@ -132,6 +133,7 @@ class Item { … }
 - accessor `ConstructorElement get asConstructor`
 - accessor `EnumElement get asEnum`
 - accessor `ExtensionElement get asExtension`
+- accessor `ExtensionTypeElement get asExtensionType`
 - accessor `FieldElement get asField`
 - accessor `FunctionElement get asFunction`
 - accessor `MethodElement get asMethod`
