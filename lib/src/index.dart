@@ -1,7 +1,3 @@
-// todo: build index from API class
-
-// todo: parse index from the SPA
-
 import 'dart:convert';
 
 import '../api.dart';

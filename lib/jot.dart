@@ -18,8 +18,6 @@ import 'src/signature.dart';
 import 'src/utils.dart';
 import 'workspace.dart';
 
-// todo: hoist to another isolate to get better progress reporting
-
 class Jot {
   final Directory inDir;
   final Directory outDir;

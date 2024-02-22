@@ -4,10 +4,6 @@
 
 // ignore_for_file: implementation_imports
 
-// TODO: This file is copied from package:analyzer; we should figure out a way
-//       to reduce the tech debt here.
-// pkg/analyzer/lib/src/dart/element/display_string_builder.dart
-
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -80,11 +76,8 @@ class ElementDisplayStringBuilder {
 
     _write(element.displayName);
 
-    _writeFormalParameters(
-      element.parameters,
-      forElement: true,
-      allowMultiline: true,
-    );
+    _writeFormalParameters(element.parameters,
+        forElement: true, allowMultiline: true);
   }
 
   void writeDynamicType() {
@@ -150,7 +143,9 @@ class ElementDisplayStringBuilder {
     _write('extension type ');
     _write(element.displayName);
     _writeTypeParameters(element.typeParameters);
-    writeConstructorElement(element.primaryConstructor);
+    _write('._');
+    _writeFormalParameters(element.primaryConstructor.parameters,
+        forElement: true, allowMultiline: true);
     _writeTypesIfNotEmpty(' implements ', element.interfaces);
   }
 
