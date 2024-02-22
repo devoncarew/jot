@@ -146,6 +146,14 @@ class ElementDisplayStringBuilder {
     _writeType(element.extendedType);
   }
 
+  void writeExtensionTypeElement(ExtensionTypeElement element) {
+    _write('extension type ');
+    _write(element.displayName);
+    _writeTypeParameters(element.typeParameters);
+    writeConstructorElement(element.primaryConstructor);
+    _writeTypesIfNotEmpty(' implements ', element.interfaces);
+  }
+
   void writeFormalParameter(ParameterElement element) {
     if (element.isRequiredPositional) {
       _writeWithoutDelimiters(element, forElement: true);

@@ -341,6 +341,8 @@ class Item {
 
   ExtensionElement get asExtension => element as ExtensionElement;
 
+  ExtensionTypeElement get asExtensionType => element as ExtensionTypeElement;
+
   EnumElement get asEnum => element as EnumElement;
 
   FieldElement get asField => element as FieldElement;
@@ -702,19 +704,33 @@ enum GroupType implements Comparable<GroupType> {
   method('Methods', 'method', {ElementKind.METHOD}),
 
   // library members
-  topLevelVariable('Top Level Variables', 'top level variable',
-      {ElementKind.TOP_LEVEL_VARIABLE}),
+  topLevelVariable('Top Level Variables', 'top level variable', {
+    ElementKind.TOP_LEVEL_VARIABLE,
+  }),
   function('Functions', 'function', {ElementKind.FUNCTION}),
-  functionTypeAlias('Function Type Aliases', 'function type alias',
-      {ElementKind.FUNCTION_TYPE_ALIAS}),
+  functionTypeAlias(
+    'Function Type Aliases',
+    'function type alias',
+    {ElementKind.FUNCTION_TYPE_ALIAS},
+  ),
   typeAlias('Type Aliases', 'type alias', {ElementKind.TYPE_ALIAS}),
 
   // container items
   $enum('Enums', 'enum', {ElementKind.ENUM}, containerType: true),
   $mixin('Mixins', 'mixin', {}, containerType: true),
   $class('Classes', 'class', {ElementKind.CLASS}, containerType: true),
-  $extension('Extensions', 'extension', {ElementKind.EXTENSION},
-      containerType: true),
+  $extension(
+    'Extensions',
+    'extension',
+    {ElementKind.EXTENSION},
+    containerType: true,
+  ),
+  $extensionType(
+    'Extension Types',
+    'extension type',
+    {ElementKind.EXTENSION_TYPE},
+    containerType: true,
+  ),
   // todo: implement
   // $record('Records', 'record', {ElementKind.RECORD}, containerType: true),
 

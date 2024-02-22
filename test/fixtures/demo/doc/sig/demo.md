@@ -40,6 +40,7 @@
 - function `(String, int) userInfo(Map<String, dynamic> json)`
 - type alias `typedef Compare<T> = int Function(T, T)`
 - type alias `typedef IntList = List<int>`
+- type alias `typedef JSAnyRepType = Object`
 - type alias `typedef ListMapper<X> = Map<X, List<X>>`
 
 ## Enums
@@ -105,6 +106,12 @@ abstract class Describable { … }
 
 ```
 class Foo<T extends Object> { … }
+```
+
+### class JSObjectRepType
+
+```
+abstract class JSObjectRepType { … }
 ```
 
 ### class MockSpaceship
@@ -207,3 +214,39 @@ extension NumberParsing on String { … }
 
 - method `double parseDouble()`
 - method `int parseInt()`
+
+## Extension Types
+
+### extension type EventInit
+
+EventInit
+
+- constructor `EventInit({bool bubbles, bool cancelable, bool composed})`
+- accessor `set bubbles=(bool value)`
+- accessor `bool get bubbles`
+- accessor `set cancelable=(bool value)`
+- accessor `bool get cancelable`
+- accessor `set composed=(bool value)`
+- accessor `bool get composed`
+
+### extension type JSAny
+
+JSAny
+
+### extension type JSObject
+
+JSObject
+
+- constructor `JSObject.fromInteropObject(Object interopObject)`
+
+### extension type ProgressEventInit
+
+ProgressEventInit
+
+- constructor `ProgressEventInit({bool lengthComputable, int loaded, int total})`
+- accessor `set lengthComputable=(bool value)`
+- accessor `bool get lengthComputable`
+- accessor `set loaded=(int value)`
+- accessor `int get loaded`
+- accessor `set total=(int value)`
+- accessor `int get total`

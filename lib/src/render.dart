@@ -39,6 +39,8 @@ abstract class Renderer {
         return handleClass(item);
       case GroupType.$extension:
         return handleExtension(item);
+      case GroupType.$extensionType:
+        return handleExtensionType(item);
 
       // unexpected values
       case GroupType.skip:
@@ -63,6 +65,7 @@ abstract class Renderer {
   String handleClass(Item item) => handleDefault(item);
   String handleEnum(Item item) => handleDefault(item);
   String handleExtension(Item item) => handleDefault(item);
+  String handleExtensionType(Item item) => handleDefault(item);
 
   String handleDefault(Item item) => item.name;
 }
@@ -247,6 +250,16 @@ class LinkedCodeRenderer extends Renderer {
     var text = LinkedText(resolver, fromFile);
     var builder = ElementDisplayStringBuilder(text);
     builder.writeExtensionElement(element);
+    return text.emitHtml(DartFormat.asClass, ' { … }');
+  }
+
+  @override
+  String handleExtensionType(Item item) {
+    var element = item.asExtensionType;
+
+    var text = LinkedText(resolver, fromFile);
+    var builder = ElementDisplayStringBuilder(text);
+    builder.writeExtensionTypeElement(element);
     return text.emitHtml(DartFormat.asClass, ' { … }');
   }
 
