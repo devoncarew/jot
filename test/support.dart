@@ -5,10 +5,13 @@ import 'package:cli_util/cli_logging.dart';
 import 'package:jot/api.dart';
 import 'package:jot/src/analysis.dart';
 import 'package:jot/src/html.dart';
+import 'package:jot/src/render.dart';
 import 'package:jot/workspace.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
+@isTest
 void testWithSource(
   String description,
   String source,
@@ -60,8 +63,25 @@ class TestProject {
 
   LibraryItemContainer get firstLibrary => libraries.first;
 
-  Items get firstClassItem => firstLibrary.allChildren
+  Item get firstItem => firstLibrary.allChildren.first;
+
+  Item itemNamed(String name) =>
+      firstLibrary.allChildren.firstWhere((item) => item.element.name == name);
+
+  Items get firstInterfaceItem => firstLibrary.allChildren
       .firstWhere((item) => item.element is InterfaceElement) as Items;
+
+  Items classNamed(String name) => firstLibrary.allChildren.firstWhere((item) =>
+      item.element is InterfaceElement && item.element.name == name) as Items;
+
+  Items extensionTypeNamed(String name) =>
+      firstLibrary.allChildren.firstWhere((item) =>
+              item.element is ExtensionTypeElement && item.element.name == name)
+          as Items;
+
+  LinkedCodeRenderer rendererFor(Item item) {
+    return LinkedCodeRenderer(resolver, resolver.fileFor(item.element)!);
+  }
 
   void _create() {
     final pubspec = File(p.join(dir.path, 'pubspec.yaml'));

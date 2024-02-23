@@ -7,6 +7,8 @@ import 'package:test/test.dart';
 
 import 'support.dart';
 
+// Server (--serve) integration tests using test/fixtures/demo.
+
 void main() {
   group('server', () {
     late final DocServer server;

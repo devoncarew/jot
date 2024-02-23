@@ -90,10 +90,8 @@ class Api {
   }
 
   void _buildElementItemMap(Item item) {
-    var element = item.element;
-    var currentMapping = elementItemMap[element];
-    if (currentMapping == null) {
-      elementItemMap[element] = item;
+    if (elementItemMap[item.element] == null) {
+      elementItemMap[item.element] = item;
     }
 
     if (item is Items) {
@@ -830,12 +828,19 @@ class Resolver {
   }
 
   WorkspaceFile? fileFor(Element element) {
+    // See if this element cooresponds directly to a file.
     var item = elementToItemMap[element];
     var file = itemToFileMap[item];
     if (file != null) return file;
 
-    var enclosingItem = elementToItemMap[element.enclosingElement];
-    file = itemToFileMap[enclosingItem];
+    // Otherwise check its library or compilation element.
+    if (element.enclosingElement is CompilationUnitElement) {
+      var enclosingItem = elementToItemMap[element.library];
+      file = itemToFileMap[enclosingItem];
+    } else {
+      var enclosingItem = elementToItemMap[element.enclosingElement];
+      file = itemToFileMap[enclosingItem];
+    }
 
     return file;
   }
