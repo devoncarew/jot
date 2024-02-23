@@ -7,8 +7,10 @@ import 'package:test/test.dart';
 
 import 'support.dart';
 
+// Signature (--sig) integration tests using test/fixtures/demo.
+
 void main() {
-  group('integration signature', () {
+  group('signature', () {
     late final TestProject demoProject;
 
     setUpAll(() async {
