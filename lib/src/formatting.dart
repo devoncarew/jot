@@ -66,10 +66,7 @@ $fragment$formattingSuffix
 // cut 2
 ${suffix ?? ''}
 ''';
-    // TODO: Remove these flags when there's a new version of the formatter.
-    final formatter = DartFormatter(
-      experimentFlags: ['inline-class'],
-    );
+    final formatter = DartFormatter();
     source = formatter.format(source);
     source = source.substring(
       source.indexOf('// cut 1') + '// cut 1'.length,
