@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+// TODO(devoncarew): Update away from this.
+// ignore: deprecated_member_use
 import 'dart:html';
 
 import 'dom.dart';
@@ -77,11 +79,7 @@ class Jot {
       final url = window.location.href;
       final scrollPos = event.state as int?;
 
-      jumpToPage(
-        url,
-        updateHistory: false,
-        scrollPos: scrollPos,
-      );
+      jumpToPage(url, updateHistory: false, scrollPos: scrollPos);
     });
 
     // replace all the a hrefs with listeners
@@ -270,18 +268,22 @@ class SidebarManager {
     if (itemAnchor != null) {
       var parents = <Element>[];
 
-      for (var item
-          in _nav.querySelectorAll('li.theme-doc-sidebar-item-category')) {
+      for (var item in _nav.querySelectorAll(
+        'li.theme-doc-sidebar-item-category',
+      )) {
         if (item.parentOf(itemAnchor)) {
           parents.add(item);
         }
       }
 
       if (parents.isNotEmpty) {
-        for (var item
-            in _nav.querySelectorAll('li.theme-doc-sidebar-item-category')) {
-          item.classes
-              .toggle('menu__list-item--collapsed', !parents.contains(item));
+        for (var item in _nav.querySelectorAll(
+          'li.theme-doc-sidebar-item-category',
+        )) {
+          item.classes.toggle(
+            'menu__list-item--collapsed',
+            !parents.contains(item),
+          );
         }
       }
     }
@@ -289,8 +291,9 @@ class SidebarManager {
 
   Future<void> _populateNav() async {
     // todo: write a utility for fetch()
-    var response = (await window.fetch('${jot.urlBase}_resources/nav.json'))
-        as FetchResponse;
+    var response =
+        (await window.fetch('${jot.urlBase}_resources/nav.json'))
+            as FetchResponse;
     var code = response.status;
     if (code == 404) {
       print('error response: $response');
@@ -321,12 +324,7 @@ class SidebarItem {
   final String? type;
   final List<SidebarItem>? children;
 
-  SidebarItem({
-    required this.name,
-    this.href,
-    this.type,
-    this.children,
-  });
+  SidebarItem({required this.name, this.href, this.type, this.children});
 
   factory SidebarItem._parse(JsonType json) {
     List<SidebarItem>? children;
@@ -367,7 +365,7 @@ class SidebarItem {
               event.preventDefault();
               jot.jumpToPage(p.normalize(p.join(jot.urlBase, href!)));
             },
-          )
+          ),
         ],
       );
     } else {
@@ -397,9 +395,7 @@ class SidebarItem {
           ),
           ul(
             classes: ['menu__list'],
-            children: [
-              ...children!.map((child) => child.createElement(jot)),
-            ],
+            children: [...children!.map((child) => child.createElement(jot))],
           ),
         ],
       );

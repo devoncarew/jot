@@ -1,3 +1,5 @@
+// TODO(devoncarew): Update away from this.
+// ignore: deprecated_member_use
 import 'dart:html';
 
 T $id<T extends Element>(String id) => document.getElementById(id) as T;
@@ -63,10 +65,7 @@ LIElement li({
     ..children = children;
 }
 
-ButtonElement button({
-  String? type,
-  List<String> classes = const [],
-}) {
+ButtonElement button({String? type, List<String> classes = const []}) {
   final element = ButtonElement()..classes.addAll(classes);
   if (type != null) element.type = type;
   return element;
