@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+// TODO(devoncarew): Update away from this.
+// ignore: deprecated_member_use
 import 'dart:html';
 
 import 'dom.dart';
@@ -174,11 +176,13 @@ class SearchResultsUI {
 
     var ul = searchArea.querySelector('ul')!;
     ul.children.clear();
-    ul.children.addAll(items.map((item) {
-      var li = _renderItem(results.pattern, item);
-      itemToElement[item] = li;
-      return li;
-    }));
+    ul.children.addAll(
+      items.map((item) {
+        var li = _renderItem(results.pattern, item);
+        itemToElement[item] = li;
+        return li;
+      }),
+    );
     selected = items.isEmpty ? null : items.first;
     itemToElement[selected]?.classes.add('selected');
     ul.scrollTop = 0;
@@ -195,24 +199,25 @@ class SearchResultsUI {
 
   LIElement _renderItem(String pattern, IndexMember item) {
     return li(
-      classes: ['margin--sm', 'padding--sm'],
-      children: [
-        div(
-          children: [
-            ..._renderMatchText(item.display, item.name, pattern),
-            span(text: item.importReference(true), classes: ['location']),
-            span(text: item.type, classes: ['type', 'badge']),
-          ],
-        ),
-        div(
-          classes: ['docs'],
-          children: [
-            if (item.docs == null) span(innerHtml: '&nbsp;'),
-            if (item.docs != null) span(text: item.docs),
-          ],
-        ),
-      ],
-    )..onMouseDown.listen((event) {
+        classes: ['margin--sm', 'padding--sm'],
+        children: [
+          div(
+            children: [
+              ..._renderMatchText(item.display, item.name, pattern),
+              span(text: item.importReference(true), classes: ['location']),
+              span(text: item.type, classes: ['type', 'badge']),
+            ],
+          ),
+          div(
+            classes: ['docs'],
+            children: [
+              if (item.docs == null) span(innerHtml: '&nbsp;'),
+              if (item.docs != null) span(text: item.docs),
+            ],
+          ),
+        ],
+      )
+      ..onMouseDown.listen((event) {
         event.stopPropagation();
         urlHandler(item.url);
         hide();
@@ -243,9 +248,7 @@ List<Element> _renderMatchText(String display, String name, String pattern) {
   }
 
   if (matchAt == -1) {
-    return [
-      span(text: display),
-    ];
+    return [span(text: display)];
   } else {
     return [
       span(text: display.substring(0, matchAt)),
@@ -264,23 +267,24 @@ class Index {
   final Completer _completer = Completer();
 
   Index(String urlBase) {
-    _init(urlBase).then(
-      (result) {
-        members = result;
-        _completer.complete();
-      },
-    ).catchError((dynamic error) {
-      members = [];
-      print('error reading index: $error');
-      _completer.complete();
-    });
+    _init(urlBase)
+        .then((result) {
+          members = result;
+          _completer.complete();
+        })
+        .catchError((dynamic error) {
+          members = [];
+          print('error reading index: $error');
+          _completer.complete();
+        });
   }
 
   Future<void> ready() => _completer.future;
 
   Future<List<IndexMember>> _init(String urlBase) async {
-    var response = (await window.fetch('${urlBase}_resources/index.json'))
-        as FetchResponse;
+    var response =
+        (await window.fetch('${urlBase}_resources/index.json'))
+            as FetchResponse;
     var code = response.status;
     if (code == 404) {
       print('error response: $response');
@@ -306,7 +310,10 @@ class Index {
   }
 
   static void _gatherPotentialMatches(
-      String pattern, IndexMember member, List<IndexMember> matches) {
+    String pattern,
+    IndexMember member,
+    List<IndexMember> matches,
+  ) {
     if (member.ref != null) {
       if (member.name.toLowerCase().contains(pattern) ||
           member.display.toLowerCase().contains(pattern)) {
@@ -422,9 +429,7 @@ abstract class IndexMember {
     }
   }
 
-  static const Set<String> importantPackages = {
-    'flutter',
-  };
+  static const Set<String> importantPackages = {'flutter'};
 
   static const Set<String> discouragedPackages = {
     'dart:cli',
@@ -514,8 +519,7 @@ class SearchResults {
 
     items = rawItems.map((item) {
       return SearchResult(item.calcRank(pattern, patternLower), item);
-    }).toList()
-      ..sort();
+    }).toList()..sort();
   }
 }
 
