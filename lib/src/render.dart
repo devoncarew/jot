@@ -80,8 +80,9 @@ class OutlineRenderer extends Renderer {
 
   @override
   String handleAccessor(Item item) {
-    var prefix =
-        (item.element as PropertyAccessorElement).isGetter ? 'get' : 'set';
+    var prefix = (item.element as PropertyAccessorElement).isGetter
+        ? 'get'
+        : 'set';
     return '$prefix\u00A0${item.name}';
   }
 
@@ -111,8 +112,10 @@ String writeAnnotations(Item item) {
   var buf = StringBuffer('<p class="annotations-container">\n');
   for (var annotation in annotations) {
     var text = annotation.toSource();
-    buf.writeln('<span class="badge badge--secondary">'
-        '${htmlEscape(text)}</span>');
+    buf.writeln(
+      '<span class="badge badge--secondary">'
+      '${htmlEscape(text)}</span>',
+    );
   }
 
   buf.writeln('</p>');
@@ -132,9 +135,13 @@ class LinkedCodeRenderer extends Renderer {
     var text = LinkedText(resolver, fromFile);
     var builder = ElementDisplayStringBuilder(text);
     builder.writeConstructorElement(element);
-    return text.emitHtml((text) => DartFormat.asConstructor(text,
+    return text.emitHtml(
+      (text) => DartFormat.asConstructor(
+        text,
         className: element.enclosingElement.name,
-        isConst: !element.isFactory && element.isConst));
+        isConst: !element.isFactory && element.isConst,
+      ),
+    );
   }
 
   @override
@@ -164,7 +171,9 @@ class LinkedCodeRenderer extends Renderer {
     var text = LinkedText(resolver, fromFile);
     var builder = ElementDisplayStringBuilder(text);
     builder.writeExecutableElement(
-        element, element.isOperator ? element.displayName : element.name);
+      element,
+      element.isOperator ? element.displayName : element.name,
+    );
     return text.emitHtml(DartFormat.asMethod);
   }
 

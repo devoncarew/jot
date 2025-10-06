@@ -42,8 +42,9 @@ void main(List<String> args) async {
   }
 
   var rest = results.rest;
-  var sdkDir =
-      rest.isEmpty ? calcFlutterSdk(detectDartSdk) : Directory(rest.first);
+  var sdkDir = rest.isEmpty
+      ? calcFlutterSdk(detectDartSdk)
+      : Directory(rest.first);
   if (!sdkDir.existsSync()) {
     stderr.writeln("error: '${sdkDir.path}' does not exist.");
     exit(1);
@@ -116,11 +117,13 @@ void validateFlutterSdk(Directory sdk) {
     exit(1);
   }
 
-  var flutterPubspec =
-      File(p.join(sdk.path, 'packages', 'flutter', 'pubspec.yaml'));
+  var flutterPubspec = File(
+    p.join(sdk.path, 'packages', 'flutter', 'pubspec.yaml'),
+  );
   if (!flutterPubspec.existsSync()) {
     stderr.writeln(
-        'Invalid SDK (${sdk.path}) - missing packages/flutter/pubspec.yaml file');
+      'Invalid SDK (${sdk.path}) - missing packages/flutter/pubspec.yaml file',
+    );
     exit(1);
   }
 }

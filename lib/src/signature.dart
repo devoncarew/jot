@@ -43,8 +43,9 @@ class MarkdownSignature {
     }
 
     // delete older files that were not re-generated
-    for (final file in existingFiles
-        .where((file) => !wroteFiles.contains(file.absolute.path))) {
+    for (final file in existingFiles.where(
+      (file) => !wroteFiles.contains(file.absolute.path),
+    )) {
       file.deleteSync();
     }
   }
@@ -55,9 +56,10 @@ class MarkdownSignature {
         .whereType<File>()
         .where((file) => file.path.endsWith('.md'))
         .where((file) {
-      final content = file.readAsStringSync();
-      return content.startsWith('# library ');
-    }).toSet();
+          final content = file.readAsStringSync();
+          return content.startsWith('# library ');
+        })
+        .toSet();
   }
 
   Set<File> _generatePackage(Package package, Directory dir) {
@@ -113,15 +115,17 @@ class MarkdownSignature {
     final renderer = SignatureRenderer();
 
     // members
-    final members =
-        library.allChildren.where((item) => item is! Items).toList();
+    final members = library.allChildren
+        .where((item) => item is! Items)
+        .toList();
     // normalize order
     members.sort(compareByNaturalOrdering);
 
     if (members.isNotEmpty) {
       for (var member in members) {
         out.writeln(
-            '- ${member.type.displayName} `${renderer.renderItem(member)}`');
+          '- ${member.type.displayName} `${renderer.renderItem(member)}`',
+        );
       }
       out.writeln();
     }
@@ -135,8 +139,9 @@ class MarkdownSignature {
       out.writeln('## ${groupType.title}');
       out.writeln();
 
-      for (var clazz in classesByGroup[groupType]!.cast<Items>().toList()
-        ..sort(compareByName)) {
+      for (var clazz
+          in classesByGroup[groupType]!.cast<Items>().toList()
+            ..sort(compareByName)) {
         out.writeln('### ${groupType.displayName} ${clazz.name}');
         out.writeln();
         out.writeln(renderer.renderItem(clazz));
@@ -150,10 +155,12 @@ class MarkdownSignature {
           for (var member in members) {
             final modifiers =
                 member.isStatic && member.type != GroupType.enumValue
-                    ? 'static '
-                    : '';
-            out.writeln('- $modifiers${member.type.displayName} '
-                '`${renderer.renderItem(member)}`');
+                ? 'static '
+                : '';
+            out.writeln(
+              '- $modifiers${member.type.displayName} '
+              '`${renderer.renderItem(member)}`',
+            );
           }
           out.writeln();
         }

@@ -28,28 +28,32 @@ void main() {
     });
 
     test('index.html', () async {
-      final response =
-          await http.read(Uri.http('localhost:${server.port}', 'index.html'));
+      final response = await http.read(
+        Uri.http('localhost:${server.port}', 'index.html'),
+      );
       expect(response, contains('<title>package:server_demo</title>'));
     });
 
     test('a.html', () async {
-      var response =
-          await http.read(Uri.http('localhost:${server.port}', 'a.html'));
+      var response = await http.read(
+        Uri.http('localhost:${server.port}', 'a.html'),
+      );
       expect(response, contains('<h1>a.dart</h1>'));
       expect(response, contains('bar('));
       expect(response, contains('Classes'));
 
-      response =
-          await http.read(Uri.http('localhost:${server.port}', 'a/A.html'));
+      response = await http.read(
+        Uri.http('localhost:${server.port}', 'a/A.html'),
+      );
       expect(response, contains('<h1>A</h1>'));
       expect(response, contains('class A'));
       expect(response, contains('foo()'));
     });
 
     test('b.html', () async {
-      final response =
-          await http.read(Uri.http('localhost:${server.port}', 'b.html'));
+      final response = await http.read(
+        Uri.http('localhost:${server.port}', 'b.html'),
+      );
       expect(response, contains('<h1>b.dart</h1>'));
       expect(response, contains('baz('));
       expect(response, isNot(contains('Classes')));

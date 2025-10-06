@@ -76,8 +76,10 @@ Future<void> verify() async {
 
   var existing = File('lib/resources/script.sig').readAsStringSync().trim();
   if (existing != sig) {
-    stderr.writeln('Compilation artifacts not up-to-date; '
-        "re-run 'dart tool/build_web.dart'.");
+    stderr.writeln(
+      'Compilation artifacts not up-to-date; '
+      "re-run 'dart tool/build_web.dart'.",
+    );
     exit(1);
   } else {
     print('Compilation artifacts up-to-date.');
@@ -85,8 +87,10 @@ Future<void> verify() async {
 }
 
 Future<String> calcSig() async {
-  final digest =
-      await _fileLines().transform(utf8.encoder).transform(md5).single;
+  final digest = await _fileLines()
+      .transform(utf8.encoder)
+      .transform(md5)
+      .single;
 
   return digest.bytes
       .map((byte) => byte.toRadixString(16).padLeft(2, '0').toUpperCase())
@@ -95,12 +99,13 @@ Future<String> calcSig() async {
 
 Stream<String> _fileLines() async* {
   // Collect lib/ Dart files.
-  final files = Directory('web')
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((file) => file.path.endsWith('.dart'))
-      .toList()
-    ..sort((a, b) => a.path.toLowerCase().compareTo(b.path.toLowerCase()));
+  final files =
+      Directory('web')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'))
+          .toList()
+        ..sort((a, b) => a.path.toLowerCase().compareTo(b.path.toLowerCase()));
 
   for (var file in files) {
     for (var line in file.readAsLinesSync()) {

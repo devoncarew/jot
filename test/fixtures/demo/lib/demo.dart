@@ -18,9 +18,7 @@ class Point {
   Point(this.x, this.y);
 
   // Named constructor
-  Point.origin()
-      : x = xOrigin,
-        y = yOrigin;
+  Point.origin() : x = xOrigin, y = yOrigin;
 
   // factory constructor
   factory Point.fromJson(Map<String, Object> json) {
@@ -286,7 +284,7 @@ var flybyObjects = ['Jupiter', 'Saturn', 'Uranus', 'Neptune'];
 // ignore: type_annotate_public_apis
 var image = {
   'tags': ['saturn'],
-  'url': '//path/to/saturn.jpg'
+  'url': '//path/to/saturn.jpg',
 };
 
 // null safety (https://dart.dev/null-safety/understanding-null-safety)
@@ -334,18 +332,14 @@ extension type JSAny._(JSAnyRepType _jsAny) implements Object {}
 
 extension type JSObject._(JSObjectRepType _jsObject) implements JSAny {
   JSObject.fromInteropObject(Object interopObject)
-      : _jsObject = interopObject as JSObjectRepType;
+    : _jsObject = interopObject as JSObjectRepType;
 
   // /// Creates a new JavaScript object.
   // JSObject() : _jsObject = _createObjectLiteral();
 }
 
 extension type EventInit._(JSObject _) implements JSObject {
-  external factory EventInit({
-    bool bubbles,
-    bool cancelable,
-    bool composed,
-  });
+  external factory EventInit({bool bubbles, bool cancelable, bool composed});
 
   external set bubbles(bool value);
   external bool get bubbles;

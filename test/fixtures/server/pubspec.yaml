@@ -2,4 +2,4 @@ name: server_demo
 publish_to: none
 
 environment: 
-  sdk: ^3.0.0
+  sdk: ^3.9.0

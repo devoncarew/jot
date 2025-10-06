@@ -68,15 +68,25 @@ class TestProject {
   Item itemNamed(String name) =>
       firstLibrary.allChildren.firstWhere((item) => item.element.name == name);
 
-  Items get firstInterfaceItem => firstLibrary.allChildren
-      .firstWhere((item) => item.element is InterfaceElement) as Items;
+  Items get firstInterfaceItem =>
+      firstLibrary.allChildren.firstWhere(
+            (item) => item.element is InterfaceElement,
+          )
+          as Items;
 
-  Items classNamed(String name) => firstLibrary.allChildren.firstWhere((item) =>
-      item.element is InterfaceElement && item.element.name == name) as Items;
+  Items classNamed(String name) =>
+      firstLibrary.allChildren.firstWhere(
+            (item) =>
+                item.element is InterfaceElement && item.element.name == name,
+          )
+          as Items;
 
   Items extensionTypeNamed(String name) =>
-      firstLibrary.allChildren.firstWhere((item) =>
-              item.element is ExtensionTypeElement && item.element.name == name)
+      firstLibrary.allChildren.firstWhere(
+            (item) =>
+                item.element is ExtensionTypeElement &&
+                item.element.name == name,
+          )
           as Items;
 
   LinkedCodeRenderer rendererFor(Item item) {
@@ -102,8 +112,9 @@ class TestProject {
     workspace = Workspace.fromPackage(htmlTemplate, dir);
     var packageName = workspace.name.substring('package:'.length);
 
-    analyzer =
-        Analyzer.packages(includedPaths: [p.normalize(dir.absolute.path)]);
+    analyzer = Analyzer.packages(
+      includedPaths: [p.normalize(dir.absolute.path)],
+    );
 
     await for (var resolvedLibrary in analyzer.resolvedPublicLibraries()) {
       var libraryPath = resolvedLibrary.element.source.fullName;
@@ -111,13 +122,15 @@ class TestProject {
       var dartLibraryPath = p.relative(libraryPath, from: libDirPath);
       var htmlOutputPath = '${p.withoutExtension(dartLibraryPath)}.html';
 
-      var libraryContainer = workspace.addChild(WorkspaceDirectory(
-        workspace,
-        dartLibraryPath,
-      ));
+      var libraryContainer = workspace.addChild(
+        WorkspaceDirectory(workspace, dartLibraryPath),
+      );
 
-      var library = workspace.api
-          .addLibrary(resolvedLibrary.element, workspace.name, dartLibraryPath);
+      var library = workspace.api.addLibrary(
+        resolvedLibrary.element,
+        workspace.name,
+        dartLibraryPath,
+      );
 
       libraryContainer.mainFile = WorkspaceFile(
         workspace,

@@ -20,10 +20,7 @@ class MarkdownResults {
 
 typedef MarkdownLinkResolver = String? Function(String reference);
 
-String convertMarkdown(
-  String markdown, {
-  MarkdownLinkResolver? linkResolver,
-}) {
+String convertMarkdown(String markdown, {MarkdownLinkResolver? linkResolver}) {
   return markdownToHtml(
     markdown,
     extensionSet: ExtensionSet.gitHubWeb,
@@ -72,9 +69,9 @@ MarkdownResults convertMarkdownWithOutline(String markdown) {
   final nodes = document.parse(markdown);
 
   var contents = '${renderToHtml(nodes, enableTagfilter: true)}\n';
-  var elements = nodes
-      .whereType<Element>()
-      .where((element) => element.tag == 'h2' || element.tag == 'h3');
+  var elements = nodes.whereType<Element>().where(
+    (element) => element.tag == 'h2' || element.tag == 'h3',
+  );
 
   return MarkdownResults(contents, _toOutline(elements));
 }
@@ -84,7 +81,8 @@ Outline _toOutline(Iterable<Element> elements) {
   for (var element in elements) {
     var level = int.parse(element.tag.substring(1));
     outline.add(
-        Heading(element.textContent, level: level, id: element.generatedId));
+      Heading(element.textContent, level: level, id: element.generatedId),
+    );
   }
   return outline;
 }

@@ -70,13 +70,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
       .where((name) => libraryUriFor(name, libraries) != null)
       .toList();
 
-  const knownVmLibs = {
-    'cli',
-    'ffi',
-    'io',
-    'isolate',
-    'mirrors',
-  };
+  const knownVmLibs = {'cli', 'ffi', 'io', 'isolate', 'mirrors'};
 
   const knownWebLibs = {
     'html',
@@ -92,14 +86,16 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
 
   var vmLibs = libNames.toSet().intersection(knownVmLibs).toList()..sort();
   var webLibs = libNames.toSet().intersection(knownWebLibs).toList()..sort();
-  var coreLibs = (libNames.toSet()
-        ..removeAll(webLibs)
-        ..removeAll(vmLibs))
-      .toList();
+  var coreLibs =
+      (libNames.toSet()
+            ..removeAll(webLibs)
+            ..removeAll(vmLibs))
+          .toList();
 
   // set up the analysis context
-  var analyzer =
-      Analyzer.packages(includedPaths: [p.normalize(sdkDir.absolute.path)]);
+  var analyzer = Analyzer.packages(
+    includedPaths: [p.normalize(sdkDir.absolute.path)],
+  );
 
   // create the workspace
   var stats = Stats()..start();
@@ -137,16 +133,25 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
       var libUrl = libraryUriFor(libName, libraries)!;
 
       var libFile = File(p.join(libDir.path, libUrl));
-      var libraryElement =
-          await analyzer.getLibraryByUri(libFile.uri.toString());
+      var libraryElement = await analyzer.getLibraryByUri(
+        libFile.uri.toString(),
+      );
 
-      var packageContainer =
-          workspace.addChild(WorkspaceDirectory(workspace, 'dart:$libName'));
+      var packageContainer = workspace.addChild(
+        WorkspaceDirectory(workspace, 'dart:$libName'),
+      );
 
-      var library =
-          api.addLibrary(libraryElement.element, 'Dart SDK', 'dart:$libName');
-      var file = WorkspaceFile(packageContainer, 'dart:$libName',
-          '$libName.html', libraryGenerator(library));
+      var library = api.addLibrary(
+        libraryElement.element,
+        'Dart SDK',
+        'dart:$libName',
+      );
+      var file = WorkspaceFile(
+        packageContainer,
+        'dart:$libName',
+        '$libName.html',
+        libraryGenerator(library),
+      );
       file.importScript = file.name;
       packageContainer.mainFile = file;
 
@@ -154,12 +159,14 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
 
       for (var itemContainer in library.allChildrenSorted.whereType<Items>()) {
         var path = '$libName/${itemContainer.name}.html';
-        var docFile = packageContainer.addChild(WorkspaceFile(
-          packageContainer,
-          itemContainer.name,
-          path,
-          itemsGenerator(itemContainer),
-        ));
+        var docFile = packageContainer.addChild(
+          WorkspaceFile(
+            packageContainer,
+            itemContainer.name,
+            path,
+            itemsGenerator(itemContainer),
+          ),
+        );
         api.addResolution(itemContainer, docFile);
       }
     }
@@ -205,16 +212,22 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   // generate the api signature files
   final sigOut = Directory(p.join(outDir.path, '_sig'))..createSync();
   final sig = MarkdownSignature(
-      workspace: workspace, outDir: sigOut, logger: log, stats: stats);
+    workspace: workspace,
+    outDir: sigOut,
+    logger: log,
+    stats: stats,
+  );
   sig.generate();
 
   stats.stop();
 
   log.stdout('');
   // "1,347 symbols, 82% have documentation, 4 libraries, 8MB of html, 0.3s"
-  log.stdout('Wrote docs to ${p.relative(outDir.path)} in '
-      '${stats.elapsedSeconds}s (${stats.fileCount} files, '
-      '${stats.sizeDesc}).');
+  log.stdout(
+    'Wrote docs to ${p.relative(outDir.path)} in '
+    '${stats.elapsedSeconds}s (${stats.fileCount} files, '
+    '${stats.sizeDesc}).',
+  );
 }
 
 String _parserSdkVersion(File versionFile) {
@@ -297,7 +310,10 @@ void validateSdk(Directory sdk) {
 extension WorkspaceExtension on Workspace {
   // ignore: unreachable_from_main
   void addPackage(
-      Analyzer analyzer, String packageName, String fullPackagePath) {
+    Analyzer analyzer,
+    String packageName,
+    String fullPackagePath,
+  ) {
     // todo: find the file location
 
     // todo: get the element info
