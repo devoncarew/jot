@@ -17,9 +17,6 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         sdk: [stable, beta, dev]
-        include:
-          - sdk: stable
-            run-tests: true
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
@@ -31,7 +28,7 @@ jobs:
       - run: dart analyze --fatal-infos
 
       - run: dart format --output=none --set-exit-if-changed .
-        if: ${{matrix.run-tests}}
+        if: ${{ matrix.sdk == dev}}
 
       # Ensure that the front-end is up to date.
       - run: dart tool/build_web.dart --verify
@@ -40,7 +37,6 @@ jobs:
       - run: dart tool/build_web.dart
 
       - run: dart test
-        if: ${{matrix.run-tests}}
 
       # Ensure that we can build the Dart SDK docs.
       - run: dart tool/create_dart_sdk.dart
