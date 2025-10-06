@@ -88,8 +88,10 @@ class Generator {
     bool printProgress = true,
   }) async {
     var pageContents = await file.generatePageContents();
-    var fileContents =
-        await workspace.generateWorkspacePage(file, pageContents);
+    var fileContents = await workspace.generateWorkspacePage(
+      file,
+      pageContents,
+    );
     var outFile = File(p.join(outDir.path, file.path));
     outFile.parent.createSync(recursive: true);
     outFile.writeAsStringSync(fileContents);
@@ -162,8 +164,12 @@ class _LibraryGenerator {
 
     if (library.docs != null) {
       // todo: also support compound references - Class.field, Class.method
-      buf.writeln(convertMarkdown(library.docs!,
-          linkResolver: library.markdownLinkResolver(api.resolver)));
+      buf.writeln(
+        convertMarkdown(
+          library.docs!,
+          linkResolver: library.markdownLinkResolver(api.resolver),
+        ),
+      );
     }
 
     var pageItemRenderer = OutlineRenderer();
@@ -189,14 +195,18 @@ class _LibraryGenerator {
           buf.write('<tr>');
           buf.write('<td class="item-title">${groupType.title}</td>');
           buf.write('<td class="item-docs">');
-          buf.writeln(items.map((item) {
-            var ref = api.hrefOrSpan(
-              pageItemRenderer.render(item.type, item),
-              item.element,
-              from: thisFile,
-            );
-            return '<code>$ref</code>';
-          }).join(',\n'));
+          buf.writeln(
+            items
+                .map((item) {
+                  var ref = api.hrefOrSpan(
+                    pageItemRenderer.render(item.type, item),
+                    item.element,
+                    from: thisFile,
+                  );
+                  return '<code>$ref</code>';
+                })
+                .join(',\n'),
+          );
           buf.write('</td>');
           buf.writeln('</tr>');
         }
@@ -213,16 +223,22 @@ class _LibraryGenerator {
 
         for (var item in group.items) {
           buf.write('<tr><td>');
-          buf.writeln(api.hrefOrSpan(
-            pageItemRenderer.render(group.type, item),
-            item.element,
-            from: thisFile,
-          ));
+          buf.writeln(
+            api.hrefOrSpan(
+              pageItemRenderer.render(group.type, item),
+              item.element,
+              from: thisFile,
+            ),
+          );
           buf.write('</td>');
           buf.write('<td class="item-docs">');
           if (item.docs != null) {
-            buf.writeln(convertMarkdown(firstSentence(item.docs!),
-                linkResolver: item.markdownLinkResolver(api.resolver)));
+            buf.writeln(
+              convertMarkdown(
+                firstSentence(item.docs!),
+                linkResolver: item.markdownLinkResolver(api.resolver),
+              ),
+            );
           }
           buf.write('</td></tr>');
         }
@@ -238,8 +254,12 @@ class _LibraryGenerator {
           buf.write(writeAnnotations(item));
           buf.writeln(linkedCodeRenderer.render(group.type, item));
           if (item.docs != null) {
-            buf.writeln(convertMarkdown(item.docs!,
-                linkResolver: item.markdownLinkResolver(api.resolver)));
+            buf.writeln(
+              convertMarkdown(
+                item.docs!,
+                linkResolver: item.markdownLinkResolver(api.resolver),
+              ),
+            );
           }
         }
       }
@@ -257,8 +277,13 @@ class _LibraryGenerator {
 
       if (!group.containerType) {
         for (var item in group.items) {
-          outline.add(Heading(outlineRenderer.render(group.type, item),
-              id: item.anchorId, level: 3));
+          outline.add(
+            Heading(
+              outlineRenderer.render(group.type, item),
+              id: item.anchorId,
+              level: 3,
+            ),
+          );
         }
       }
     }
@@ -289,10 +314,18 @@ class _InterfaceElementGenerator {
     buf.writeln(linkedCodeRenderer.render(classItems.type, classItems));
     writeAncestors(buf);
     _writeChildRelationships(
-        buf, classItems.relationships, thisFile, workspace.api);
+      buf,
+      classItems.relationships,
+      thisFile,
+      workspace.api,
+    );
     if (classItems.docs != null) {
-      buf.writeln(convertMarkdown(classItems.docs!,
-          linkResolver: classItems.markdownLinkResolver(api.resolver)));
+      buf.writeln(
+        convertMarkdown(
+          classItems.docs!,
+          linkResolver: classItems.markdownLinkResolver(api.resolver),
+        ),
+      );
     }
 
     var pageItemRenderer = OutlineRenderer();
@@ -311,8 +344,12 @@ class _InterfaceElementGenerator {
           buf.writeln('<td id="${item.anchorId}">${item.name}</td>');
           buf.write('<td class="item-docs">');
           if (item.docs != null) {
-            buf.writeln(convertMarkdown(item.docs!,
-                linkResolver: item.markdownLinkResolver(api.resolver)));
+            buf.writeln(
+              convertMarkdown(
+                item.docs!,
+                linkResolver: item.markdownLinkResolver(api.resolver),
+              ),
+            );
           }
           buf.write('</td></tr>');
         }
@@ -328,8 +365,12 @@ class _InterfaceElementGenerator {
           buf.write(writeAnnotations(item));
           buf.writeln(linkedCodeRenderer.render(group.type, item));
           if (item.docs != null) {
-            buf.writeln(convertMarkdown(item.docs!,
-                linkResolver: item.markdownLinkResolver(api.resolver)));
+            buf.writeln(
+              convertMarkdown(
+                item.docs!,
+                linkResolver: item.markdownLinkResolver(api.resolver),
+              ),
+            );
           }
         }
       }
@@ -343,8 +384,13 @@ class _InterfaceElementGenerator {
 
       if (group.type != GroupType.enumValue) {
         for (var item in group.items) {
-          outline.add(Heading(outlineRenderer.render(group.type, item),
-              id: item.anchorId, level: 3));
+          outline.add(
+            Heading(
+              outlineRenderer.render(group.type, item),
+              id: item.anchorId,
+              level: 3,
+            ),
+          );
         }
       }
     }
@@ -368,20 +414,28 @@ class _InterfaceElementGenerator {
     if (element.interfaces.isNotEmpty) {
       buf.writeln('<tr><td class="item-title">Implements</td>');
       buf.write('<td class="item-docs">');
-      buf.write(element.interfaces
-          .map((i) => api.hrefOrSpan(i.element.name, i.element, from: thisFile))
-          .map((s) => '<code>$s</code>')
-          .join(', '));
+      buf.write(
+        element.interfaces
+            .map(
+              (i) => api.hrefOrSpan(i.element.name, i.element, from: thisFile),
+            )
+            .map((s) => '<code>$s</code>')
+            .join(', '),
+      );
       buf.write('</td></tr>');
     }
 
     if (element.mixins.isNotEmpty) {
       buf.writeln('<tr><td class="item-title">Mixins</td>');
       buf.write('<td class="item-docs">');
-      buf.write(element.mixins
-          .map((m) => api.hrefOrSpan(m.element.name, m.element, from: thisFile))
-          .map((s) => '<code>$s</code>')
-          .join(', '));
+      buf.write(
+        element.mixins
+            .map(
+              (m) => api.hrefOrSpan(m.element.name, m.element, from: thisFile),
+            )
+            .map((s) => '<code>$s</code>')
+            .join(', '),
+      );
       buf.write('</td></tr>');
     }
 
@@ -415,10 +469,18 @@ class _ExtentionElementGenerator {
     buf.writeln(linkedCodeRenderer.render(extensionItems.type, extensionItems));
     writeAncestors(buf);
     _writeChildRelationships(
-        buf, extensionItems.relationships, thisFile, workspace.api);
+      buf,
+      extensionItems.relationships,
+      thisFile,
+      workspace.api,
+    );
     if (extensionItems.docs != null) {
-      buf.writeln(convertMarkdown(extensionItems.docs!,
-          linkResolver: extensionItems.markdownLinkResolver(api.resolver)));
+      buf.writeln(
+        convertMarkdown(
+          extensionItems.docs!,
+          linkResolver: extensionItems.markdownLinkResolver(api.resolver),
+        ),
+      );
     }
 
     var pageItemRenderer = OutlineRenderer();
@@ -435,8 +497,12 @@ class _ExtentionElementGenerator {
         buf.write(writeAnnotations(item));
         buf.writeln(linkedCodeRenderer.render(group.type, item));
         if (item.docs != null) {
-          buf.writeln(convertMarkdown(item.docs!,
-              linkResolver: item.markdownLinkResolver(api.resolver)));
+          buf.writeln(
+            convertMarkdown(
+              item.docs!,
+              linkResolver: item.markdownLinkResolver(api.resolver),
+            ),
+          );
         }
       }
     }
@@ -448,8 +514,13 @@ class _ExtentionElementGenerator {
       outline.add(Heading(group.name, id: group.anchorId, level: 2));
 
       for (var item in group.items) {
-        outline.add(Heading(outlineRenderer.render(group.type, item),
-            id: item.anchorId, level: 3));
+        outline.add(
+          Heading(
+            outlineRenderer.render(group.type, item),
+            id: item.anchorId,
+            level: 3,
+          ),
+        );
       }
     }
 
@@ -465,8 +536,11 @@ class _ExtentionElementGenerator {
     if (extendedElement != null && extendedElement.name != null) {
       buf.writeln('<tr><td class="item-title">Extension on</td>');
       buf.write('<td class="item-docs">');
-      var ref = api.hrefOrSpan(extendedElement.name!, extendedElement,
-          from: thisFile);
+      var ref = api.hrefOrSpan(
+        extendedElement.name!,
+        extendedElement,
+        from: thisFile,
+      );
       buf.write('<code>$ref</code></td></tr>');
     }
 
@@ -478,8 +552,12 @@ class _ExtentionElementGenerator {
   }
 }
 
-void _writeChildRelationships(StringBuffer buf, RelationshipMap relationships,
-    WorkspaceFile thisFile, Api api) {
+void _writeChildRelationships(
+  StringBuffer buf,
+  RelationshipMap relationships,
+  WorkspaceFile thisFile,
+  Api api,
+) {
   if (relationships.isEmpty) return;
 
   buf.writeln('<table>');
@@ -491,10 +569,14 @@ void _writeChildRelationships(StringBuffer buf, RelationshipMap relationships,
     buf.write('<td class="item-docs">');
     var items = relationships[kind]!;
     items.sort((a, b) => adjustedLexicalCompare(a.name, b.name));
-    buf.write(items.map((item) {
-      var ref = api.hrefOrSpan(item.name, item.element, from: thisFile);
-      return '<code>$ref</code>';
-    }).join(', '));
+    buf.write(
+      items
+          .map((item) {
+            var ref = api.hrefOrSpan(item.name, item.element, from: thisFile);
+            return '<code>$ref</code>';
+          })
+          .join(', '),
+    );
     buf.writeln('</td></tr>');
   }
 

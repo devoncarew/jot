@@ -59,7 +59,8 @@ class DartFormat {
     String? suffix,
     bool trimIndent = false,
   }) {
-    var source = '''
+    var source =
+        '''
 ${prefix ?? ''}
 // cut 1
 $fragment$formattingSuffix

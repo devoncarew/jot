@@ -18,10 +18,7 @@ class HtmlTemplate {
     _parseTemplate();
   }
 
-  Future<void> generateStaticResources(
-    Directory outDir, {
-    Stats? stats,
-  }) async {
+  Future<void> generateStaticResources(Directory outDir, {Stats? stats}) async {
     const resources = [
       'script.js',
       'styles.css',

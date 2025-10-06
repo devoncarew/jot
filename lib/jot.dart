@@ -43,8 +43,9 @@ class Jot {
     var stats = Stats()..start();
 
     htmlTemplate = await HtmlTemplate.createDefault();
-    analyzer =
-        Analyzer.packages(includedPaths: [p.normalize(inDir.absolute.path)]);
+    analyzer = Analyzer.packages(
+      includedPaths: [p.normalize(inDir.absolute.path)],
+    );
 
     var progress = logger.progress('Resolving public libraries');
     var workspace = await _buildWorkspace();
@@ -69,7 +70,11 @@ class Jot {
     if (signature) {
       final sigOut = Directory(p.join(outDir.parent.path, 'sig'))..createSync();
       final sig = MarkdownSignature(
-          workspace: workspace, outDir: sigOut, logger: logger, stats: stats);
+        workspace: workspace,
+        outDir: sigOut,
+        logger: logger,
+        stats: stats,
+      );
       sig.generate();
     }
 
@@ -77,15 +82,18 @@ class Jot {
 
     logger.stdout('');
     // "1,347 symbols, 82% have documentation, 4 libraries, 8MB of html, 0.3s"
-    logger.stdout('Wrote docs to ${p.relative(outDir.path)} in '
-        '${stats.elapsedSeconds}s (${stats.fileCount} files, '
-        '${stats.sizeDesc}).');
+    logger.stdout(
+      'Wrote docs to ${p.relative(outDir.path)} in '
+      '${stats.elapsedSeconds}s (${stats.fileCount} files, '
+      '${stats.sizeDesc}).',
+    );
   }
 
   Future<DocServer> serve(int port) async {
     htmlTemplate = await HtmlTemplate.createDefault();
-    analyzer =
-        Analyzer.packages(includedPaths: [p.normalize(inDir.absolute.path)]);
+    analyzer = Analyzer.packages(
+      includedPaths: [p.normalize(inDir.absolute.path)],
+    );
 
     var progress = logger.progress('Resolving public libraries');
     var workspace = await _buildWorkspace();
@@ -116,13 +124,15 @@ class Jot {
       var dartLibraryPath = p.relative(libraryPath, from: libDirPath);
       var htmlOutputPath = '${p.withoutExtension(dartLibraryPath)}.html';
 
-      var libraryContainer = workspace.addChild(WorkspaceDirectory(
-        workspace,
-        dartLibraryPath,
-      ));
+      var libraryContainer = workspace.addChild(
+        WorkspaceDirectory(workspace, dartLibraryPath),
+      );
 
-      var library = workspace.api
-          .addLibrary(resolvedLibrary.element, workspace.name, dartLibraryPath);
+      var library = workspace.api.addLibrary(
+        resolvedLibrary.element,
+        workspace.name,
+        dartLibraryPath,
+      );
 
       libraryContainer.mainFile = WorkspaceFile(
         workspace,
@@ -159,10 +169,7 @@ class DocServer {
   Workspace workspace;
   late final HttpServer _server;
 
-  DocServer({
-    required this.jot,
-    required this.workspace,
-  });
+  DocServer({required this.jot, required this.workspace});
 
   int get port => _server.port;
 
@@ -187,8 +194,10 @@ class DocServer {
       return _notFound(request);
     } else {
       var pageContents = await file.generatePageContents();
-      var fileContents =
-          await workspace.generateWorkspacePage(file, pageContents);
+      var fileContents = await workspace.generateWorkspacePage(
+        file,
+        pageContents,
+      );
       return Response.ok(fileContents, headers: headersFor(filePath));
     }
   }
@@ -196,11 +205,13 @@ class DocServer {
   Future<Response> _resourcesHandler(Request request) {
     var path = request.url.path;
 
-    return loadResourceDataAsBytes(path).then((data) {
-      return Response.ok(data, headers: headersFor(path));
-    }).onError((error, _) {
-      return _notFound(request);
-    });
+    return loadResourceDataAsBytes(path)
+        .then((data) {
+          return Response.ok(data, headers: headersFor(path));
+        })
+        .onError((error, _) {
+          return _notFound(request);
+        });
   }
 
   Handler _loggingHandler(Handler handler) {
@@ -232,16 +243,22 @@ class DocServer {
       return Response.movedPermanently('index.html');
     });
     app.get('/favicon.ico', (Request request) async {
-      return Response.ok(await loadResourceDataAsBytes('dart.png'),
-          headers: headersFor('dart.png'));
+      return Response.ok(
+        await loadResourceDataAsBytes('dart.png'),
+        headers: headersFor('dart.png'),
+      );
     });
     app.get('/_resources/index.json', (Request request) async {
-      return Response.ok(workspace.api.index.toJson(),
-          headers: headersFor(request.url.path));
+      return Response.ok(
+        workspace.api.index.toJson(),
+        headers: headersFor(request.url.path),
+      );
     });
     app.get('/_resources/nav.json', (Request request) async {
-      return Response.ok(workspace.generateNavData(),
-          headers: headersFor(request.url.path));
+      return Response.ok(
+        workspace.generateNavData(),
+        headers: headersFor(request.url.path),
+      );
     });
     app.mount('/_resources', Router(notFoundHandler: _resourcesHandler).call);
 
@@ -251,7 +268,8 @@ class DocServer {
       port,
     );
     logger.stdout(
-        'Serving docs at http://${_server.address.host}:${_server.port}/.');
+      'Serving docs at http://${_server.address.host}:${_server.port}/.',
+    );
   }
 
   Future<void> dispose() => _server.close();

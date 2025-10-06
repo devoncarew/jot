@@ -63,8 +63,13 @@ class IndexMember implements Comparable<IndexMember> {
 
   IndexMember(this.name, this.type, {this.ref, this.id, this.docs});
 
-  IndexMember add(String name, String type,
-      {String? ref, String? id, String? docs}) {
+  IndexMember add(
+    String name,
+    String type, {
+    String? ref,
+    String? id,
+    String? docs,
+  }) {
     var child = IndexMember(name, type, ref: ref, id: id, docs: docs);
     children.add(child);
     return child;

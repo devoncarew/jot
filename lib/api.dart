@@ -21,12 +21,18 @@ class Api {
   Api();
 
   LibraryItemContainer addLibrary(
-      LibraryElement element, String packageName, String libraryPath) {
-    var package = packages.firstWhere((p) => p.name == packageName, orElse: () {
-      var package = Package(packageName);
-      packages.add(package);
-      return package;
-    });
+    LibraryElement element,
+    String packageName,
+    String libraryPath,
+  ) {
+    var package = packages.firstWhere(
+      (p) => p.name == packageName,
+      orElse: () {
+        var package = Package(packageName);
+        packages.add(package);
+        return package;
+      },
+    );
 
     var library = LibraryItemContainer(package, element, libraryPath);
     package.libraries.add(library);
@@ -182,8 +188,9 @@ class Api {
     //   item._addRelationship(item, RelationshipKind.$definedIn);
     // }
 
-    for (var entry in topLevelElementsToItems.entries
-        .where((entry) => entry.value.length > 1)) {
+    for (var entry in topLevelElementsToItems.entries.where(
+      (entry) => entry.value.length > 1,
+    )) {
       _updateForDuplicates(entry.key, entry.value);
     }
 
@@ -226,14 +233,17 @@ class Api {
       var parentLib = item.libraryParent;
       var len = parentLib!._calcElementExportLength(element);
       return _ElementExports(element, item, parentLib, len);
-    }).toList()
-      ..sort();
+    }).toList()..sort();
 
-    print('dups for [$element] defined in '
-        '${element.library?.librarySource.uri}:');
+    print(
+      'dups for [$element] defined in '
+      '${element.library?.librarySource.uri}:',
+    );
     for (var export in exports) {
-      print('  ${export.element.name} from '
-          '${export.libraryContainer.name}: ${export.exportLength}');
+      print(
+        '  ${export.element.name} from '
+        '${export.libraryContainer.name}: ${export.exportLength}',
+      );
     }
 
     // for non-canonical items:
@@ -262,7 +272,11 @@ class _ElementExports implements Comparable<_ElementExports> {
   final int exportLength;
 
   _ElementExports(
-      this.element, this.item, this.libraryContainer, this.exportLength);
+    this.element,
+    this.item,
+    this.libraryContainer,
+    this.exportLength,
+  );
 
   @override
   int compareTo(_ElementExports other) {
@@ -393,8 +407,11 @@ class Item {
 
   String? _lookupMethodDocs(MethodElement element) {
     var enclosing = element.enclosingElement as InterfaceElement;
-    var superMethod = enclosing.thisType
-        .lookUpMethod2(element.name, element.library, inherited: true);
+    var superMethod = enclosing.thisType.lookUpMethod2(
+      element.name,
+      element.library,
+      inherited: true,
+    );
     return superMethod == null
         ? null
         : (superMethod.documentationComment ?? _lookupMethodDocs(superMethod));
@@ -402,8 +419,11 @@ class Item {
 
   String? _lookupGetterDocs(PropertyAccessorElement element) {
     var enclosing = element.enclosingElement as InterfaceElement;
-    var accessor = enclosing.thisType
-        .lookUpGetter2(element.name, element.library, inherited: true);
+    var accessor = enclosing.thisType.lookUpGetter2(
+      element.name,
+      element.library,
+      inherited: true,
+    );
     return accessor == null
         ? null
         : (accessor.documentationComment ?? _lookupGetterDocs(accessor));
@@ -411,8 +431,11 @@ class Item {
 
   String? _lookupSetterDocs(PropertyAccessorElement element) {
     var enclosing = element.enclosingElement as InterfaceElement;
-    var accessor = enclosing.thisType
-        .lookUpSetter2(element.name, element.library, inherited: true);
+    var accessor = enclosing.thisType.lookUpSetter2(
+      element.name,
+      element.library,
+      inherited: true,
+    );
     return accessor == null
         ? null
         : (accessor.documentationComment ?? _lookupSetterDocs(accessor));
@@ -469,13 +492,19 @@ class Item {
       return InterfaceScope(_calcScope(element.enclosingElement)!, element);
     } else if (element is MethodElement) {
       return FormalParameterScope(
-          _calcScope(element.enclosingElement)!, element.parameters);
+        _calcScope(element.enclosingElement)!,
+        element.parameters,
+      );
     } else if (element is FunctionElement) {
       return FormalParameterScope(
-          _calcScope(element.enclosingElement)!, element.parameters);
+        _calcScope(element.enclosingElement)!,
+        element.parameters,
+      );
     } else if (element is ConstructorElement) {
       return ConstructorInitializerScope(
-          _calcScope(element.enclosingElement)!, element);
+        _calcScope(element.enclosingElement)!,
+        element,
+      );
     } else if (element is PropertyAccessorElement) {
       return LocalScope(_calcScope(element.enclosingElement)!)..add(element);
     } else if (element is FieldElement) {
@@ -585,7 +614,7 @@ class LibraryItemContainer extends Items
   final List<ExportedItem> exports = [];
 
   LibraryItemContainer(this.package, LibraryElement element, String name)
-      : super(null, element) {
+    : super(null, element) {
     nameOverride = name;
 
     var exportNamespace = element.exportNamespace;
@@ -598,28 +627,32 @@ class LibraryItemContainer extends Items
       if (e is InterfaceElement) {
         var interfaceElement = e;
 
-        var interfaceElementChildren =
-            addChild(InterfaceElementItems(this, interfaceElement));
+        var interfaceElementChildren = addChild(
+          InterfaceElementItems(this, interfaceElement),
+        );
 
         for (var child in interfaceElement.children.where((c) => c.isPublic)) {
           if (child.isSynthetic) continue;
 
-          interfaceElementChildren
-              .addChild(Item(interfaceElementChildren, child));
+          interfaceElementChildren.addChild(
+            Item(interfaceElementChildren, child),
+          );
         }
 
         interfaceElementChildren.sort();
       } else if (e is ExtensionElement) {
         var extensionElement = e;
 
-        var extensionElementChildren =
-            addChild(ExtensionElementItems(this, extensionElement));
+        var extensionElementChildren = addChild(
+          ExtensionElementItems(this, extensionElement),
+        );
 
         for (var child in extensionElement.children.where((c) => c.isPublic)) {
           if (child.isSynthetic) continue;
 
-          extensionElementChildren
-              .addChild(Item(extensionElementChildren, child));
+          extensionElementChildren.addChild(
+            Item(extensionElementChildren, child),
+          );
         }
 
         extensionElementChildren.sort();
@@ -706,29 +739,21 @@ enum GroupType implements Comparable<GroupType> {
     ElementKind.TOP_LEVEL_VARIABLE,
   }),
   function('Functions', 'function', {ElementKind.FUNCTION}),
-  functionTypeAlias(
-    'Function Type Aliases',
-    'function type alias',
-    {ElementKind.FUNCTION_TYPE_ALIAS},
-  ),
+  functionTypeAlias('Function Type Aliases', 'function type alias', {
+    ElementKind.FUNCTION_TYPE_ALIAS,
+  }),
   typeAlias('Type Aliases', 'type alias', {ElementKind.TYPE_ALIAS}),
 
   // container items
   $enum('Enums', 'enum', {ElementKind.ENUM}, containerType: true),
   $mixin('Mixins', 'mixin', {}, containerType: true),
   $class('Classes', 'class', {ElementKind.CLASS}, containerType: true),
-  $extension(
-    'Extensions',
-    'extension',
-    {ElementKind.EXTENSION},
-    containerType: true,
-  ),
-  $extensionType(
-    'Extension Types',
-    'extension type',
-    {ElementKind.EXTENSION_TYPE},
-    containerType: true,
-  ),
+  $extension('Extensions', 'extension', {
+    ElementKind.EXTENSION,
+  }, containerType: true),
+  $extensionType('Extension Types', 'extension type', {
+    ElementKind.EXTENSION_TYPE,
+  }, containerType: true),
   // todo: implement
   // $record('Records', 'record', {ElementKind.RECORD}, containerType: true),
 
@@ -939,7 +964,10 @@ class LinkedText {
 
   // A List of Strings and _ElementSpans.
   Iterable<dynamic> _chunks(
-      String fmt, List<_ElementSpan> spans, List<int> spanStarts) sync* {
+    String fmt,
+    List<_ElementSpan> spans,
+    List<int> spanStarts,
+  ) sync* {
     var fmtIndex = 0;
 
     for (var i = 0; i < spans.length; i++) {

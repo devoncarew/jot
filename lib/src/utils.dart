@@ -110,7 +110,8 @@ class Outline {
 
   String get asHtml {
     var buf = StringBuffer(
-        '<ul class="table-of-contents table-of-contents__left-border">\n');
+      '<ul class="table-of-contents table-of-contents__left-border">\n',
+    );
     for (var item in items) {
       buf.writeln(item.asHtml);
     }
@@ -142,7 +143,8 @@ class Heading {
     var buf = StringBuffer('<li>');
     var href = id == null ? '' : 'href="#$id"';
     buf.write(
-        '<a class="table-of-contents__link toc-highlight" $href>$label</a>');
+      '<a class="table-of-contents__link toc-highlight" $href>$label</a>',
+    );
     if (children.isNotEmpty) {
       buf.writeln();
       buf.writeln('<ul>');

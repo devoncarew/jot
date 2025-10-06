@@ -10,8 +10,11 @@ import 'src/html.dart';
 import 'src/markdown.dart';
 import 'src/utils.dart';
 
-typedef FileContentGenerator = Future<GenerationResults> Function(
-    Workspace workspace, WorkspaceFile thisFile);
+typedef FileContentGenerator =
+    Future<GenerationResults> Function(
+      Workspace workspace,
+      WorkspaceFile thisFile,
+    );
 
 class GenerationResults {
   final String contents;
@@ -21,7 +24,9 @@ class GenerationResults {
 }
 
 Future<GenerationResults> emptyContentGenerator(
-    Workspace workspace, WorkspaceFile thisFile) {
+  Workspace workspace,
+  WorkspaceFile thisFile,
+) {
   return Future.value(GenerationResults(''));
 }
 
@@ -96,10 +101,7 @@ class WorkspaceFile extends WorkspaceEntity {
   String toString() => 'DocFile $name';
 }
 
-enum FileType {
-  markdown,
-  dart;
-}
+enum FileType { markdown, dart }
 
 class WorkspaceSeparator extends WorkspaceEntity {
   WorkspaceSeparator(super.parent, super.name);
@@ -173,10 +175,15 @@ class Workspace extends WorkspaceDirectory {
   String? footer;
 
   Workspace(String name, {super.isPackage, required this.htmlTemplate})
-      : super(null, name) {
+    : super(null, name) {
     // Placeholder for the main file.
-    mainFile = WorkspaceFile(this, 'index.html', 'index.html',
-        emptyContentGenerator, FileType.markdown);
+    mainFile = WorkspaceFile(
+      this,
+      'index.html',
+      'index.html',
+      emptyContentGenerator,
+      FileType.markdown,
+    );
   }
 
   @override
@@ -201,37 +208,39 @@ class Workspace extends WorkspaceDirectory {
   }
 
   Future<String> generateWorkspacePage(
-      WorkspaceFile file, GenerationResults page) async {
+    WorkspaceFile file,
+    GenerationResults page,
+  ) async {
     // navbar
-    var navbarContent = [
-      mainFile!,
-      ...navFiles,
-    ].map((target) {
-      var active = '';
-      if (navFiles.contains(file) && target == file) {
-        active = ' navbar__link--active';
-      } else if (!navFiles.contains(file) && target == mainFile) {
-        active = ' navbar__link--active';
-      }
+    var navbarContent = [mainFile!, ...navFiles]
+        .map((target) {
+          var active = '';
+          if (navFiles.contains(file) && target == file) {
+            active = ' navbar__link--active';
+          } else if (!navFiles.contains(file) && target == mainFile) {
+            active = ' navbar__link--active';
+          }
 
-      var href = 'href="${pathTo(target, from: file)}"';
-      var name = target == mainFile ? 'Docs' : target.name;
-      return '<a $href class="navbar__item navbar__link$active" data-jot>$name</a>';
-    }).join(' ');
+          var href = 'href="${pathTo(target, from: file)}"';
+          var name = target == mainFile ? 'Docs' : target.name;
+          return '<a $href class="navbar__item navbar__link$active" data-jot>$name</a>';
+        })
+        .join(' ');
 
     // breadcrumbs
     var breadcrumbs = file.breadcrumbs;
     if (breadcrumbs.length == 1) {
       breadcrumbs = [];
     }
-    var breadcrumbsContent = breadcrumbs.map((entity) {
-      var target = entity is WorkspaceFile
-          ? entity
-          : (entity as WorkspaceDirectory).mainFile!;
-      var href = 'href="${pathTo(target, from: file)}"';
+    var breadcrumbsContent = breadcrumbs
+        .map((entity) {
+          var target = entity is WorkspaceFile
+              ? entity
+              : (entity as WorkspaceDirectory).mainFile!;
+          var href = 'href="${pathTo(target, from: file)}"';
 
-      if (workspace.mainFile == target) {
-        return '''
+          if (workspace.mainFile == target) {
+            return '''
           <li class="breadcrumbs__item">
             <a class="breadcrumbs__link" $href>
               <svg viewBox="0 0 24 24" class="breadcrumbHomeIcon">
@@ -242,17 +251,21 @@ class Workspace extends WorkspaceDirectory {
               </svg>
             </a>
           </li>''';
-      } else if (file == target) {
-        return '<li class="breadcrumbs__item breadcrumbs__item--active">'
-            '<span class="breadcrumbs__link">${entity.name}</span></li>';
-      } else {
-        return '<li class="breadcrumbs__item">'
-            '<a $href class="breadcrumbs__link">${entity.name}</a></li>';
-      }
-    }).join(' ');
+          } else if (file == target) {
+            return '<li class="breadcrumbs__item breadcrumbs__item--active">'
+                '<span class="breadcrumbs__link">${entity.name}</span></li>';
+          } else {
+            return '<li class="breadcrumbs__item">'
+                '<a $href class="breadcrumbs__link">${entity.name}</a></li>';
+          }
+        })
+        .join(' ');
 
-    var pathPrefix =
-        p.split(file.path).skip(1).map((e) => '..').join(p.separator);
+    var pathPrefix = p
+        .split(file.path)
+        .skip(1)
+        .map((e) => '..')
+        .join(p.separator);
     if (pathPrefix.isNotEmpty) pathPrefix = '$pathPrefix/';
 
     return htmlTemplate.templateSubtitute(
@@ -270,24 +283,15 @@ class Workspace extends WorkspaceDirectory {
   String generateNavData() {
     const encoder = JsonEncoder.withIndent('');
 
-    var navItems = [
-      mainFile!,
-      ...children,
-    ].map(_generateNavData).toList();
+    var navItems = [mainFile!, ...children].map(_generateNavData).toList();
     return encoder.convert(navItems);
   }
 
   Map<String, dynamic> _generateNavData(WorkspaceEntity page) {
     if (page is WorkspaceFile) {
-      return {
-        'n': page.name,
-        'h': page.path,
-      };
+      return {'n': page.name, 'h': page.path};
     } else if (page is WorkspaceSeparator) {
-      return {
-        'n': page.name,
-        't': 'separator',
-      };
+      return {'n': page.name, 't': 'separator'};
     } else if (page is WorkspaceDirectory) {
       final mainFile = page.mainFile!;
 
@@ -323,39 +327,65 @@ class Workspace extends WorkspaceDirectory {
     }
     workspace.description = pubspec['description'] as String?;
 
-    for (var file in dir
-        .listSyncSorted()
-        .whereType<File>()
-        .where((f) => f.publicMarkdownFile)) {
+    for (var file in dir.listSyncSorted().whereType<File>().where(
+      (f) => f.publicMarkdownFile,
+    )) {
       var name = p.relative(file.path, from: dir.path);
-      var title =
-          titleCase(p.basenameWithoutExtension(file.path).toLowerCase());
+      var title = titleCase(
+        p.basenameWithoutExtension(file.path).toLowerCase(),
+      );
 
       var path = '${p.withoutExtension(name)}.html';
       if (name == 'README.md') {
-        workspace.mainFile = WorkspaceFile(workspace, title, 'index.html',
-            createMarkdownGenerator(file), FileType.markdown);
+        workspace.mainFile = WorkspaceFile(
+          workspace,
+          title,
+          'index.html',
+          createMarkdownGenerator(file),
+          FileType.markdown,
+        );
       } else if (name == 'CHANGELOG.md' || name == 'LICENSE.md') {
-        workspace.navFiles.add(WorkspaceFile(workspace, title, path,
-            createMarkdownGenerator(file), FileType.markdown));
+        workspace.navFiles.add(
+          WorkspaceFile(
+            workspace,
+            title,
+            path,
+            createMarkdownGenerator(file),
+            FileType.markdown,
+          ),
+        );
       } else {
-        workspace.addChild(WorkspaceFile(workspace, title, path,
-            createMarkdownGenerator(file), FileType.markdown));
+        workspace.addChild(
+          WorkspaceFile(
+            workspace,
+            title,
+            path,
+            createMarkdownGenerator(file),
+            FileType.markdown,
+          ),
+        );
       }
     }
 
     var docDir = Directory(p.join(dir.path, 'doc'));
     if (docDir.existsSync()) {
-      for (var file in docDir
-          .listSyncSorted()
-          .whereType<File>()
-          .where((f) => f.publicMarkdownFile)) {
+      for (var file in docDir.listSyncSorted().whereType<File>().where(
+        (f) => f.publicMarkdownFile,
+      )) {
         var name = file.name;
-        var title =
-            titleCase(p.basenameWithoutExtension(file.path).toLowerCase());
+        var title = titleCase(
+          p.basenameWithoutExtension(file.path).toLowerCase(),
+        );
         var path = '${p.withoutExtension(name)}.html';
-        workspace.addChild(WorkspaceFile(workspace, title, path,
-            createMarkdownGenerator(file), FileType.markdown));
+        workspace.addChild(
+          WorkspaceFile(
+            workspace,
+            title,
+            path,
+            createMarkdownGenerator(file),
+            FileType.markdown,
+          ),
+        );
       }
     }
 

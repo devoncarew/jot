@@ -20,10 +20,8 @@ class ElementDisplayStringBuilder {
   /// Whether to allow a display string to be written in multiple lines.
   final bool _multiline;
 
-  ElementDisplayStringBuilder(
-    this.linkedText, {
-    bool multiline = false,
-  }) : _multiline = multiline;
+  ElementDisplayStringBuilder(this.linkedText, {bool multiline = false})
+    : _multiline = multiline;
 
   @override
   String toString() => linkedText.toString();
@@ -76,8 +74,11 @@ class ElementDisplayStringBuilder {
 
     _write(element.displayName);
 
-    _writeFormalParameters(element.parameters,
-        forElement: true, allowMultiline: true);
+    _writeFormalParameters(
+      element.parameters,
+      forElement: true,
+      allowMultiline: true,
+    );
   }
 
   void writeDynamicType() {
@@ -144,8 +145,11 @@ class ElementDisplayStringBuilder {
     _write(element.displayName);
     _writeTypeParameters(element.typeParameters);
     _write('._');
-    _writeFormalParameters(element.primaryConstructor.parameters,
-        forElement: true, allowMultiline: true);
+    _writeFormalParameters(
+      element.primaryConstructor.parameters,
+      forElement: true,
+      allowMultiline: true,
+    );
     _writeTypesIfNotEmpty(' implements ', element.interfaces);
   }
 
@@ -544,9 +548,11 @@ class ElementDisplayStringBuilder {
         const unicodeSubscriptZero = 0x2080;
         const unicodeZero = 0x30;
 
-        var subscript = String.fromCharCodes('$counter'.codeUnits.map((n) {
-          return unicodeSubscriptZero + (n - unicodeZero);
-        }));
+        var subscript = String.fromCharCodes(
+          '$counter'.codeUnits.map((n) {
+            return unicodeSubscriptZero + (n - unicodeZero);
+          }),
+        );
 
         name = typeParameter.name + subscript;
       }

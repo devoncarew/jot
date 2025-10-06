@@ -23,9 +23,7 @@ class Analyzer {
         resourceProvider ?? PhysicalResourceProvider.INSTANCE;
 
     _collection = AnalysisContextCollection(
-      includedPaths: [
-        ...includedPaths.map((path) => p.join(path, 'lib')),
-      ],
+      includedPaths: [...includedPaths.map((path) => p.join(path, 'lib'))],
       resourceProvider: this.resourceProvider,
     );
   }
@@ -38,8 +36,9 @@ class Analyzer {
 
   Stream<ResolvedLibraryResult> resolvedPublicLibraries() async* {
     for (var file in _publicFiles) {
-      var lib = await context.currentSession.getResolvedLibrary(file.path)
-          as ResolvedLibraryResult;
+      var lib =
+          await context.currentSession.getResolvedLibrary(file.path)
+              as ResolvedLibraryResult;
 
       // TODO: Filter out parts?
 
@@ -51,8 +50,9 @@ class Analyzer {
     var context = contextFor(path);
 
     for (var file in context.publicFiles) {
-      var lib = await context.currentSession.getResolvedLibrary(file.path)
-          as ResolvedLibraryResult;
+      var lib =
+          await context.currentSession.getResolvedLibrary(file.path)
+              as ResolvedLibraryResult;
 
       // TODO: Filter out parts?
 
@@ -70,11 +70,12 @@ class Analyzer {
 
     final currentMillis = DateTime.now().millisecondsSinceEpoch;
 
-    for (var path in context.contextRoot
-        .analyzedFiles()
-        .where((path) => path.endsWith('.dart'))) {
-      var modificationStamp =
-          context.contextRoot.resourceProvider.getFile(path).modificationStamp;
+    for (var path in context.contextRoot.analyzedFiles().where(
+      (path) => path.endsWith('.dart'),
+    )) {
+      var modificationStamp = context.contextRoot.resourceProvider
+          .getFile(path)
+          .modificationStamp;
 
       if (modificationStamp > _lastCheckedMillis) {
         hasChanges = true;
@@ -94,11 +95,12 @@ class Analyzer {
       var root = context.contextRoot;
       var src = root.root.getChildAssumingFolder('src');
 
-      var dartFiles = context.contextRoot
-          .analyzedFiles()
-          .where((path) => path.endsWith('.dart'))
-          .toList()
-        ..sort();
+      var dartFiles =
+          context.contextRoot
+              .analyzedFiles()
+              .where((path) => path.endsWith('.dart'))
+              .toList()
+            ..sort();
 
       for (var path in dartFiles) {
         if (src.contains(path)) continue;
@@ -120,11 +122,12 @@ extension AnalysisContextExtension on AnalysisContext {
     var root = contextRoot;
     var src = root.root.getChildAssumingFolder('src');
 
-    var dartFiles = contextRoot
-        .analyzedFiles()
-        .where((path) => path.endsWith('.dart'))
-        .toList()
-      ..sort();
+    var dartFiles =
+        contextRoot
+            .analyzedFiles()
+            .where((path) => path.endsWith('.dart'))
+            .toList()
+          ..sort();
 
     for (var path in dartFiles) {
       if (src.contains(path)) continue;
