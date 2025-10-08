@@ -24,12 +24,13 @@ class DocServer { … }
 class Jot { … }
 ```
 
-- constructor `Jot({required Directory inDir, required Directory outDir, bool signature, Logger? logger})`
+- constructor `Jot({required Directory inDir, required Directory outDir, bool summary, bool signature, Logger? logger})`
 - field `Analyzer analyzer`
 - field `HtmlTemplate htmlTemplate`
 - field `Directory inDir`
 - field `Logger logger`
 - field `Directory outDir`
 - field `bool signature`
+- field `bool summary`
 - method `Future<void> generate()`
 - method `Future<DocServer> serve(int port)`

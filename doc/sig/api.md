@@ -141,6 +141,7 @@ class Item { … }
 - accessor `TopLevelVariableElement get asTopLevelVariableElement`
 - accessor `TypeAliasElement get asTypeAlias`
 - accessor `String get debugPath`
+- accessor `bool get hasDocs`
 - accessor `bool get isStatic`
 - accessor `LibraryItemContainer? get libraryParent`
 - accessor `String get name`

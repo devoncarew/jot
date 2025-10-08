@@ -41,8 +41,14 @@ void main(List<String> args) async {
   }
 
   final signature = results['signature'] as bool;
+  final summary = results['summary'] as bool;
 
-  var jot = Jot(inDir: inDir, outDir: outDir, signature: signature);
+  var jot = Jot(
+    inDir: inDir,
+    outDir: outDir,
+    summary: summary,
+    signature: signature,
+  );
 
   if (servePort == null) {
     await jot.generate();
@@ -64,6 +70,11 @@ ArgParser createArgsParser() {
       abbr: 'o',
       defaultsTo: 'doc/api',
       help: 'Configure the output directory.',
+    )
+    ..addFlag(
+      'summary',
+      negatable: false,
+      help: 'Write an LLM-friendly markdown summary of the API to doc/summary.',
     )
     ..addFlag(
       'signature',
