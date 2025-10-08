@@ -1,3 +1,8 @@
+/// Used to model the desired generation output.
+///
+/// See [Workspace].
+library;
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -167,6 +172,7 @@ class WorkspaceDirectory extends WorkspaceEntity {
   }
 }
 
+/// A model of the generation output.
 class Workspace extends WorkspaceDirectory {
   final Api api = Api();
   final HtmlTemplate htmlTemplate;

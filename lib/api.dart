@@ -347,6 +347,8 @@ class Item {
 
   late String? docs = _calculateDocs();
 
+  bool get hasDocs => docs != null;
+
   ClassElement get asClass => element as ClassElement;
 
   MixinElement get asMixin => element as MixinElement;
