@@ -23,8 +23,8 @@ class Jot {
   final Directory inDir;
   final Directory outDir;
 
-  /// Create an LLM-friendly markdown summary of the API in doc/summary.
-  final bool summary;
+  /// Create an LLM-friendly markdown summary of the API in doc/markdown.
+  final bool markdown;
 
   /// Create a API signature files in doc/sig.
   final bool signature;
@@ -37,7 +37,7 @@ class Jot {
   Jot({
     required this.inDir,
     required this.outDir,
-    this.summary = true,
+    this.markdown = false,
     this.signature = false,
     Logger? logger,
   }) : logger = logger ?? Logger.standard();
@@ -74,8 +74,11 @@ class Jot {
     );
     await generator.generate();
 
-    if (summary) {
-      final summaryOut = Directory(p.join(outDir.parent.path, 'summary'))
+    if (markdown) {
+      logger.stdout('');
+      logger.stdout('Generating markdown summary...');
+
+      final summaryOut = Directory(p.join(outDir.parent.path, 'markdown'))
         ..createSync();
       final summaryGenerator = LLMSummary(
         workspace: workspace,
@@ -87,6 +90,9 @@ class Jot {
     }
 
     if (signature) {
+      logger.stdout('');
+      logger.stdout('Generating API signature...');
+
       final sigOut = Directory(p.join(outDir.parent.path, 'sig'))..createSync();
       final sig = MarkdownSignature(
         workspace: workspace,

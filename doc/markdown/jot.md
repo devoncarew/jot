@@ -24,14 +24,14 @@ class DocServer { … }
 class Jot { … }
 ```
 
-- `Jot({required Directory inDir, required Directory outDir, bool summary, bool signature, Logger? logger})`
+- `Jot({required Directory inDir, required Directory outDir, bool markdown, bool signature, Logger? logger})`
 - `Analyzer analyzer`
 - `HtmlTemplate htmlTemplate`
 - `Directory inDir`
 - `Logger logger`
+- `bool markdown`:
+  Create an LLM-friendly markdown summary of the API in doc/markdown.
 - `Directory outDir`
 - `bool signature`: Create a API signature files in doc/sig.
-- `bool summary`:
-  Create an LLM-friendly markdown summary of the API in doc/summary.
 - `Future<void> generate()`
 - `Future<DocServer> serve(int port)`

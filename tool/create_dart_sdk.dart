@@ -7,6 +7,7 @@ import 'package:jot/api.dart';
 import 'package:jot/src/analysis.dart';
 import 'package:jot/src/generate.dart';
 import 'package:jot/src/html.dart';
+import 'package:jot/src/llm_summary.dart';
 import 'package:jot/src/signature.dart';
 import 'package:jot/src/utils.dart';
 import 'package:jot/workspace.dart';
@@ -103,13 +104,15 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   var workspace = Workspace('Dart SDK', htmlTemplate: htmlTemplate);
   workspace.version = version;
   workspace.footer = 'Dart SDK $version';
+  final sdkReadmeFile = File(p.join(sdkDir.path, 'lib', 'api_readme.md'));
   workspace.mainFile = WorkspaceFile(
     workspace,
     'Readme',
     'index.html',
-    createMarkdownGenerator(File(p.join(sdkDir.path, 'lib', 'api_readme.md'))),
+    createMarkdownGenerator(sdkReadmeFile),
     FileType.markdown,
   );
+  workspace.description = sdkReadmeFile.readAsStringSync();
 
   final api = workspace.api;
 
@@ -218,6 +221,17 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     stats: stats,
   );
   sig.generate();
+
+  // generate the markdown summary files
+  final summaryOut = Directory(p.join(outDir.path, '..', 'sdk_markdown'))
+    ..createSync();
+  final summary = LLMSummary(
+    workspace: workspace,
+    outDir: summaryOut,
+    logger: log,
+    stats: stats,
+  );
+  summary.generate();
 
   stats.stop();
 
