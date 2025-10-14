@@ -76,8 +76,7 @@ ArgParser createArgsParser() {
       aliases: ['md', 'llm'],
       negatable: true,
       defaultsTo: true,
-      help:
-          'Write an LLM-friendly markdown summary of the API to doc/summaries.',
+      help: 'Include LLM-friendly markdown summaries of the API.',
     )
     ..addFlag(
       'signature',
