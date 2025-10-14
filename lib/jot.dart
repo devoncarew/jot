@@ -78,7 +78,7 @@ class Jot {
       logger.stdout('');
       logger.stdout('Generating markdown summary...');
 
-      final summaryOut = Directory(p.join(outDir.parent.path, 'markdown'))
+      final summaryOut = Directory(p.join(outDir.parent.path, 'summaries'))
         ..createSync();
       final summaryGenerator = LLMSummary(
         workspace: workspace,

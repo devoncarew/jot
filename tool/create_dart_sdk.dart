@@ -223,8 +223,7 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   sig.generate();
 
   // generate the markdown summary files
-  final summaryOut = Directory(p.join(outDir.path, '..', 'sdk_markdown'))
-    ..createSync();
+  final summaryOut = Directory(p.join(outDir.path, 'summaries'))..createSync();
   final summary = LLMSummary(
     workspace: workspace,
     outDir: summaryOut,
