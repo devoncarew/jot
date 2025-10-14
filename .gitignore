@@ -5,6 +5,7 @@ pubspec.lock
 
 doc/api/
 doc/sdk/
+doc/sdk_markdown/
 
 lib/resources/script.js.deps
 lib/resources/script.js.map

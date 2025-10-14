@@ -69,7 +69,7 @@ class LLMSummary {
     out.writeln();
 
     if (package.description != null) {
-      out.writeln('${package.description}');
+      out.writeln(package.description!.trimRight());
     }
 
     out.writeln();
@@ -77,6 +77,10 @@ class LLMSummary {
     out.writeln();
 
     final wroteFiles = <File>{};
+
+    // TODO: Disambiguate this from any 'index' library in the package.
+    final indexFile = File(p.join(dir.path, 'index.md'));
+    logger.stdout('  ${p.relative(indexFile.path)}');
 
     for (var library in package.libraries) {
       final filePath =
@@ -94,10 +98,9 @@ class LLMSummary {
       logger.stdout('  ${p.relative(file.path)}');
     }
 
-    final packageFile = File(
-      p.join(dir.path, '${package.name.replaceAll(':', '_')}.md'),
-    );
-    packageFile.writeAsStringSync(out.toString());
+    // Emit the index file.
+    indexFile.writeAsStringSync(out.toString());
+    wroteFiles.add(indexFile);
 
     return wroteFiles;
   }

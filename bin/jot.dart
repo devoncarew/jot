@@ -41,12 +41,12 @@ void main(List<String> args) async {
   }
 
   final signature = results['signature'] as bool;
-  final summary = results['summary'] as bool;
+  final markdown = results['markdown'] as bool;
 
   var jot = Jot(
     inDir: inDir,
     outDir: outDir,
-    summary: summary,
+    markdown: markdown,
     signature: signature,
   );
 
@@ -72,9 +72,12 @@ ArgParser createArgsParser() {
       help: 'Configure the output directory.',
     )
     ..addFlag(
-      'summary',
-      negatable: false,
-      help: 'Write an LLM-friendly markdown summary of the API to doc/summary.',
+      'markdown',
+      aliases: ['md', 'llm'],
+      negatable: true,
+      defaultsTo: true,
+      help:
+          'Write an LLM-friendly markdown summary of the API to doc/summaries.',
     )
     ..addFlag(
       'signature',
