@@ -47,7 +47,9 @@ void main(List<String> args) async {
 Future<void> generate(Directory sdkDir, Directory outDir) async {
   var log = Logger.standard();
 
-  if (!outDir.existsSync()) outDir.createSync(recursive: true);
+  if (!outDir.existsSync()) {
+    outDir.createSync(recursive: true);
+  }
 
   var versionFile = File(p.join(sdkDir.path, 'version'));
   final version = _parserSdkVersion(versionFile);
@@ -223,10 +225,9 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
   sig.generate();
 
   // generate the markdown summary files
-  final summaryOut = Directory(p.join(outDir.path, 'summaries'))..createSync();
   final summary = LLMSummary(
     workspace: workspace,
-    outDir: summaryOut,
+    outDir: outDir,
     logger: log,
     stats: stats,
   );

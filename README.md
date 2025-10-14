@@ -23,7 +23,7 @@ usage: dart bin/jot.dart <options> [<directory>]
 -h, --help             Print this command help.
 -o, --output           Configure the output directory.
                        (defaults to "doc/api")
-    --[no-]markdown    Write an LLM-friendly markdown summary of the API to doc/summaries.
+    --[no-]markdown    Include LLM-friendly markdown summaries of the API.
                        (defaults to on)
     --signature        Write the package API in markdown format to doc/sig.
     --serve=<port>     Serve live docs from the documented package.

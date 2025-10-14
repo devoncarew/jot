@@ -29,7 +29,6 @@ class LLMSummary {
     final api = workspace.api;
     final packages = api.packages;
 
-    final existingFiles = _discoverExistingGeneratedFiles(outDir);
     final wroteFiles = <String>{};
 
     if (packages.length == 1) {
@@ -42,25 +41,6 @@ class LLMSummary {
         wroteFiles.addAll(wrote.map((file) => file.absolute.path));
       }
     }
-
-    // delete older files that were not re-generated
-    for (final file in existingFiles.where(
-      (file) => !wroteFiles.contains(file.absolute.path),
-    )) {
-      file.deleteSync();
-    }
-  }
-
-  Set<File> _discoverExistingGeneratedFiles(Directory dir) {
-    return dir
-        .listSync(recursive: true, followLinks: false)
-        .whereType<File>()
-        .where((file) => file.path.endsWith('.md'))
-        .where((file) {
-          final content = file.readAsStringSync();
-          return content.startsWith('# library ');
-        })
-        .toSet();
   }
 
   Set<File> _generatePackage(Package package, Directory dir) {
@@ -111,7 +91,7 @@ class LLMSummary {
     out.writeln('# Library: ${library.name}');
     out.writeln();
 
-    // todo: we should do some escaping here
+    // TODO: we should do some escaping here
     if (library.docs != null) {
       out.writeln(library.docs);
       out.writeln();
