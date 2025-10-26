@@ -355,6 +355,7 @@ class Item {
 
   ExtensionElement get asExtension => element as ExtensionElement;
 
+  // ignore: experimental_member_use
   ExtensionTypeElement get asExtensionType => element as ExtensionTypeElement;
 
   EnumElement get asEnum => element as EnumElement;

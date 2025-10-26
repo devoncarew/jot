@@ -84,6 +84,7 @@ class TestProject {
   Items extensionTypeNamed(String name) =>
       firstLibrary.allChildren.firstWhere(
             (item) =>
+                // ignore: experimental_member_use
                 item.element is ExtensionTypeElement &&
                 item.element.name == name,
           )

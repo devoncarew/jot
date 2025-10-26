@@ -140,6 +140,7 @@ class ElementDisplayStringBuilder {
     _writeType(element.extendedType);
   }
 
+  // ignore: experimental_member_use
   void writeExtensionTypeElement(ExtensionTypeElement element) {
     _write('extension type ');
     _write(element.displayName);
