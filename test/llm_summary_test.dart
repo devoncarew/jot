@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:jot/api.dart';
-import 'package:jot/src/signature.dart';
+import 'package:jot/src/llm_summary.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'support.dart';
 
-// Signature (--sig) integration tests using test/fixtures/demo.
+// LLM markdown summary integration tests using test/fixtures/demo.
 
 void main() {
   group('signature', () {
@@ -40,7 +40,7 @@ void main() {
     }
 
     test('demo.dart', () {
-      final sig = MarkdownSignature(
+      final sig = LLMSummary(
         workspace: demoProject.workspace,
         outDir: tempDir!,
         logger: NullLogger(),
@@ -51,7 +51,7 @@ void main() {
     });
 
     test('modifiers_a.dart', () {
-      final sig = MarkdownSignature(
+      final sig = LLMSummary(
         workspace: demoProject.workspace,
         outDir: tempDir!,
         logger: NullLogger(),
@@ -62,7 +62,7 @@ void main() {
     });
 
     test('modifiers_b.dart', () {
-      final sig = MarkdownSignature(
+      final sig = LLMSummary(
         workspace: demoProject.workspace,
         outDir: tempDir!,
         logger: NullLogger(),
@@ -75,6 +75,6 @@ void main() {
 }
 
 String golden(String sigName) {
-  final path = p.join('test', 'fixtures', 'demo', 'doc', 'sig', sigName);
+  final path = p.join('test', 'fixtures', 'demo', 'doc', 'api', sigName);
   return File(path).readAsStringSync();
 }

@@ -1,4 +1,6 @@
-# library demo.dart
+# Library: demo.dart
+
+A sample library to exercise most Dart language features.
 
 ## Members
 
@@ -43,210 +45,200 @@
 - type alias `typedef JSAnyRepType = Object`
 - type alias `typedef ListMapper<X> = Map<X, List<X>>`
 
-## Enums
+## Enum: Vehicle
 
-### enum Vehicle
-
-```
+```dart
 enum Vehicle implements Comparable<Vehicle> { … }
 ```
 
-- constructor `Vehicle({required int tires, required int passengers, required int carbonPerKilometer})`
-- enum value `bicycle`
-- enum value `bus`
-- enum value `car`
-- field `int carbonPerKilometer`
-- field `int passengers`
-- field `int tires`
-- accessor `int get carbonFootprint`
-- accessor `bool get isTwoWheeled`
-- method `int compareTo(Vehicle other)`
+- `Vehicle({required int tires, required int passengers, required int carbonPerKilometer})`
+- `bicycle`
+- `bus`
+- `car`
+- `int carbonPerKilometer`
+- `int passengers`
+- `int tires`
+- `int get carbonFootprint`
+- `bool get isTwoWheeled`
+- `int compareTo(Vehicle other)`: Compares this object to another object.
 
-## Mixins
+## Mixin: MusicalPerformer
 
-### mixin MusicalPerformer
-
-```
+```dart
 mixin MusicalPerformer on Musician { … }
 ```
 
-## Classes
+## Class: BicycleSealed
 
-### class BicycleSealed
-
-```
+```dart
 class BicycleSealed extends VehicleSealed { … }
 ```
 
-### class Cache
+## Class: Cache
 
-```
+```dart
 abstract class Cache<T> { … }
 ```
 
-- method `T getByKey(String key)`
-- method `void setByKey(String key, T value)`
+- `T getByKey(String key)`
+- `void setByKey(String key, T value)`
 
-### class CarSealed
+## Class: CarSealed
 
-```
+```dart
 class CarSealed extends VehicleSealed { … }
 ```
 
-### class Describable
+## Class: Describable
 
-```
+```dart
 abstract class Describable { … }
 ```
 
-- method `void describe()`
-- method `void describeWithEmphasis()`
+- `void describe()`
+- `void describeWithEmphasis()`
 
-### class Foo
+## Class: Foo
 
-```
+```dart
 class Foo<T extends Object> { … }
 ```
 
-### class JSObjectRepType
+## Class: JSObjectRepType
 
-```
+```dart
 abstract class JSObjectRepType { … }
 ```
 
-### class MockSpaceship
+## Class: MockSpaceship
 
-```
+```dart
 class MockSpaceship implements Spacecraft { … }
 ```
 
-- field `DateTime? launchDate`
-- field `String name`
-- accessor `int? get launchYear`
-- method `void describe()`
+- `DateTime? launchDate`
+- `String name`
+- `int? get launchYear`
+- `void describe()`
 
-### class Musician
+## Class: Musician
 
-```
+```dart
 class Musician { … }
 ```
 
-### class Orbiter
+## Class: Orbiter
 
-```
+```dart
 class Orbiter extends Spacecraft { … }
 ```
 
-- constructor `Orbiter(String name, DateTime launchDate, double altitude)`
-- field `double altitude`
+- `Orbiter(String name, DateTime launchDate, double altitude)`
+- `double altitude`
 
-### class Point
+## Class: Point
 
-```
+```dart
 class Point { … }
 ```
 
-- constructor `Point(double x, double y)`
-- constructor `Point.fromJson(Map<String, Object> json)`
-- constructor `Point.origin()`
-- static field `Point zero`
-- static method `double distanceBetween(Point a, Point b)`
-- field `double x`
-- field `double y`
+- `Point(double x, double y)`
+- `Point.fromJson(Map<String, Object> json)`
+- `Point.origin()`
+- static `Point zero`
+- static `double distanceBetween(Point a, Point b)`
+- `double x`
+- `double y`
 
-### class SingerDancer
+## Class: SingerDancer
 
-```
+```dart
 class SingerDancer extends Musician with MusicalPerformer { … }
 ```
 
-### class Spacecraft
+## Class: Spacecraft
 
-```
+```dart
 class Spacecraft { … }
 ```
 
-- constructor `Spacecraft(String name, DateTime? launchDate)`
-- constructor `Spacecraft.unlaunched(String name)`
-- field `DateTime? launchDate`
-- field `String name`
-- accessor `int? get launchYear`
-- method `void describe()`
+- `Spacecraft(String name, DateTime? launchDate)`
+- `Spacecraft.unlaunched(String name)`
+- `DateTime? launchDate`
+- `String name`
+- `int? get launchYear`
+- `void describe()`
 
-### class TruckSealed
+## Class: TruckSealed
 
-```
+```dart
 class TruckSealed implements VehicleSealed { … }
 ```
 
-### class Vector2d
+## Class: Vector2d
 
-```
+```dart
 class Vector2d { … }
 ```
 
-- constructor `Vector2d(double x, double y)`
-- field `double x`
-- field `double y`
+- `Vector2d(double x, double y)`
+- `double x`
+- `double y`
 
-### class Vector3d
+## Class: Vector3d
 
-```
+```dart
 class Vector3d extends Vector2d { … }
 ```
 
-- constructor `Vector3d(double x, double y, double z)`
-- field `double z`
+- `Vector3d(double x, double y, double z)`
+- `double z`
 
-### class VehicleSealed
+## Class: VehicleSealed
 
-```
+```dart
 sealed class VehicleSealed { … }
 ```
 
-## Extensions
+## Extension: NumberParsing
 
-### extension NumberParsing
-
-```
+```dart
 extension NumberParsing on String { … }
 ```
 
-- method `double parseDouble()`
-- method `int parseInt()`
+- `double parseDouble()`
+- `int parseInt()`
 
-## Extension Types
-
-### extension type EventInit
+## Extension type: EventInit
 
 EventInit
 
-- constructor `EventInit({bool bubbles, bool cancelable, bool composed})`
-- accessor `set bubbles=(bool value)`
-- accessor `bool get bubbles`
-- accessor `set cancelable=(bool value)`
-- accessor `bool get cancelable`
-- accessor `set composed=(bool value)`
-- accessor `bool get composed`
+- `EventInit({bool bubbles, bool cancelable, bool composed})`
+- `set bubbles=(bool value)`
+- `bool get bubbles`
+- `set cancelable=(bool value)`
+- `bool get cancelable`
+- `set composed=(bool value)`
+- `bool get composed`
 
-### extension type JSAny
+## Extension type: JSAny
 
 JSAny
 
-### extension type JSObject
+## Extension type: JSObject
 
 JSObject
 
-- constructor `JSObject.fromInteropObject(Object interopObject)`
+- `JSObject.fromInteropObject(Object interopObject)`
 
-### extension type ProgressEventInit
+## Extension type: ProgressEventInit
 
 ProgressEventInit
 
-- constructor `ProgressEventInit({bool lengthComputable, int loaded, int total})`
-- accessor `set lengthComputable=(bool value)`
-- accessor `bool get lengthComputable`
-- accessor `set loaded=(int value)`
-- accessor `int get loaded`
-- accessor `set total=(int value)`
-- accessor `int get total`
+- `ProgressEventInit({bool lengthComputable, int loaded, int total})`
+- `set lengthComputable=(bool value)`
+- `bool get lengthComputable`
+- `set loaded=(int value)`
+- `int get loaded`
+- `set total=(int value)`
+- `int get total`

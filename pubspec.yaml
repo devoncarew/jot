@@ -28,3 +28,8 @@ dev_dependencies:
   dart_flutter_team_lints: ^3.0.0
   http: ^1.1.0
   test: ^1.23.0
+
+# Test packages.
+workspace:
+  - test/fixtures/demo
+  - test/fixtures/server

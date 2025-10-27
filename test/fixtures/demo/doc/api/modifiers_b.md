@@ -1,4 +1,4 @@
-# library modifiers_b.dart
+# Library: modifiers_b.dart
 
 ## Members
 
@@ -7,37 +7,35 @@
 - accessor `VehicleInterface get myVehicle2`
 - accessor `set myVehicle2=(VehicleInterface _myVehicle2)`
 
-## Classes
+## Class: Car
 
-### class Car
-
-```
+```dart
 class Car extends Vehicle { … }
 ```
 
-- field `int passengers`
-- method `void moveForward(int meters)`
+- `int passengers`
+- `void moveForward(int meters)`
 
-### class CarBase
+## Class: CarBase
 
-```
+```dart
 class CarBase extends VehicleBase { … }
 ```
 
-- field `int passengers`
+- `int passengers`
 
-### class MockVehicle
+## Class: MockVehicle
 
-```
+```dart
 class MockVehicle implements Vehicle { … }
 ```
 
-- method `void moveForward(int meters)`
+- `void moveForward(int meters)`
 
-### class MockVehicleInterface
+## Class: MockVehicleInterface
 
-```
+```dart
 class MockVehicleInterface implements VehicleInterface { … }
 ```
 
-- method `void moveForward(int meters)`
+- `void moveForward(int meters)`

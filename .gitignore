@@ -9,7 +9,8 @@ doc/sdk/
 lib/resources/script.js.deps
 lib/resources/script.js.map
 
-test/fixtures/demo/doc/api/
+test/fixtures/demo/doc/api/_resources/
+test/fixtures/demo/doc/api/**/*.html
 
 .firebase/
 site/analyzer/

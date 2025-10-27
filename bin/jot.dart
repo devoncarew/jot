@@ -40,15 +40,9 @@ void main(List<String> args) async {
     servePort = int.tryParse(results['serve'] as String);
   }
 
-  final signature = results['signature'] as bool;
   final markdown = results['markdown'] as bool;
 
-  var jot = Jot(
-    inDir: inDir,
-    outDir: outDir,
-    markdown: markdown,
-    signature: signature,
-  );
+  var jot = Jot(inDir: inDir, outDir: outDir, markdown: markdown);
 
   if (servePort == null) {
     await jot.generate();
@@ -77,12 +71,6 @@ ArgParser createArgsParser() {
       negatable: true,
       defaultsTo: true,
       help: 'Include LLM-friendly markdown summaries of the API.',
-    )
-    ..addFlag(
-      'signature',
-      aliases: ['sig'],
-      negatable: false,
-      help: 'Write the package API in markdown format to doc/sig.',
     )
     ..addOption(
       'serve',

@@ -15,7 +15,6 @@ import 'src/generate.dart';
 import 'src/html.dart';
 import 'src/llm_summary.dart';
 import 'src/server.dart';
-import 'src/signature.dart';
 import 'src/utils.dart';
 import 'workspace.dart';
 
@@ -26,9 +25,6 @@ class Jot {
   /// Create an LLM-friendly markdown summary of the API in doc/markdown.
   final bool markdown;
 
-  /// Create a API signature files in doc/sig.
-  final bool signature;
-
   final Logger logger;
 
   late final Analyzer analyzer;
@@ -38,7 +34,6 @@ class Jot {
     required this.inDir,
     required this.outDir,
     this.markdown = false,
-    this.signature = false,
     Logger? logger,
   }) : logger = logger ?? Logger.standard();
 
@@ -87,20 +82,6 @@ class Jot {
         stats: stats,
       );
       summaryGenerator.generate();
-    }
-
-    if (signature) {
-      logger.stdout('');
-      logger.stdout('Generating API signature...');
-
-      final sigOut = Directory(p.join(outDir.parent.path, 'sig'))..createSync();
-      final sig = MarkdownSignature(
-        workspace: workspace,
-        outDir: sigOut,
-        logger: logger,
-        stats: stats,
-      );
-      sig.generate();
     }
 
     stats.stop();
