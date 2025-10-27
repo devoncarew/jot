@@ -8,7 +8,6 @@ import 'package:jot/src/analysis.dart';
 import 'package:jot/src/generate.dart';
 import 'package:jot/src/html.dart';
 import 'package:jot/src/llm_summary.dart';
-import 'package:jot/src/signature.dart';
 import 'package:jot/src/utils.dart';
 import 'package:jot/workspace.dart';
 import 'package:path/path.dart' as p;
@@ -213,16 +212,6 @@ Future<void> generate(Directory sdkDir, Directory outDir) async {
     stats: stats,
   );
   await generator.generate();
-
-  // generate the api signature files
-  final sigOut = Directory(p.join(outDir.path, '_sig'))..createSync();
-  final sig = MarkdownSignature(
-    workspace: workspace,
-    outDir: sigOut,
-    logger: log,
-    stats: stats,
-  );
-  sig.generate();
 
   // generate the markdown summary files
   final summary = LLMSummary(
