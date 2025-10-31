@@ -2,6 +2,9 @@
 
 An experimental documentation generator for Dart.
 
+> [!NOTE]
+> This has moved to https://github.com/dart-lang/labs/tree/main/pkgs/jot.
+
 ## What's this?
 
 An experimental documentation generator for Dart; the main design features are:
